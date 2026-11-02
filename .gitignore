@@ -1,0 +1,42 @@
+# Local secrets and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+credentials/
+
+# Private runtime data
+accounts.json
+accounts.*.json
+cookies.txt
+cookies.json
+passwords.txt
+AccountData/
+UserData/
+backups/
+*.db
+*.db-shm
+*.db-wal
+*.log
+logs/
+
+# Build outputs
+bin/
+obj/
+dist/
+build/
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Local editor and OS files
+.vs/
+.idea/
+*.user
+*.suo
+.DS_Store
+Thumbs.db
