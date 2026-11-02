@@ -1,0 +1,695 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Win32;
+
+namespace RobloxMultiHub
+{
+    // Holds Roblox's single-instance lock objects (ROBLOX_singletonMutex + ROBLOX_singletonEvent) so
+    // that more than one Roblox client may run. Must be running BEFORE the first Roblox client starts.
+    // Nothing is injected into Roblox and no Roblox memory is touched - these are plain Windows objects.
+    public static class MultiInstance
+    {
+        static Thread thread;
+        static volatile bool stop;
+        static volatile string state = "Off";
+
+        public static string State { get { return state; } }
+        public static bool Active { get { return state == "Active"; } }
+        public static bool Enabled { get { return thread != null; } }
+
+        public static void Start()
+        {
+            if (thread != null) return;
+            stop = false;
+            state = "Waiting";
+            thread = new Thread(Run);
+            thread.IsBackground = true;
+            thread.Name = "MultiInstanceHolder";
+            thread.Start();
+        }
+
+        public static void Stop()
+        {
+            if (thread == null) return;
+            stop = true;
+            try { thread.Join(2000); } catch (Exception) { }
+            thread = null;
+            state = "Off";
+        }
+
+        static void Run()
+        {
+            Mutex mutex = null;
+            EventWaitHandle ev = null;
+            bool owned = false;
+            try
+            {
+                bool created;
+                ev = new EventWaitHandle(false, EventResetMode.ManualReset, "ROBLOX_singletonEvent", out created);
+                mutex = new Mutex(false, "ROBLOX_singletonMutex");
+                while (!stop)
+                {
+                    bool got = false;
+                    try { got = mutex.WaitOne(400); }
+                    catch (AbandonedMutexException) { got = true; }
+                    if (got)
+                    {
+                        owned = true;
+                        state = "Active";
+                        while (!stop) Thread.Sleep(250);
+                    }
+                    else
+                    {
+                        state = "Waiting";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                state = "Error: " + ex.Message;
+                Log.Error("MultiInstance", ex);
+            }
+            finally
+            {
+                try { if (owned && mutex != null) mutex.ReleaseMutex(); } catch (Exception) { }
+                try { if (mutex != null) mutex.Close(); } catch (Exception) { }
+                try { if (ev != null) ev.Close(); } catch (Exception) { }
+                if (!state.StartsWith("Error")) state = "Off";
+            }
+        }
+    }
+
+    public static class Launcher
+    {
+        public static readonly List<Instance> Instances = new List<Instance>();
+        static readonly Random Rng = new Random();
+        const string ProcName = "RobloxPlayerBeta";
+
+        // ---------- process helpers ----------
+        public static List<int> RobloxPids()
+        {
+            List<int> pids = new List<int>();
+            foreach (Process p in Process.GetProcessesByName(ProcName))
+            {
+                pids.Add(p.Id);
+                p.Dispose();
+            }
+            return pids;
+        }
+
+        // Uses the process snapshot only (no process handle), so it also works for protected Roblox processes.
+        public static bool IsAlive(int pid)
+        {
+            try
+            {
+                using (Process p = Process.GetProcessById(pid))
+                {
+                    return p.ProcessName.Equals(ProcName, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            catch (Exception) { return false; }
+        }
+
+        public static void KillPid(int pid)
+        {
+            try
+            {
+                using (Process p = Process.GetProcessById(pid))
+                {
+                    if (p.ProcessName.Equals(ProcName, StringComparison.OrdinalIgnoreCase)) p.Kill();
+                }
+            }
+            catch (ArgumentException) { }
+            catch (Exception ex) { Log.Write("Could not close Roblox process " + pid + ": " + ex.Message); }
+        }
+
+        // Closes every Roblox client and the Roblox bootstrapper (used before turning multi-instance on).
+        public static int KillAllRoblox()
+        {
+            int n = 0;
+            foreach (string name in new string[] { ProcName, "RobloxPlayerLauncher", "RobloxCrashHandler" })
+            {
+                foreach (Process p in Process.GetProcessesByName(name))
+                {
+                    try { p.Kill(); n++; } catch (Exception) { }
+                    p.Dispose();
+                }
+            }
+            Instances.Clear();
+            return n;
+        }
+
+        public static void CloseInstancesOf(Account a, Action<string> log)
+        {
+            List<Instance> mine = Instances.Where(i => i.Account == a).ToList();
+            foreach (Instance i in mine)
+            {
+                i.UserClosed = true;
+                if (IsAlive(i.Pid))
+                {
+                    KillPid(i.Pid);
+                    if (log != null) log("[" + AppState.Name(a) + "] closed previous Roblox window (PID " + i.Pid + ")");
+                }
+                Instances.Remove(i);
+            }
+        }
+
+        public static Instance FindInstance(int pid)
+        {
+            return Instances.FirstOrDefault(i => i.Pid == pid);
+        }
+
+        // ---------- locating Roblox ----------
+        static string ExtractExe(string command)
+        {
+            if (string.IsNullOrEmpty(command)) return null;
+            command = command.Trim();
+            if (command.StartsWith("\""))
+            {
+                int end = command.IndexOf('"', 1);
+                if (end > 1) return command.Substring(1, end - 1);
+                return null;
+            }
+            int sp = command.IndexOf(' ');
+            return sp > 0 ? command.Substring(0, sp) : command;
+        }
+
+        public static string FindRobloxExe()
+        {
+            try
+            {
+                using (RegistryKey k = Registry.CurrentUser.OpenSubKey(@"Software\Classes\roblox-player\shell\open\command"))
+                {
+                    if (k != null)
+                    {
+                        string handler = ExtractExe(k.GetValue("") as string);
+                        if (handler != null)
+                        {
+                            string dir = Path.GetDirectoryName(handler);
+                            if (dir != null)
+                            {
+                                string beta = Path.Combine(dir, ProcName + ".exe");
+                                if (File.Exists(beta)) return beta;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception) { }
+            try
+            {
+                string root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Roblox", "Versions");
+                if (Directory.Exists(root))
+                {
+                    string best = null;
+                    DateTime bestTime = DateTime.MinValue;
+                    foreach (string d in Directory.GetDirectories(root))
+                    {
+                        string exe = Path.Combine(d, ProcName + ".exe");
+                        if (!File.Exists(exe)) continue;
+                        DateTime t = File.GetLastWriteTime(exe);
+                        if (t > bestTime) { bestTime = t; best = exe; }
+                    }
+                    if (best != null) return best;
+                }
+            }
+            catch (Exception) { }
+            return null;
+        }
+
+        // True if the roblox-player URL handler points at the old bootstrapper, which closes other clients.
+        public static bool UsesLegacyBootstrapper()
+        {
+            try
+            {
+                using (RegistryKey k = Registry.CurrentUser.OpenSubKey(@"Software\Classes\roblox-player\shell\open\command"))
+                {
+                    if (k == null) return false;
+                    string v = (k.GetValue("") as string) ?? "";
+                    return v.IndexOf("RobloxPlayerLauncher", StringComparison.OrdinalIgnoreCase) >= 0
+                        || v.IndexOf("RobloxPlayerInstaller", StringComparison.OrdinalIgnoreCase) >= 0;
+                }
+            }
+            catch (Exception) { return false; }
+        }
+
+        // ---------- client settings (graphics flags) ----------
+        // Writes the allowlisted flags chosen on the Performance page into Roblox's ClientAppSettings.json.
+        // Called right before every launch, so the same settings apply to every account until changed.
+        public static void WriteClientSettings(string exe)
+        {
+            try
+            {
+                List<string> ignored;
+                Dictionary<string, object> flags = Gfx.Final(out ignored);
+                string dir = Path.Combine(Path.GetDirectoryName(exe), "ClientSettings");
+                string file = Path.Combine(dir, "ClientAppSettings.json");
+                if (flags.Count == 0)
+                {
+                    // user wants Roblox defaults: only remove a file that this app wrote earlier
+                    if (Store.Settings.WroteClientFile)
+                    {
+                        if (File.Exists(file)) File.Delete(file);
+                        Store.Settings.WroteClientFile = false;
+                        Store.SaveSettings();
+                    }
+                    return;
+                }
+                Directory.CreateDirectory(dir);
+                File.WriteAllText(file, Json.To(flags));
+                if (!Store.Settings.WroteClientFile)
+                {
+                    Store.Settings.WroteClientFile = true;
+                    Store.SaveSettings();
+                }
+            }
+            catch (Exception ex) { Log.Write("Could not write ClientAppSettings.json: " + ex.Message); }
+        }
+
+        public static string RemoveClientSettings()
+        {
+            string exe = FindRobloxExe();
+            if (exe == null) return "Roblox was not found.";
+            try
+            {
+                string f = Path.Combine(Path.GetDirectoryName(exe), "ClientSettings", "ClientAppSettings.json");
+                Store.Settings.WroteClientFile = false;
+                Store.SaveSettings();
+                if (File.Exists(f)) { File.Delete(f); return "Roblox default settings restored (deleted " + f + ")."; }
+                return "Roblox default settings restored (there was no settings file).";
+            }
+            catch (Exception ex) { return "Failed: " + ex.Message; }
+        }
+
+        // ---------- FPS cap (Roblox's own settings file, NOT a Fast Flag) ----------
+        // Roblox keeps its "Max frame rate" in %LOCALAPPDATA%\Roblox\GlobalBasicSettings_13.xml as
+        // <int name="FramerateCap">-1</int>. Changing it before a client starts is what the manual
+        // "edit the XML in Notepad" method does. Roblox reads it at startup.
+        internal static string FindBasicSettings()
+        {
+            try
+            {
+                string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Roblox");
+                if (!Directory.Exists(dir)) return null;
+                string prefix = "GlobalBasicSettings_";
+                string best = null;
+                int bestNum = -1;
+                foreach (string f in Directory.GetFiles(dir, prefix + "*.xml"))
+                {
+                    string name = Path.GetFileNameWithoutExtension(f);
+                    int n;
+                    if (!int.TryParse(name.Substring(prefix.Length), out n)) continue;   // skips the Studio file
+                    if (n > bestNum) { bestNum = n; best = f; }
+                }
+                return best;
+            }
+            catch (Exception) { return null; }
+        }
+
+        public static void ApplyFpsCap(Action<string> log)
+        {
+            SetFpsCap(Store.Settings.FpsCap, log);
+        }
+
+        const string FpsPattern = "(<int name=\"FramerateCap\">)(-?\\d+)(</int>)";
+
+        // Puts "want" into Roblox's settings file (one attempt) and reads it back.
+        // Returns "" when the file now holds that value, otherwise the reason it does not.
+        internal static string TryWriteCap(string file, int want, out bool changed)
+        {
+            changed = false;
+            try
+            {
+                string xml = File.ReadAllText(file, Encoding.UTF8);
+                Match m = Regex.Match(xml, FpsPattern);
+                if (!m.Success) return "the settings file has no FramerateCap entry yet - start Roblox once normally, close it, then try again";
+                int have;
+                int.TryParse(m.Groups[2].Value, out have);
+                if (have != want)
+                {
+                    string backup = file + ".multihub-backup";
+                    if (!File.Exists(backup)) File.Copy(file, backup);
+                    xml = xml.Substring(0, m.Groups[2].Index) + want + xml.Substring(m.Groups[2].Index + m.Groups[2].Length);
+                    File.WriteAllText(file, xml, new UTF8Encoding(false));
+                    changed = true;
+                }
+                Match check = Regex.Match(File.ReadAllText(file, Encoding.UTF8), FpsPattern);
+                return (check.Success && check.Groups[2].Value == want.ToString()) ? "" : "Roblox changed the file again right away";
+            }
+            catch (IOException ex) { return ex.Message; }
+            catch (UnauthorizedAccessException ex) { return ex.Message; }
+        }
+
+        // Writes one specific cap (0 = give control back to Roblox). Used for the global cap and for per-account caps.
+        // Retries when Roblox still has the file open and checks that the value really is in the file afterwards.
+        public static void SetFpsCap(int cap, Action<string> log)
+        {
+            bool restore = cap <= 0;
+            if (restore && !Store.Settings.WroteFpsCap) return;       // never asked for a cap: leave Roblox alone
+            string file = FindBasicSettings();
+            if (file == null)
+            {
+                if (!restore && log != null) log("FPS cap: Roblox's settings file was not found. Start Roblox once normally, close it, then try again.");
+                return;
+            }
+            int want = restore ? -1 : cap;
+            string problem = "";
+            bool changed = false;
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                bool c;
+                problem = TryWriteCap(file, want, out c);
+                if (c) changed = true;
+                if (problem.Length == 0) break;
+                Thread.Sleep(150);
+            }
+            if (problem.Length > 0)
+            {
+                if (log != null) log("Could not set the FPS cap in Roblox's settings file: " + problem);
+                return;
+            }
+            if (restore)
+            {
+                Store.Settings.WroteFpsCap = false;
+                Store.SaveSettings();
+                if (changed && log != null) log("FPS cap removed: Roblox uses its own frame rate setting again.");
+            }
+            else
+            {
+                if (!Store.Settings.WroteFpsCap) { Store.Settings.WroteFpsCap = true; Store.SaveSettings(); }
+                if (changed && log != null) log("FPS cap " + cap + " written to Roblox's settings file.");
+            }
+        }
+
+        // Waits until the Roblox window of that process exists (the client has read its settings by then).
+        static async Task WaitForWindow(int pid, int timeoutMs)
+        {
+            DateTime end = DateTime.Now.AddMilliseconds(timeoutMs);
+            while (DateTime.Now < end)
+            {
+                foreach (WinInfo w in WindowLayout.FindRobloxWindows())
+                    if (w.Pid == pid && w.HasWindow) return;
+                await Task.Delay(700);
+            }
+        }
+
+        // ---------- CPU priority ----------
+        public static bool ApplyPriority(int pid, bool includeNormal)
+        {
+            ProcessPriorityClass pc;
+            string s = Store.Settings.Priority;
+            if (s == "BelowNormal") pc = ProcessPriorityClass.BelowNormal;
+            else if (s == "Idle") pc = ProcessPriorityClass.Idle;
+            else if (includeNormal) pc = ProcessPriorityClass.Normal;
+            else return true;
+            try
+            {
+                using (Process p = Process.GetProcessById(pid)) { p.PriorityClass = pc; }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Write("Could not change the CPU priority of process " + pid + " (Roblox may protect it): " + ex.Message);
+                return false;
+            }
+        }
+
+        public static int ApplyPriorityAll()
+        {
+            int ok = 0;
+            foreach (int pid in RobloxPids())
+                if (ApplyPriority(pid, true)) ok++;
+            return ok;
+        }
+
+        // ---------- launching ----------
+        // Same shape as Roblox Account Manager: 6 digits (100000-174999) followed by 6 digits (100000-899999).
+        static long RandomTracker()
+        {
+            return long.Parse(Rng.Next(100000, 175000).ToString() + Rng.Next(100000, 900000).ToString());
+        }
+
+        // The join request the Roblox client sends to Roblox, built exactly like Roblox Account Manager does
+        // (same parameters in the same order). Accounts launched like that are not asked for human verification.
+        public static string PlaceLauncherUrl(LaunchSpec s, long tracker)
+        {
+            string b = Store.Settings.PlaceLauncherUrl;
+            if (string.IsNullOrWhiteSpace(b)) b = "https://assetgame.roblox.com/game/PlaceLauncher.ashx";
+            if (s.Kind == "Job")
+                return b + "?request=RequestGameJob&browserTrackerId=" + tracker + "&placeId=" + s.PlaceId + "&gameId=" + s.JobId + "&isPlayTogetherGame=false";
+            if (s.Kind == "Private")
+                return b + "?request=RequestPrivateGame&placeId=" + s.PlaceId + "&linkCode=" + s.LinkCode;
+            if (s.Kind == "Follow")
+                return b + "?request=RequestFollowUser&userId=" + s.FollowUserId;
+            return b + "?request=RequestGame&browserTrackerId=" + tracker + "&placeId=" + s.PlaceId + "&isPlayTogetherGame=false";
+        }
+
+        // Same encoding as .NET's HttpUtility.UrlEncode (lower-case hex, space = '+'), which Roblox Account Manager uses.
+        static string UrlEncode(string s)
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (byte b in Encoding.UTF8.GetBytes(s))
+            {
+                char c = (char)b;
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || "-_.!*()".IndexOf(c) >= 0) sb.Append(c);
+                else if (c == ' ') sb.Append('+');
+                else sb.Append('%').Append(((int)b).ToString("x2"));
+            }
+            return sb.ToString();
+        }
+
+        public static async Task<bool> LaunchAsync(Account a, LaunchSpec spec, Action<string> log)
+        {
+            string who = "[" + AppState.Name(a) + "] ";
+            FpsGuard guard = null;
+            try
+            {
+                if (string.IsNullOrEmpty(a.Cookie)) { log(who + "has no cookie saved."); return false; }
+
+                int max = Store.Settings.MaxInstances;
+                if (max > 0 && RobloxPids().Count >= max)
+                {
+                    log(who + "not launched: Max instances (" + max + ") reached. Close one or raise the limit in Settings.");
+                    return false;
+                }
+
+                if (Store.Settings.RefreshCookieOnLaunch)
+                {
+                    string nc = await Api.RotateCookie(a.Cookie, log);
+                    if (nc != null) { a.Cookie = nc; Store.SaveAccounts(); log(who + "cookie refreshed."); }
+                }
+
+                log(who + "requesting login ticket...");
+                TicketResult t = await Api.GetTicket(a.Cookie);
+                if (t.Ticket == null)
+                {
+                    log(who + "failed: " + t.Error);
+                    if (t.Unauthorized) AppState.Live(a).CookieBad = true;
+                    if (t.Locked) { AppState.Live(a).Locked = true; log(who + "this account looks LOCKED / blocked by Roblox (HTTP 403). Unlock it on roblox.com."); }
+                    return false;
+                }
+                AppState.Live(a).CookieBad = false;
+
+                if (Store.Settings.AutoCloseLast) CloseInstancesOf(a, log);
+                if (a.TrackerId == 0) a.TrackerId = RandomTracker();
+
+                if (!MultiInstance.Active && RobloxPids().Count > 0)
+                    log(who + "WARNING: multi-instance is not active, so starting this will likely close your other Roblox windows.");
+
+                bool direct = Store.Settings.LaunchMethod != "Protocol";
+                string exe = FindRobloxExe();
+                if (direct && exe == null) { log(who + "Roblox was not found. Install it from roblox.com (or switch the launch method to Protocol in Settings)."); return false; }
+                if (exe != null) WriteClientSettings(exe);
+                if (a.FpsCap > 0)
+                {
+                    SetFpsCap(a.FpsCap, log);                      // this account has its own cap for this launch ...
+                    guard = new FpsGuard(a.FpsCap, log);           // ... and nothing may overwrite it while the client starts
+                }
+                else ApplyFpsCap(log);
+
+                List<int> before = RobloxPids();
+                long launchTime = Util.NowMs();
+                string url = PlaceLauncherUrl(spec, a.TrackerId);
+
+                try
+                {
+                    if (direct)
+                    {
+                        string args = "--app -t " + t.Ticket + " -j \"" + url + "\" -b " + a.TrackerId
+                            + " --launchtime=" + launchTime + " --rloc en_us --gloc en_us";
+                        ProcessStartInfo psi = new ProcessStartInfo(exe, args);
+                        psi.UseShellExecute = false;
+                        psi.WorkingDirectory = Path.GetDirectoryName(exe);
+                        Process.Start(psi);
+                    }
+                    else
+                    {
+                        string proto = "roblox-player:1+launchmode:play+gameinfo:" + t.Ticket + "+launchtime:" + launchTime
+                            + "+placelauncherurl:" + UrlEncode(url) + "+browsertrackerid:" + a.TrackerId
+                            + "+robloxLocale:en_us+gameLocale:en_us+channel:+LaunchExp:InApp";
+                        ProcessStartInfo psi = new ProcessStartInfo(proto);
+                        psi.UseShellExecute = true;
+                        Process.Start(psi);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log(who + "could not start Roblox: " + ex.Message);
+                    if (guard != null) { guard.Dispose(); ApplyFpsCap(log); }
+                    return false;
+                }
+
+                log(who + "Roblox is starting (" + spec.Describe() + ")...");
+                int pid = 0;
+                for (int i = 0; i < 120 && pid == 0; i++)
+                {
+                    await Task.Delay(500);
+                    foreach (int p in RobloxPids())
+                    {
+                        if (!before.Contains(p) && FindInstance(p) == null) { pid = p; break; }
+                    }
+                }
+
+                a.LastUsedTicks = DateTime.UtcNow.Ticks;
+                Store.SaveAccounts();
+
+                if (pid == 0)
+                {
+                    log(who + "launch command sent, but no new Roblox process appeared within 60 s (not tracked). Check that Roblox is installed and up to date.");
+                    if (guard != null) { guard.Dispose(); ApplyFpsCap(log); }
+                    return false;
+                }
+                Instance inst = new Instance();
+                inst.Account = a;
+                inst.Pid = pid;
+                inst.Started = DateTime.Now;
+                inst.Spec = spec.Copy();
+                Instances.Add(inst);
+                ApplyPriority(pid, false);
+                log(who + "started (PID " + pid + ").");
+                if (guard != null)
+                {
+                    // Wait until the Roblox window is really up (the client has read its settings by then), then put the
+                    // global cap back so the next account gets the global one again.
+                    await WaitForWindow(pid, 60000);
+                    await Task.Delay(8000);
+                    guard.Dispose();
+                    guard = null;
+                    ApplyFpsCap(log);
+                    log(who + "ran with its own FPS cap (" + a.FpsCap + "); the global FPS setting is active again.");
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("LaunchAsync", ex);
+                log(who + "unexpected error: " + ex.Message);
+                if (guard != null) { guard.Dispose(); ApplyFpsCap(log); }
+                return false;
+            }
+        }
+
+        // ---------- watcher: relaunch accounts whose Roblox window disappeared ----------
+        public static async Task WatcherTick(Action<string> log)
+        {
+            if (!Store.Settings.AutoRelaunch)
+            {
+                Instances.RemoveAll(i => !IsAlive(i.Pid));
+                return;
+            }
+
+            List<Instance> dead = Instances.Where(i => !i.UserClosed && !IsAlive(i.Pid)).ToList();
+
+            if (Store.Settings.WatcherUsePresence)
+            {
+                foreach (Instance i in Instances.ToList())
+                {
+                    if (i.UserClosed || !IsAlive(i.Pid) || i.Account.UserId <= 0) continue;
+                    if ((DateTime.Now - i.Started).TotalSeconds < 150) continue;
+                    List<long> ids = new List<long>();
+                    ids.Add(i.Account.UserId);
+                    Dictionary<long, PresenceInfo> pr = await Api.Presence(i.Account.Cookie, ids);
+                    PresenceInfo pi;
+                    if (!pr.TryGetValue(i.Account.UserId, out pi)) continue;
+                    if (pi.Type == 2) { i.Strikes = 0; continue; }
+                    i.Strikes++;
+                    if (i.Strikes >= 2)
+                    {
+                        log("Watcher: " + AppState.Name(i.Account) + " is not in a game anymore - closing and relaunching.");
+                        KillPid(i.Pid);
+                        dead.Add(i);
+                    }
+                }
+            }
+
+            if (dead.Count == 0) return;
+            if (!await Api.InternetOk()) { log("Watcher: no internet connection, will retry."); return; }
+
+            foreach (Instance d in dead)
+            {
+                Instances.Remove(d);
+                log("Watcher: relaunching " + AppState.Name(d.Account) + "...");
+                await LaunchAsync(d.Account, d.Spec, log);
+                await Task.Delay(Math.Max(1, Store.Settings.LaunchDelaySec) * 1000);
+            }
+        }
+    }
+
+    // While a client with its own FPS cap is starting, Roblox may rewrite its settings file (for example a window that
+    // is still closing). This watches the file and puts the wanted value straight back.
+    public class FpsGuard : IDisposable
+    {
+        readonly int want;
+        readonly Action<string> log;
+        FileSystemWatcher watcher;
+        DateTime last = DateTime.MinValue;
+        readonly object gate = new object();
+
+        public FpsGuard(int cap, Action<string> log)
+        {
+            want = cap;
+            this.log = log;
+            try
+            {
+                string file = Launcher.FindBasicSettings();
+                if (file == null) return;
+                watcher = new FileSystemWatcher(Path.GetDirectoryName(file), Path.GetFileName(file));
+                watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size;
+                watcher.Changed += OnChanged;
+                watcher.EnableRaisingEvents = true;
+            }
+            catch (Exception) { watcher = null; }
+        }
+
+        void OnChanged(object sender, FileSystemEventArgs e)
+        {
+            lock (gate)
+            {
+                if ((DateTime.Now - last).TotalMilliseconds < 400) return;
+                last = DateTime.Now;
+            }
+            Thread.Sleep(300);                                    // let the writer finish
+            bool changed;
+            Launcher.TryWriteCap(e.FullPath, want, out changed);
+            if (changed && log != null) log("Roblox rewrote its FPS setting while the window was starting - put " + want + " back.");
+        }
+
+        public void Dispose()
+        {
+            FileSystemWatcher w = watcher;
+            watcher = null;
+            if (w != null)
+            {
+                w.EnableRaisingEvents = false;
+                w.Dispose();
+            }
+        }
+    }
+}
