@@ -162,6 +162,7 @@ namespace RobloxMultiHub
         public MacroSettings Macro = new MacroSettings();
         public MemSettings Mem = new MemSettings();
         public bool CheckLoginsAtStartup = true;    // check every saved login when the app starts
+        public bool CheckUpdates = true;            // check GitHub for a newer version at startup (notify only)
         public int WinW = 1300;
         public int WinH = 780;
 

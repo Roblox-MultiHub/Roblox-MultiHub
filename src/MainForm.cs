@@ -492,6 +492,7 @@ namespace RobloxMultiHub
             RefreshPresence();
             StartMemOnLaunch();
             if (Store.Settings.CheckLoginsAtStartup) CheckLoginsOnStartup();
+            if (Store.Settings.CheckUpdates) CheckUpdatesOnStartup();
             if (!string.IsNullOrEmpty(Store.Settings.StartupPreset)) RunStartupPreset();
         }
 

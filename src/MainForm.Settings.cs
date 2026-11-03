@@ -20,6 +20,7 @@ namespace RobloxMultiHub
         NumericUpDown numMax, numPresence, numWatcher;
         RoundTextBox tbLauncherUrl;
         CheckBox chkPresence, chkRelaunch, chkWatcherPresence, chkStartup, chkAntiAfk, chkCheckLogins;
+        CheckBox chkCheckUpdates;
         CheckBox chkCrashBreaker;
         NumericUpDown numCrashMax;
         CheckBox chkWebhook, chkWebhookCrash, chkWebhookRelaunch, chkWebhookBatch, chkWebhookLocked;
@@ -170,6 +171,15 @@ namespace RobloxMultiHub
                 "Useful with multi-instance: if this app starts before Roblox does, it always wins the lock. Adds a normal Windows startup entry that you can remove here again.",
                 chkStartup);
 
+            p.Section("Updates");
+            chkCheckUpdates = Ui.Chk("Check for a new version when MultiHub starts", S.CheckUpdates, null);
+            p.Opt("Just tells you when a newer version is out - it never downloads anything by itself.",
+                "When the app starts it asks GitHub once what the latest released version is. If that is newer than the version you have, you get a short notice with a button to open the download page. It only reads a version number; it never downloads or replaces the app on its own, so it is completely safe. Turn it off to never check.",
+                chkCheckUpdates);
+            p.Opt("Check right now.",
+                "Asks GitHub for the latest version immediately and tells you whether you are up to date.",
+                Ui.Btn("Check for updates now", 200, delegate { CheckUpdatesNow(); }, ""));
+
             p.Section("Advanced");
             tbLauncherUrl = Ui.Txt(290, S.PlaceLauncherUrl);
             p.Opt("Only change this if Roblox moves the launcher URL.",
@@ -199,6 +209,7 @@ namespace RobloxMultiHub
             chkPresence.CheckedChanged += changed;
             numPresence.ValueChanged += changed;
             chkCheckLogins.CheckedChanged += changed;
+            chkCheckUpdates.CheckedChanged += changed;
             chkRelaunch.CheckedChanged += changed;
             numWatcher.ValueChanged += changed;
             chkWatcherPresence.CheckedChanged += changed;
@@ -242,6 +253,7 @@ namespace RobloxMultiHub
             chkRefreshLaunch.Checked = S.RefreshCookieOnLaunch;
             chkPresence.Checked = S.ShowPresence;
             chkCheckLogins.Checked = S.CheckLoginsAtStartup;
+            if (chkCheckUpdates != null) chkCheckUpdates.Checked = S.CheckUpdates;
             chkRelaunch.Checked = S.AutoRelaunch;
             chkWatcherPresence.Checked = S.WatcherUsePresence;
             if (chkCrashBreaker != null)
@@ -278,6 +290,7 @@ namespace RobloxMultiHub
             S.ShowPresence = chkPresence.Checked;
             S.PresenceSec = (int)numPresence.Value;
             S.CheckLoginsAtStartup = chkCheckLogins.Checked;
+            S.CheckUpdates = chkCheckUpdates.Checked;
             S.AutoRelaunch = chkRelaunch.Checked;
             S.WatcherSec = (int)numWatcher.Value;
             S.WatcherUsePresence = chkWatcherPresence.Checked;
@@ -437,6 +450,50 @@ namespace RobloxMultiHub
         {
             try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
             catch (Exception ex) { AddLog("Could not open the " + what + ": " + ex.Message); }
+        }
+
+        // Quiet check at startup: only says something when a newer version exists.
+        async void CheckUpdatesOnStartup()
+        {
+            try
+            {
+                UpdateInfo u = await Updater.Check();
+                if (IsDisposed || !u.Available) return;
+                AddLog("Update available: v" + u.Latest + " (you have v" + u.Current + ").");
+                if (MessageBox.Show(this,
+                        "A newer version of Roblox MultiHub is available:\r\n\r\n" +
+                        "    v" + u.Latest + "   (you have v" + u.Current + ")\r\n\r\n" +
+                        "Open the download page now? Nothing is downloaded automatically.",
+                        "Update available", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                    OpenLink(u.Url, "download page");
+            }
+            catch (Exception ex) { Log.Error("CheckUpdatesOnStartup", ex); }
+        }
+
+        // Manual check from the button: always tells you the result.
+        async void CheckUpdatesNow()
+        {
+            AddLog("Checking GitHub for a new version...");
+            UpdateInfo u = await Updater.Check();
+            if (IsDisposed) return;
+            if (!string.IsNullOrEmpty(u.Error))
+            {
+                MessageBox.Show(this, "Could not check for updates right now:\r\n" + u.Error, "Check for updates", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (u.Available)
+            {
+                AddLog("Update available: v" + u.Latest + " (you have v" + u.Current + ").");
+                if (MessageBox.Show(this,
+                        "A newer version is available:\r\n\r\n    v" + u.Latest + "   (you have v" + u.Current + ")\r\n\r\nOpen the download page now?",
+                        "Update available", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                    OpenLink(u.Url, "download page");
+            }
+            else
+            {
+                AddLog("You are up to date (v" + u.Current + ").");
+                MessageBox.Show(this, "You already have the latest version (v" + u.Current + ").", "Check for updates", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
         }
 
     }
