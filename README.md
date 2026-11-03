@@ -115,6 +115,10 @@ It automates windows and input, which some antivirus flags as a false positive. 
 - 💖 Donate: **[buymeacoffee.com/multihub](https://buymeacoffee.com/multihub)** — keeps the project going, totally optional.
 - 💬 Discord: **[discord.gg/TCrVyjYhHr](https://discord.gg/TCrVyjYhHr)** — announcements, update logs, help and support tickets.
 
+## 🔏 Code signing
+
+Free code signing for Windows builds is provided by [SignPath.io](https://signpath.io), with a certificate issued by the [SignPath Foundation](https://signpath.org). The signed executable is built in the open by the [GitHub Actions workflow](.github/workflows/build.yml), straight from the source in this repository.
+
 ## 📄 License
 
 Released under the **GNU GPL-3.0** license. See [LICENSE](LICENSE).
