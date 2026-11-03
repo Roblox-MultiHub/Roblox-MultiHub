@@ -609,15 +609,20 @@ namespace RobloxMultiHub
                 }
 
                 log(who + "Roblox is starting (" + spec.Describe() + ")...");
-                int pid = 0;
-                for (int i = 0; i < 120 && pid == 0; i++)
+                // Poll for the new Roblox process on a background thread (Thread.Sleep, not an awaited
+                // Task.Delay). This never touches the UI message pump, so the launch sequence can't stall
+                // when Roblox grabs the foreground - the cause of "only the first account starts until you click".
+                HashSet<int> beforeSet = new HashSet<int>(before);
+                int pid = await Task.Run(delegate
                 {
-                    await Task.Delay(500);
-                    foreach (int p in RobloxPids())
+                    for (int i = 0; i < 120; i++)
                     {
-                        if (!before.Contains(p) && FindInstance(p) == null) { pid = p; break; }
+                        foreach (int p in RobloxPids())
+                            if (!beforeSet.Contains(p) && FindInstance(p) == null) return p;
+                        System.Threading.Thread.Sleep(500);
                     }
-                }
+                    return 0;
+                });
 
                 a.LastUsedTicks = DateTime.UtcNow.Ticks;
                 Store.SaveAccounts();
