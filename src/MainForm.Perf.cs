@@ -10,6 +10,7 @@ namespace RobloxMultiHub
     {
         ComboBox cbPreset, cbQuality, cbTexture, cbMsaa, cbApi, cbPriority;
         CheckBox chkNoGrass, chkVoxel, chkSky, chkCsg, chkUnlisted;
+        CheckBox chkMaxAlts, chkMaxIdle, chkMaxTrim, chkMaxMin;
         TextBox tbPreview, tbCustomFlags;
         Label lblPerfLive;
         NumericUpDown numFps;
@@ -33,6 +34,7 @@ namespace RobloxMultiHub
             p.Row(lblPerfLive);
 
             BuildMemorySection(p);
+            BuildMaxAltsSection(p);
 
             p.Section("Frame rate");
             numFps = Ui.Num(0, 1000, Store.Settings.FpsCap, 80);
@@ -254,6 +256,39 @@ namespace RobloxMultiHub
             }
             AddLog("Minimized " + n + " Roblox window(s).");
             RefreshWindowList();
+        }
+
+        void BuildMaxAltsSection(PageBuilder p)
+        {
+            p.Section("Max alts  (throttle the windows you are not playing)");
+            chkMaxAlts = Ui.Chk("Turn on Max alts", Store.Settings.MaxAlts, null);
+            p.Opt("The window you are in stays full speed; every other Roblox window is slowed down.",
+                "OFF by default. While this is on, the Roblox window that currently has your focus runs at full speed, and every OTHER Roblox window this app sees is made cheap for your PC: Windows gives it CPU time last and runs it in 'efficiency mode' (the same EcoQoS leaf Task Manager shows), and its memory is trimmed now and then. The moment you click a different Roblox window, that one speeds up and the previous one slows down.\n\nNothing inside Roblox is touched - only the standard Windows process controls. Best for idling or auto-farming many accounts while you actively play one. Roblox can protect a process; windows it protects are simply left alone.",
+                chkMaxAlts);
+            chkMaxIdle = Ui.Chk("Idle CPU priority + efficiency mode for background windows", Store.Settings.MaxAltsIdle, null);
+            p.Opt("The main saving - lets the window you play keep the CPU.",
+                "Background clients get the lowest CPU priority and Windows' efficiency mode, so the client you are playing always gets the CPU first. Recommended on.",
+                chkMaxIdle);
+            chkMaxTrim = Ui.Chk("Trim the memory of background windows", Store.Settings.MaxAltsTrim, null);
+            p.Opt("Frees unused RAM of the windows you are not in (every ~20 s).",
+                "Empties the working set of each background client, which pushes memory it is not actively using back to Windows. No admin rights needed - it only touches the clients this app launched.",
+                chkMaxTrim);
+            chkMaxMin = Ui.Chk("Also minimize background windows", Store.Settings.MaxAltsMinimize, null);
+            p.Opt("Minimized Roblox windows usually render even less.",
+                "Optional. Minimizes every client except the one you are in. It fights with the Layout page (which arranges windows on screen), so leave it off if you tile your windows.",
+                chkMaxMin);
+
+            chkMaxAlts.CheckedChanged += delegate
+            {
+                if (loadingPerf) return;
+                Store.Settings.MaxAlts = chkMaxAlts.Checked;
+                Store.SaveSettings();
+                if (chkMaxAlts.Checked) { AddLog("Max alts ON: the window you are not playing is throttled."); MaxAlts.Tick(); }
+                else { MaxAlts.Reset(); AddLog("Max alts OFF: every Roblox window runs at full speed again."); }
+            };
+            chkMaxIdle.CheckedChanged += delegate { if (loadingPerf) return; Store.Settings.MaxAltsIdle = chkMaxIdle.Checked; Store.SaveSettings(); if (!chkMaxIdle.Checked) MaxAlts.Reset(); };
+            chkMaxTrim.CheckedChanged += delegate { if (loadingPerf) return; Store.Settings.MaxAltsTrim = chkMaxTrim.Checked; Store.SaveSettings(); };
+            chkMaxMin.CheckedChanged += delegate { if (loadingPerf) return; Store.Settings.MaxAltsMinimize = chkMaxMin.Checked; Store.SaveSettings(); };
         }
     }
 }

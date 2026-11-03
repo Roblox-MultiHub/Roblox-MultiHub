@@ -133,6 +133,7 @@ namespace RobloxMultiHub
             else if (c is Panel || c is TableLayoutPanel || c is FlowLayoutPanel)
             {
                 if (tag == "card") c.BackColor = Panel;
+                else if (tag == "card2") c.BackColor = Panel2;
                 else if (tag == "panel2") c.BackColor = Panel2;
                 else if (tag == "line") c.BackColor = Border;
                 else if (tag == "accent") c.BackColor = Accent;

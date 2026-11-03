@@ -1,0 +1,39 @@
+name: Build
+
+# Verifiable build from source on a clean Windows runner. This is the public, reproducible
+# pipeline SignPath Foundation (free code signing for open source) expects: the exe that gets
+# signed is the one GitHub builds here, not a local build.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Compile RobloxMultiHub.exe
+        shell: pwsh
+        run: |
+          $csc = "$env:windir\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+          if (-not (Test-Path $csc)) { $csc = "$env:windir\Microsoft.NET\Framework\v4.0.30319\csc.exe" }
+          & $csc /nologo /target:winexe /optimize+ /debug- /warn:1 `
+            /nowarn:0168,0219,0414,0649,0169,0067 `
+            /out:RobloxMultiHub.exe /win32icon:app.ico /win32manifest:app.manifest `
+            /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll `
+            /r:System.Web.Extensions.dll /r:System.Net.Http.dll /r:System.Security.dll `
+            /recurse:src\*.cs
+          if (-not (Test-Path RobloxMultiHub.exe)) { Write-Error "Build produced no exe"; exit 1 }
+          Get-FileHash RobloxMultiHub.exe -Algorithm SHA256
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RobloxMultiHub
+          path: RobloxMultiHub.exe
+          if-no-files-found: error

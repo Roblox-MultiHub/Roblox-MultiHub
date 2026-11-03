@@ -43,6 +43,7 @@ namespace RobloxMultiHub
             }
 
             Store.Init();
+            Lang.Init();
             Theme.Set(Store.Settings.Theme != "Light");
             if (!Unlock()) return;
 

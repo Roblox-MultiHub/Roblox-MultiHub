@@ -92,6 +92,54 @@ namespace RobloxMultiHub
         static readonly Random Rng = new Random();
         const string ProcName = "RobloxPlayerBeta";
 
+        // ---------- crash breaker ----------
+        // Counts how often the watcher has relaunched an account inside a short window. Once it reaches the
+        // limit the account is left alone for a cooldown, so a client that keeps crashing never loops forever.
+        class BreakerState { public int Count; public DateTime WindowStart; public bool GaveUp; public DateTime GaveUpAt; }
+        static readonly Dictionary<string, BreakerState> breaker = new Dictionary<string, BreakerState>();
+
+        static BreakerState Breaker(Account a)
+        {
+            BreakerState s;
+            if (!breaker.TryGetValue(a.Id, out s)) { s = new BreakerState(); s.WindowStart = DateTime.UtcNow; breaker[a.Id] = s; }
+            return s;
+        }
+
+        // May the watcher relaunch this account right now? (false = the breaker has given up for a while)
+        public static bool BreakerAllows(Account a)
+        {
+            if (!Store.Settings.CrashBreaker) return true;
+            BreakerState s = Breaker(a);
+            if (s.GaveUp)
+            {
+                if ((DateTime.UtcNow - s.GaveUpAt).TotalMinutes >= Math.Max(1, Store.Settings.CrashBreakerCooldownMin))
+                {
+                    s.GaveUp = false; s.Count = 0; s.WindowStart = DateTime.UtcNow;   // cooldown over: try again
+                    return true;
+                }
+                return false;
+            }
+            return true;
+        }
+
+        // Record one watcher relaunch; returns true if that tipped the account over the limit (just gave up).
+        public static bool BreakerRecord(Account a)
+        {
+            if (!Store.Settings.CrashBreaker) return false;
+            BreakerState s = Breaker(a);
+            int windowMin = Math.Max(1, Store.Settings.CrashBreakerWindowMin);
+            if ((DateTime.UtcNow - s.WindowStart).TotalMinutes > windowMin) { s.WindowStart = DateTime.UtcNow; s.Count = 0; }
+            s.Count++;
+            if (s.Count >= Math.Max(1, Store.Settings.CrashBreakerMax)) { s.GaveUp = true; s.GaveUpAt = DateTime.UtcNow; return true; }
+            return false;
+        }
+
+        // A deliberate (user) launch clears the breaker for that account.
+        public static void BreakerClear(Account a)
+        {
+            breaker.Remove(a.Id);
+        }
+
         // ---------- process helpers ----------
         public static List<int> RobloxPids()
         {
@@ -492,10 +540,22 @@ namespace RobloxMultiHub
                 {
                     log(who + "failed: " + t.Error);
                     if (t.Unauthorized) AppState.Live(a).CookieBad = true;
-                    if (t.Locked) { AppState.Live(a).Locked = true; log(who + "this account looks LOCKED / blocked by Roblox (HTTP 403). Unlock it on roblox.com."); }
+                    if (t.Locked)
+                    {
+                        LiveInfo li = AppState.Live(a);
+                        if (!li.LockedAlerted && Store.Settings.WebhookLocked)
+                        {
+                            Webhook.Send("Account locked", AppState.Name(a) + " — Roblox returned HTTP 403 (locked / blocked). Unlock it on roblox.com.", Webhook.Red);
+                            li.LockedAlerted = true;
+                        }
+                        li.Locked = true;
+                        log(who + "this account looks LOCKED / blocked by Roblox (HTTP 403). Unlock it on roblox.com.");
+                    }
                     return false;
                 }
                 AppState.Live(a).CookieBad = false;
+                AppState.Live(a).Locked = false;
+                AppState.Live(a).LockedAlerted = false;
 
                 if (Store.Settings.AutoCloseLast) CloseInstancesOf(a, log);
                 if (a.TrackerId == 0) a.TrackerId = RandomTracker();
@@ -599,6 +659,11 @@ namespace RobloxMultiHub
         // ---------- watcher: relaunch accounts whose Roblox window disappeared ----------
         public static async Task WatcherTick(Action<string> log)
         {
+            // Crash/disconnect alerts go out whether or not auto-relaunch is on.
+            if (Store.Settings.WebhookCrash)
+                foreach (Instance g in Instances.Where(i => !i.UserClosed && !IsAlive(i.Pid)).ToList())
+                    Webhook.Send("Client closed", AppState.Name(g.Account) + " — its Roblox window disappeared unexpectedly.", Webhook.Red);
+
             if (!Store.Settings.AutoRelaunch)
             {
                 Instances.RemoveAll(i => !IsAlive(i.Pid));
@@ -635,8 +700,22 @@ namespace RobloxMultiHub
             foreach (Instance d in dead)
             {
                 Instances.Remove(d);
+                if (!BreakerAllows(d.Account))
+                {
+                    log("Watcher: " + AppState.Name(d.Account) + " keeps crashing - the crash breaker stopped relaunching it. Launch it yourself to try again.");
+                    continue;
+                }
                 log("Watcher: relaunching " + AppState.Name(d.Account) + "...");
                 await LaunchAsync(d.Account, d.Spec, log);
+                bool gaveUp = BreakerRecord(d.Account);
+                if (Store.Settings.WebhookRelaunch)
+                    Webhook.Send("Client relaunched", AppState.Name(d.Account) + " was brought back by the watcher.", Webhook.Yellow);
+                if (gaveUp)
+                {
+                    log("Watcher: " + AppState.Name(d.Account) + " has crashed too often - the crash breaker will stop relaunching it for " + Math.Max(1, Store.Settings.CrashBreakerCooldownMin) + " min.");
+                    if (Store.Settings.WebhookCrash)
+                        Webhook.Send("Crash breaker", AppState.Name(d.Account) + " crashed too many times - auto-relaunch paused for " + Math.Max(1, Store.Settings.CrashBreakerCooldownMin) + " min.", Webhook.Red);
+                }
                 await Task.Delay(Math.Max(1, Store.Settings.LaunchDelaySec) * 1000);
             }
         }

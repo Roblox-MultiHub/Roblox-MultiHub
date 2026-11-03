@@ -21,6 +21,19 @@ namespace RobloxMultiHub
         public static int Count;
         public static bool CpuAvailable = true;
 
+        // Short rolling history per process, for the sparklines on the Monitor page.
+        public const int HistLen = 40;
+        public static Dictionary<int, List<double>> CpuHist = new Dictionary<int, List<double>>();
+        public static Dictionary<int, List<double>> RamHist = new Dictionary<int, List<double>>();
+
+        static void Push(Dictionary<int, List<double>> hist, int pid, double v)
+        {
+            List<double> l;
+            if (!hist.TryGetValue(pid, out l)) { l = new List<double>(); hist[pid] = l; }
+            l.Add(v);
+            if (l.Count > HistLen) l.RemoveRange(0, l.Count - HistLen);
+        }
+
         public static void Update()
         {
             DateTime now = DateTime.UtcNow;
@@ -68,6 +81,15 @@ namespace RobloxMultiHub
             TotalCpu = total;
             TotalRam = ram;
             Count = count;
+
+            // roll the per-process history and forget processes that are gone
+            foreach (KeyValuePair<int, UsageSample> kv in fresh)
+            {
+                Push(CpuHist, kv.Key, kv.Value.Cpu);
+                Push(RamHist, kv.Key, kv.Value.Ram / 1048576.0);   // MB
+            }
+            foreach (int pid in new List<int>(CpuHist.Keys)) if (!fresh.ContainsKey(pid)) CpuHist.Remove(pid);
+            foreach (int pid in new List<int>(RamHist.Keys)) if (!fresh.ContainsKey(pid)) RamHist.Remove(pid);
         }
     }
 }

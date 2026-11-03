@@ -69,8 +69,11 @@ Useful for grinding, trading, holding items on alt accounts, or just keeping all
 1. **[⬇️ Download RobloxMultiHub.zip](https://github.com/Roblox-MultiHub/Roblox-MultiHub/raw/main/download/RobloxMultiHub.zip)** (direct download).
 2. Extract the whole folder somewhere (for example your Desktop).
    *Tip: if Windows shows a "protected your PC" warning, right-click the ZIP → Properties → tick "Unblock" → OK, then extract again.*
-3. Double-click **`START HERE - Build and Run.bat`**. It compiles the app with the C# compiler already built into Windows 10/11 (nothing to download) and starts it.
-4. From then on, just run **`RobloxMultiHub.exe`**.
+3. Double-click **`Install RobloxMultiHub.bat`**. It installs the app into your user profile (no admin needed), puts a shortcut on your Desktop and in the Start menu, and adds an entry to *Add or remove programs*. If `RobloxMultiHub.exe` isn't in the folder yet, it's built first with the C# compiler already in Windows 10/11 — nothing to download.
+4. From then on, launch **Roblox MultiHub** from the Start menu or the desktop shortcut.
+
+> Prefer not to install? Just run **`START HERE - Build and Run.bat`** to build and start it in place, or run `RobloxMultiHub.exe` directly.
+> To remove it later: *Add or remove programs → Roblox MultiHub → Uninstall* (your saved accounts are kept unless you choose to delete them).
 
 The `Help` page inside the app explains every button and option.
 

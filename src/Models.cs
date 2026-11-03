@@ -37,6 +37,7 @@ namespace RobloxMultiHub
         public string Where = "";
         public bool CookieBad;
         public bool Locked;                 // HTTP 403: Roblox locked / blocked this account
+        public bool LockedAlerted;          // a Discord alert was already sent for this lock
     }
 
     public static class AppState
@@ -115,6 +116,7 @@ namespace RobloxMultiHub
         public bool FirstRunDone = false;
         public bool MultiInstance = false;
         public string Theme = "Dark";
+        public string Language = "en";               // UI language code; "en" = English (default)
         public string LaunchMethod = "Protocol";    // Protocol (roblox-player: link, like Roblox Account Manager) | Direct
         public bool LaunchDefaultsV2 = false;       // set once the launch method was switched to the RAM-style default
         public int LaunchDelaySec = 8;
@@ -135,6 +137,11 @@ namespace RobloxMultiHub
         public bool AutoRelaunch = false;
         public int WatcherSec = 60;
         public bool WatcherUsePresence = false;
+        // Crash breaker: stop relaunching an account that keeps dying, so the watcher never loops forever.
+        public bool CrashBreaker = true;
+        public int CrashBreakerMax = 3;             // give up after this many relaunches...
+        public int CrashBreakerWindowMin = 3;       // ...within this many minutes
+        public int CrashBreakerCooldownMin = 10;    // then try that account again after this long
         public bool AntiAfk = false;
         public int AntiAfkMin = 12;                 // how often anti-AFK runs; Roblox kicks after ~20 min
         public string AntiAfkAction = "Nudge";      // Nudge (mouse) | Space (jump) | Zoom
@@ -157,6 +164,21 @@ namespace RobloxMultiHub
         public bool CheckLoginsAtStartup = true;    // check every saved login when the app starts
         public int WinW = 1300;
         public int WinH = 780;
+
+        // Discord webhook alerts (opt-in). The URL is only ever sent to Discord.
+        public bool Webhook = false;
+        public string WebhookUrl = "";
+        public bool WebhookCrash = true;            // a window this app started disappeared unexpectedly
+        public bool WebhookRelaunch = true;         // the watcher brought a window back
+        public bool WebhookBatch = true;            // a Launch all / preset batch finished
+        public bool WebhookLocked = true;           // an account came back locked (HTTP 403)
+
+        // "Max alts": throttle the Roblox windows you are NOT playing, so many clients stay light.
+        public bool MaxAlts = false;
+        public int MaxAltsFps = 10;                 // FPS cap used for new launches while Max alts is on
+        public bool MaxAltsIdle = true;             // background clients get Idle CPU priority + efficiency mode
+        public bool MaxAltsTrim = true;             // background clients get their memory trimmed every so often
+        public bool MaxAltsMinimize = false;        // also minimize background clients
     }
 
     // RAM cleaner (Performance page). The cleaning itself is done by an admin helper process.

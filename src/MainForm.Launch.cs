@@ -457,6 +457,7 @@ namespace RobloxMultiHub
                 {
                     if (ct.IsCancellationRequested) break;
                     Account acc = accs[i];
+                    Launcher.BreakerClear(acc);     // a launch you started yourself resets its crash breaker
                     LaunchSpec per = (allowSaved && Store.Settings.UseSavedPerAccount) ? ApplySaved(acc, spec) : spec;
                     await Launcher.LaunchAsync(acc, per, AddLog);
                     UpdateStatusCells();
@@ -467,6 +468,8 @@ namespace RobloxMultiHub
             bool cancelled = ct.IsCancellationRequested;
             launchCts = null;
             AddLog(cancelled ? "Launch cancelled." : "Launch sequence finished.");
+            if (!cancelled && Store.Settings.WebhookBatch)
+                Webhook.Send("Launch finished", "Started " + accs.Count + " account(s): " + spec.Describe(), Webhook.Green);
         }
     }
 }

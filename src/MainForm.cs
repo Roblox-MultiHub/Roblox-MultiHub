@@ -59,8 +59,8 @@ namespace RobloxMultiHub
             AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterScreen;
-            ClientSize = new Size(Math.Max(1180, Store.Settings.WinW), Math.Max(660, Store.Settings.WinH));
-            MinimumSize = new Size(1180, 660);
+            ClientSize = new Size(Math.Max(1320, Store.Settings.WinW), Math.Max(660, Store.Settings.WinH));
+            MinimumSize = new Size(1320, 660);
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch (Exception) { }
 
             BuildShell();
@@ -68,6 +68,7 @@ namespace RobloxMultiHub
             BuildLaunchPage();
             BuildServersPage();
             BuildLayoutPage();
+            BuildMonitorPage();
             BuildPresetsPage();
             BuildPerfPage();
             BuildSettingsPage();
@@ -109,7 +110,7 @@ namespace RobloxMultiHub
             Label title = Ui.Lbl("Roblox MultiHub", "title");
             title.Location = new Point(18, 7);
             topBar.Controls.Add(title);
-            Label sub = Ui.Lbl("Multi-account launcher", "muted");
+            Label sub = Ui.Lbl(Lang.T("Multi-account launcher"), "muted");
             sub.Location = new Point(21, 43);
             topBar.Controls.Add(sub);
             DiscordIcon disc = new DiscordIcon();
@@ -118,9 +119,9 @@ namespace RobloxMultiHub
             Ui.Tips.SetToolTip(disc, "Join our Discord - news, help and support tickets.");
             topBar.Controls.Add(disc);
 
-            statRun = new StatBlock("Running", 140);
-            statCpu = new StatBlock("Roblox CPU", 160);
-            statRam = new StatBlock("Roblox memory", 170);
+            statRun = new StatBlock(Lang.T("Running"), 140);
+            statCpu = new StatBlock(Lang.T("Roblox CPU"), 160);
+            statRam = new StatBlock(Lang.T("Roblox memory"), 170);
             statRun.SetTip("Accounts running that this app started / accounts saved.");
             statCpu.SetTip("CPU used by all Roblox windows together, as a percentage of your whole PC (same scale as Task Manager). The small line is the average per account.");
             statRam.SetTip("Memory used by all Roblox windows together. The small line is the average per account.");
@@ -168,7 +169,7 @@ namespace RobloxMultiHub
                 split.SplitterWidth = 10;
                 split.FixedPanel = FixedPanel.Panel1;
                 split.Panel1MinSize = 380;
-                split.Panel2MinSize = 790;                  // room for all page buttons (with icons) in one row
+                split.Panel2MinSize = 900;                  // room for all page buttons (with icons) in one row
             }
             catch (Exception ex) { Log.Error("split", ex); }
             split.BorderStyle = BorderStyle.None;
@@ -196,12 +197,14 @@ namespace RobloxMultiHub
 
             FlowLayoutPanel nav = new FlowLayoutPanel();
             nav.Dock = DockStyle.Fill;
+            nav.WrapContents = false;
             nav.Margin = new Padding(0, 0, 0, 6);
             string[][] items = new string[][]
             {
                 new string[] { "Launch", "\U0001F680  Launch", "94" },
                 new string[] { "Servers", "\U0001F310  Servers", "102" },
                 new string[] { "Layout", "\U0001FA9F  Layout", "94" },
+                new string[] { "Monitor", "\U0001F4CA  Monitor", "104" },
                 new string[] { "Presets", "\U0001F4BE  Presets", "98" },
                 new string[] { "Perf", "⚡  Perf", "78" },
                 new string[] { "Settings", "⚙  Settings", "100" },
@@ -211,7 +214,11 @@ namespace RobloxMultiHub
             foreach (string[] it in items)
             {
                 string key = it[0];
-                RoundButton b = Ui.Btn(it[1], int.Parse(it[2]), null, "nav");
+                string label = Lang.T(it[1]);
+                int w = int.Parse(it[2]);
+                // grow the button if the (translated) label needs more room, so nothing clips
+                int measured = TextRenderer.MeasureText(label, Theme.Base).Width + 34;
+                RoundButton b = Ui.Btn(label, Math.Max(w, measured), null, "nav");
                 b.Height = 34;
                 b.Margin = new Padding(0, 2, 6, 0);
                 b.Click += delegate { if (key == "Macro") OpenMacro(); else ShowPage(key); };
@@ -266,6 +273,7 @@ namespace RobloxMultiHub
             foreach (KeyValuePair<string, Panel> kv in pages) kv.Value.Visible = kv.Key == key;
             StyleNav();
             if (key == "Layout") RefreshWindowList();
+            if (key == "Monitor") RefreshMonitor();
             if (key == "Presets") RefreshPresetList();
         }
 
@@ -376,8 +384,10 @@ namespace RobloxMultiHub
                     UsageMonitor.Update();
                     UpdateStatusCells();
                     UpdateMemUi();
+                    MaxAlts.Tick();
                 }
                 if (currentPage == "Layout" && tickN % 2 == 0) RefreshWindowList();
+                if (currentPage == "Monitor" && tickN % 2 == 0) RefreshMonitor();
                 if (Store.Settings.ShowPresence && tickN % Math.Max(10, Store.Settings.PresenceSec) == 0) RefreshPresence();
                 if (tickN % Math.Max(10, Store.Settings.WatcherSec) == 0) RunWatcher();
                 if (Store.Settings.AntiAfk && (DateTime.Now - lastAntiAfk).TotalMinutes >= Math.Max(1, Store.Settings.AntiAfkMin)
@@ -525,6 +535,7 @@ namespace RobloxMultiHub
                 Store.SaveSettings();
                 Store.SaveAccounts();
                 UnregisterHotkeys();
+                if (Store.Settings.MaxAlts) MaxAlts.Reset();
                 if (browserCts != null) browserCts.Cancel();
             }
             catch (Exception) { }
@@ -592,10 +603,10 @@ namespace RobloxMultiHub
             cbGroupFilter.Width = 130;
             cbGroupFilter.Margin = new Padding(0, 6, 14, 0);
             cbGroupFilter.SelectedIndexChanged += delegate { if (!suspendSel) RefreshAccountList(); };
-            btnViewList = Ui.Btn("List", 52, delegate { SetView(false); }, "nav");
+            btnViewList = Ui.Btn(Lang.T("List"), 52, delegate { SetView(false); }, "nav");
             btnViewList.Margin = new Padding(0, 5, 2, 0);
             Ui.Tips.SetToolTip(btnViewList, "Compact list with profile pictures.");
-            btnViewCards = Ui.Btn("Cards", 60, delegate { SetView(true); }, "nav");
+            btnViewCards = Ui.Btn(Lang.T("Cards"), 60, delegate { SetView(true); }, "nav");
             btnViewCards.Margin = new Padding(0, 5, 0, 0);
             Ui.Tips.SetToolTip(btnViewCards, "Expanded cards: big profile picture, status, a game for each account and a Launch button.");
             filt.Controls.Add(l1);
@@ -664,14 +675,14 @@ namespace RobloxMultiHub
             foot.Margin = Padding.Empty;
             foot.Tag = "card";
             GradientButton bLaunch = new GradientButton();
-            bLaunch.Text = "\U0001F680  Launch selected";
+            bLaunch.Text = "\U0001F680  " + Lang.T("Launch selected");
             bLaunch.Size = new Size(158, 34);
             bLaunch.Margin = new Padding(0, 7, 8, 5);
             bLaunch.Click += delegate { LaunchSelected(); };
             Ui.Tips.SetToolTip(bLaunch, "Launch the selected accounts. Accounts with their own game use it; the others use the Launch page.");
-            RoundButton bAll = Ui.Btn("Launch all", 90, delegate { LaunchAllListed(); }, "");
+            RoundButton bAll = Ui.Btn(Lang.T("Launch all"), 90, delegate { LaunchAllListed(); }, "");
             Ui.Tips.SetToolTip(bAll, "Launch every account that is currently visible in the list.");
-            RoundButton bStop = Ui.Btn("Stop all", 80, delegate { StopAll(); }, "danger");
+            RoundButton bStop = Ui.Btn(Lang.T("Stop all"), 80, delegate { StopAll(); }, "danger");
             Ui.Tips.SetToolTip(bStop, "Close every Roblox window that this app started (windows you opened yourself are left alone).");
             RoundButton bUp = Ui.Btn("Up", 44, delegate { MoveSelected(-1); }, "");
             RoundButton bDown = Ui.Btn("Down", 54, delegate { MoveSelected(1); }, "");
@@ -1443,12 +1454,21 @@ namespace RobloxMultiHub
                     a.DisplayName = u.Display;
                     li.CookieBad = false;
                     li.Locked = false;
+                    li.LockedAlerted = false;
                     a.LoginLost = false;
                     good++;
                 }
                 else
                 {
-                    if (u.Locked) li.Locked = true;
+                    if (u.Locked)
+                    {
+                        if (!li.LockedAlerted && Store.Settings.WebhookLocked)
+                        {
+                            Webhook.Send("Account locked", AppState.Name(a) + " — Roblox returned HTTP 403 (locked / blocked). Unlock it on roblox.com.", Webhook.Red);
+                            li.LockedAlerted = true;
+                        }
+                        li.Locked = true;
+                    }
                     else if (u.Error.Contains("expired")) li.CookieBad = true;
                     bad++;
                     AddLog(AppState.Name(a) + ": " + u.Error);
