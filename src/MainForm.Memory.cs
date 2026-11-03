@@ -99,6 +99,16 @@ namespace RobloxMultiHub
             Store.SaveSettings();
             if (chkAutoClean.Checked)
             {
+                DialogResult ok = MessageBox.Show(this,
+                    "Auto-clean starts a small helper that runs as administrator and automatically frees Windows' memory whenever RAM use goes over your limit. Windows will ask you for permission.\r\n\r\nNothing is cleaned until you turn this on. Turn automatic RAM cleaning ON now?",
+                    "Automatic RAM cleaning", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                if (ok != DialogResult.Yes)
+                {
+                    loadingMem = true; chkAutoClean.Checked = false; loadingMem = false;
+                    Store.Settings.Mem.AutoClean = false; Store.SaveSettings();
+                    UpdateMemUi();
+                    return;
+                }
                 if (StartMemHelper()) AddLog("Auto-clean ON: memory is cleaned when more than " + Store.Settings.Mem.Threshold + "% of the RAM is in use.");
                 else SetAutoCleanOff("Auto-clean needs administrator permission - it was turned off again.");
             }

@@ -587,7 +587,9 @@ namespace RobloxMultiHub
                         ProcessStartInfo psi = new ProcessStartInfo(exe, args);
                         psi.UseShellExecute = false;
                         psi.WorkingDirectory = Path.GetDirectoryName(exe);
-                        Process.Start(psi);
+                        // Start off the UI thread: ShellExecute/CreateProcess can briefly block, and when Roblox
+                        // grabs the foreground it stalls the app's message pump until the next mouse click.
+                        await Task.Run(delegate { using (Process pr = Process.Start(psi)) { } });
                     }
                     else
                     {
@@ -596,7 +598,7 @@ namespace RobloxMultiHub
                             + "+robloxLocale:en_us+gameLocale:en_us+channel:+LaunchExp:InApp";
                         ProcessStartInfo psi = new ProcessStartInfo(proto);
                         psi.UseShellExecute = true;
-                        Process.Start(psi);
+                        await Task.Run(delegate { using (Process pr = Process.Start(psi)) { } });
                     }
                 }
                 catch (Exception ex)

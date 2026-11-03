@@ -331,12 +331,15 @@ namespace RobloxMultiHub
             if (launching) { AddLog("A launch is already running. Press Stop to cancel it."); return; }
             AddLog("Running preset '" + pr.Name + "'...");
 
+            // Remember your own MultiHub settings, so the preset's settings apply only for this run and
+            // are handed back afterwards. Running a preset must never permanently change your settings.
+            PresetSettings mySettings = PresetSettings.Capture(Store.Settings);
             if (pr.Settings != null)
             {
                 pr.Settings.ApplyTo(Store.Settings);
                 Store.SaveSettings();
                 ReloadSettingControls();
-                AddLog("Preset settings restored (FPS cap, graphics, priority, layout, launch options).");
+                AddLog("Preset settings applied for this run (FPS cap, graphics, priority, layout, launch options) - your own settings come back when it finishes.");
             }
             if (pr.Entries.Count > 1 && !Store.Settings.MultiInstance)
             {
@@ -379,6 +382,14 @@ namespace RobloxMultiHub
             catch (Exception ex) { Log.Error("RunPreset", ex); AddLog("Preset failed: " + ex.Message); }
             if (ct.IsCancellationRequested) AddLog("Preset cancelled.");
             launchCts = null;
+            // Hand your own MultiHub settings back - a preset keeps its settings to itself and never changes yours.
+            if (pr.Settings != null)
+            {
+                mySettings.ApplyTo(Store.Settings);
+                Store.SaveSettings();
+                ReloadSettingControls();
+                AddLog("Your own MultiHub settings are back.");
+            }
             SetLaunching(false);
             UpdateStatusCells();
         }

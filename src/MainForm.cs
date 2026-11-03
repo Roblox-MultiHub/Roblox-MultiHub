@@ -80,6 +80,7 @@ namespace RobloxMultiHub
 
             Log.Line += OnLogLine;
             Avatars.Updated += OnAvatarsUpdated;
+            Application.AddMessageFilter(new WheelRedirect());   // mouse wheel scrolls the page, not a hovered text box
             tick = new System.Windows.Forms.Timer();
             tick.Interval = 1000;
             tick.Tick += OnTick;
@@ -565,18 +566,19 @@ namespace RobloxMultiHub
             // ---- toolbar ----
             FlowLayoutPanel bar = new FlowLayoutPanel();
             bar.Dock = DockStyle.Fill;
+            bar.WrapContents = false;                 // keep the toolbar on one row (it fits the panel's minimum width)
             bar.Margin = Padding.Empty;
             bar.Tag = "card";
-            RoundButton bAdd = Ui.Btn("+ Add account", 110, null, "primary");
+            RoundButton bAdd = Ui.Btn("+ Add", 72, null, "primary");
             bAdd.Click += delegate { addMenu.Show(bAdd, new Point(0, bAdd.Height)); };
             Ui.Tips.SetToolTip(bAdd, "Add accounts: log in with a browser, paste cookies, or import a file.");
-            RoundButton bEdit = Ui.Btn("Edit", 56, delegate { EditSelected(); }, "");
+            RoundButton bEdit = Ui.Btn("Edit", 54, delegate { EditSelected(); }, "");
             Ui.Tips.SetToolTip(bEdit, "Edit alias, group, notes, password and the game of the selected account.");
-            RoundButton bRemove = Ui.Btn("Remove", 76, delegate { RemoveSelected(); }, "danger");
+            RoundButton bRemove = Ui.Btn("Remove", 74, delegate { RemoveSelected(); }, "danger");
             Ui.Tips.SetToolTip(bRemove, "Delete the selected account(s) from this app (does not touch the Roblox account itself).");
-            RoundButton bCheck = Ui.Btn("Check", 64, delegate { CheckAccounts(); }, "");
+            RoundButton bCheck = Ui.Btn("Check", 60, delegate { CheckAccounts(); }, "");
             Ui.Tips.SetToolTip(bCheck, "Check cookies: tests whether the saved login of the selected accounts (or all, if none selected) still works.");
-            RoundButton bActions = Ui.Btn("More", 64, null, "");
+            RoundButton bActions = Ui.Btn("More", 58, null, "");
             bActions.Click += delegate { accMenu.Show(bActions, new Point(0, bActions.Height)); };
             Ui.Tips.SetToolTip(bActions, "Copy username/password/cookie, account details, refresh cookie, groups, sorting ... (also on right-click).");
             foreach (RoundButton b in new RoundButton[] { bAdd, bEdit, bRemove, bCheck, bActions })

@@ -4,7 +4,7 @@
 ; Output: installer\Output\RobloxMultiHub-Setup.exe  (per-user, no admin needed).
 
 #define AppName "Roblox MultiHub"
-#define AppVersion "1.1.0"
+#define AppVersion "1.1.2"
 #define AppExe "RobloxMultiHub.exe"
 
 [Setup]
