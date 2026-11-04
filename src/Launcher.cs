@@ -609,20 +609,20 @@ namespace RobloxMultiHub
                 }
 
                 log(who + "Roblox is starting (" + spec.Describe() + ")...");
-                // Poll for the new Roblox process on a background thread (Thread.Sleep, not an awaited
-                // Task.Delay). This never touches the UI message pump, so the launch sequence can't stall
-                // when Roblox grabs the foreground - the cause of "only the first account starts until you click".
-                HashSet<int> beforeSet = new HashSet<int>(before);
-                int pid = await Task.Run(delegate
+                // Poll for the new Roblox process on the UI thread. Roblox is STARTED on a background thread
+                // (above), so the message pump is not blocked and these awaits resume normally - that was the
+                // real fix for "only the first account launches until you click". The poll must stay on the UI
+                // thread because it reads the shared Instances list, which the watcher also changes there:
+                // reading it from a background thread raced with the watcher and broke instance tracking.
+                int pid = 0;
+                for (int i = 0; i < 120 && pid == 0; i++)
                 {
-                    for (int i = 0; i < 120; i++)
+                    await Task.Delay(500);
+                    foreach (int p in RobloxPids())
                     {
-                        foreach (int p in RobloxPids())
-                            if (!beforeSet.Contains(p) && FindInstance(p) == null) return p;
-                        System.Threading.Thread.Sleep(500);
+                        if (!before.Contains(p) && FindInstance(p) == null) { pid = p; break; }
                     }
-                    return 0;
-                });
+                }
 
                 a.LastUsedTicks = DateTime.UtcNow.Ticks;
                 Store.SaveAccounts();
