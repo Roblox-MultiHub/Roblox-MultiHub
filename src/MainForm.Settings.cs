@@ -25,6 +25,8 @@ namespace RobloxMultiHub
         NumericUpDown numCrashMax;
         CheckBox chkWebhook, chkWebhookCrash, chkWebhookRelaunch, chkWebhookBatch, chkWebhookLocked;
         RoundTextBox tbWebhook;
+        CheckBox chkDiscordRpc;
+        RoundTextBox tbDiscordAppId;
         NumericUpDown numAntiAfk;
         ComboBox cbAntiAfkAction;
         DateTime lastAntiAfk = DateTime.Now;
@@ -140,6 +142,16 @@ namespace RobloxMultiHub
                 "Posted when a check or launch finds that Roblox has locked or blocked an account (HTTP 403), so you notice straight away which account needs attention.",
                 chkWebhookLocked);
 
+            p.Section("Discord status (Rich Presence)");
+            chkDiscordRpc = Ui.Chk("Show \"Playing Roblox MultiHub\" on my Discord profile", S.DiscordRpc, null);
+            p.Opt("Shows the app on your Discord while it runs, with how many accounts are running, a timer and buttons.",
+                "Like other apps that show \"Playing ...\" on your profile. It needs a Discord Application ID (below). While it is on, your Discord shows Playing Roblox MultiHub, how many accounts are running, how long it has been open, and two buttons (Get Roblox MultiHub / Join Discord) that other people can click. It talks only to the Discord app on your own PC - no bot token, nothing is uploaded. Needs the Discord desktop app to be running.",
+                chkDiscordRpc);
+            tbDiscordAppId = Ui.Txt(230, S.DiscordAppId);
+            p.Opt("Your Discord Application ID (a number). Required.",
+                "Create one for free: open the Discord Developer Portal (discord.com/developers/applications), click New Application, name it exactly \"Roblox MultiHub\" (that name is what shows after \"Playing\"), open it and copy the Application ID. Paste it here. For the little logo image, upload a picture under Rich Presence > Art Assets named exactly \"logo\". The ID is public - it is safe to share, unlike a bot token.",
+                Ui.Fld("Application ID", 120), tbDiscordAppId);
+
             p.Section("Security");
             lblStorage = Ui.Lbl("", "muted");
             p.Row(lblStorage);
@@ -234,6 +246,8 @@ namespace RobloxMultiHub
             chkWebhookRelaunch.CheckedChanged += changed;
             chkWebhookBatch.CheckedChanged += changed;
             chkWebhookLocked.CheckedChanged += changed;
+            chkDiscordRpc.CheckedChanged += changed;
+            tbDiscordAppId.Leave += changed;
 
             loadingSettings = false;
             SyncSettingsControls();
@@ -274,6 +288,11 @@ namespace RobloxMultiHub
                 chkWebhookBatch.Checked = S.WebhookBatch;
                 chkWebhookLocked.Checked = S.WebhookLocked;
             }
+            if (chkDiscordRpc != null)
+            {
+                chkDiscordRpc.Checked = S.DiscordRpc;
+                tbDiscordAppId.Text = S.DiscordAppId;
+            }
             UpdateStorageLabel();
             loadingSettings = was;
             if (S.MultiInstance) MultiInstance.Start();
@@ -308,7 +327,10 @@ namespace RobloxMultiHub
             S.WebhookRelaunch = chkWebhookRelaunch.Checked;
             S.WebhookBatch = chkWebhookBatch.Checked;
             S.WebhookLocked = chkWebhookLocked.Checked;
+            S.DiscordRpc = chkDiscordRpc.Checked;
+            S.DiscordAppId = tbDiscordAppId.Text.Trim();
             Store.SaveSettings();
+            if (!S.DiscordRpc) DiscordRpc.Stop();
         }
 
         void SendWebhookTest()

@@ -27,8 +27,12 @@ namespace RobloxMultiHub
     {
         public string Kind = "";        // "", "primary", "danger", "nav"
         public bool Active;             // highlighted state of nav / toggle buttons
+        public bool LeftAlign;          // left-align the text (sidebar items) instead of centering
         bool hover;
         bool pressed;
+        Color curFill, curText, curBorder;   // smoothly animated toward their target each frame
+        bool colorsInit;
+        System.Windows.Forms.Timer anim;
 
         public RoundButton()
         {
@@ -61,6 +65,7 @@ namespace RobloxMultiHub
             if (Width < 6 || Height < 6) return;
             Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
 
+            // ---- target colours for the current state ----
             Color fill = Theme.Panel2;
             Color border = Theme.Border;
             Color text = Theme.Text;
@@ -80,21 +85,61 @@ namespace RobloxMultiHub
             else if (Kind == "nav")
             {
                 if (Active) { fill = Theme.Accent; text = Color.White; }
-                else fill = hover ? Theme.Panel2 : Theme.Panel;
+                else { fill = hover ? Theme.Panel2 : Theme.Panel; text = hover ? Theme.Text : Theme.Muted; }
                 border = fill;
             }
             else if (hover) fill = Tint.Shift(fill, Theme.Dark ? 14 : -10);
-            if (pressed) fill = Tint.Shift(fill, -12);
-            if (!Enabled) { text = Theme.Muted; fill = Theme.Panel; }
+            if (pressed) fill = Tint.Shift(fill, -14);
+            if (!Enabled) { text = Theme.Muted; fill = Theme.Panel; border = Theme.Border; }
+
+            // ---- ease the displayed colours toward the target (smooth hover / active) ----
+            if (!colorsInit) { curFill = fill; curText = text; curBorder = border; colorsInit = true; }
+            else
+            {
+                curFill = Lerp(curFill, fill, 0.28f);
+                curText = Lerp(curText, text, 0.34f);
+                curBorder = Lerp(curBorder, border, 0.28f);
+            }
 
             using (GraphicsPath path = Shapes.Round(r, Math.Min(10, Height / 2)))
             {
-                using (SolidBrush b = new SolidBrush(fill)) g.FillPath(b, path);
-                if (border != fill)
-                    using (Pen pen = new Pen(border)) g.DrawPath(pen, path);
+                using (SolidBrush b = new SolidBrush(curFill)) g.FillPath(b, path);
+                if (Diff(curBorder, curFill) > 6)
+                    using (Pen pen = new Pen(curBorder)) g.DrawPath(pen, path);
             }
-            TextRenderer.DrawText(g, Text, Font, r, text,
-                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
+            Rectangle tr = r;
+            TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis;
+            if (LeftAlign) { tr = new Rectangle(r.Left + 12, r.Top, r.Width - 16, r.Height); flags |= TextFormatFlags.Left; }
+            else flags |= TextFormatFlags.HorizontalCenter;
+            TextRenderer.DrawText(g, Text, Font, tr, curText, flags);
+
+            // keep animating until the colours have settled, then stop the timer
+            if (Diff(curFill, fill) + Diff(curText, text) + Diff(curBorder, border) > 4) RunAnim();
+            else if (anim != null) anim.Stop();
+        }
+
+        static Color Lerp(Color a, Color b, float t)
+        {
+            return Color.FromArgb(
+                (int)(a.R + (b.R - a.R) * t),
+                (int)(a.G + (b.G - a.G) * t),
+                (int)(a.B + (b.B - a.B) * t));
+        }
+
+        static int Diff(Color a, Color b)
+        {
+            return Math.Abs(a.R - b.R) + Math.Abs(a.G - b.G) + Math.Abs(a.B - b.B);
+        }
+
+        void RunAnim()
+        {
+            if (anim == null)
+            {
+                anim = new System.Windows.Forms.Timer();
+                anim.Interval = 16;                         // ~60 fps while a button is transitioning
+                anim.Tick += delegate { Invalidate(); };
+            }
+            if (!anim.Enabled) anim.Start();
         }
     }
 

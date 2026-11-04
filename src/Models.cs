@@ -174,6 +174,10 @@ namespace RobloxMultiHub
         public bool WebhookBatch = true;            // a Launch all / preset batch finished
         public bool WebhookLocked = true;           // an account came back locked (HTTP 403)
 
+        // Discord Rich Presence ("Playing Roblox MultiHub" on your profile). Needs a Discord Application ID.
+        public bool DiscordRpc = true;
+        public string DiscordAppId = "";
+
         // "Max alts": throttle the Roblox windows you are NOT playing, so many clients stay light.
         public bool MaxAlts = false;
         public int MaxAltsFps = 10;                 // FPS cap used for new launches while Max alts is on

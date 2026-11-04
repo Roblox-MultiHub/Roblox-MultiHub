@@ -59,11 +59,12 @@ namespace RobloxMultiHub
             AutoScaleDimensions = new SizeF(96F, 96F);
             AutoScaleMode = AutoScaleMode.Dpi;
             StartPosition = FormStartPosition.CenterScreen;
-            ClientSize = new Size(Math.Max(1320, Store.Settings.WinW), Math.Max(660, Store.Settings.WinH));
-            MinimumSize = new Size(1320, 660);
+            ClientSize = new Size(Math.Max(1180, Store.Settings.WinW), Math.Max(660, Store.Settings.WinH));
+            MinimumSize = new Size(1180, 660);
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch (Exception) { }
 
             BuildShell();
+            BuildHomePage();
             BuildAccounts();
             BuildLaunchPage();
             BuildServersPage();
@@ -74,7 +75,7 @@ namespace RobloxMultiHub
             BuildSettingsPage();
             BuildHelpPage();
             ApplyTheme();
-            ShowPage("Launch");
+            ShowPage("Home");
             RefreshAccountList();
             SetView(Store.Settings.View == "Cards");
 
@@ -162,15 +163,16 @@ namespace RobloxMultiHub
             body.Margin = Padding.Empty;
             root.Controls.Add(body, 0, 1);
 
+            // ---- body: accounts | pages, with a draggable splitter ----
             split = new SplitContainer();
-            split.Size = new Size(1100, 600);               // give it a size first, so the minimum sizes below are valid
+            split.Size = new Size(1100, 600);
             try
             {
                 split.Orientation = Orientation.Vertical;
                 split.SplitterWidth = 10;
                 split.FixedPanel = FixedPanel.Panel1;
-                split.Panel1MinSize = 380;
-                split.Panel2MinSize = 900;                  // room for all page buttons (with icons) in one row
+                split.Panel1MinSize = 360;
+                split.Panel2MinSize = 740;
             }
             catch (Exception ex) { Log.Error("split", ex); }
             split.BorderStyle = BorderStyle.None;
@@ -190,7 +192,7 @@ namespace RobloxMultiHub
             right.ColumnCount = 1;
             right.RowCount = 3;
             right.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));
+            right.RowStyles.Add(new RowStyle(SizeType.AutoSize));            // nav: wraps to a 2nd row when narrow
             right.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             right.RowStyles.Add(new RowStyle(SizeType.Absolute, 150F));
             right.Margin = Padding.Empty;
@@ -198,10 +200,13 @@ namespace RobloxMultiHub
 
             FlowLayoutPanel nav = new FlowLayoutPanel();
             nav.Dock = DockStyle.Fill;
-            nav.WrapContents = false;
+            nav.AutoSize = true;
+            nav.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            nav.WrapContents = true;
             nav.Margin = new Padding(0, 0, 0, 6);
             string[][] items = new string[][]
             {
+                new string[] { "Home", "\U0001F3E0  Home", "80" },
                 new string[] { "Launch", "\U0001F680  Launch", "94" },
                 new string[] { "Servers", "\U0001F310  Servers", "102" },
                 new string[] { "Layout", "\U0001FA9F  Layout", "94" },
@@ -217,11 +222,10 @@ namespace RobloxMultiHub
                 string key = it[0];
                 string label = Lang.T(it[1]);
                 int w = int.Parse(it[2]);
-                // grow the button if the (translated) label needs more room, so nothing clips
                 int measured = TextRenderer.MeasureText(label, Theme.Base).Width + 34;
                 RoundButton b = Ui.Btn(label, Math.Max(w, measured), null, "nav");
                 b.Height = 34;
-                b.Margin = new Padding(0, 2, 6, 0);
+                b.Margin = new Padding(0, 2, 6, 2);
                 b.Click += delegate { if (key == "Macro") OpenMacro(); else ShowPage(key); };
                 if (key == "Macro") Ui.Tips.SetToolTip(b, "Opens the macro recorder (record and replay mouse + keyboard, like TinyTask) in its own window.");
                 navButtons[key] = b;
@@ -266,6 +270,51 @@ namespace RobloxMultiHub
             pages[key] = p;
             pageHost.Controls.Add(p);
             return p;
+        }
+
+        // A calm welcome page (the sidebar's default), in the style of modern launchers.
+        void BuildHomePage()
+        {
+            Panel page = NewPage("Home");
+            page.AutoScroll = true;
+
+            Label title = Ui.Lbl("Welcome to Roblox MultiHub", "title");
+            title.Location = new Point(20, 20);
+            page.Controls.Add(title);
+
+            Label sub = Ui.Lbl("Run all your Roblox accounts at once. Three steps to your first game.", "muted");
+            sub.AutoSize = false; sub.Size = new Size(PageW - 40, 22); sub.Location = new Point(20, 60);
+            page.Controls.Add(sub);
+
+            string[][] steps = new string[][]
+            {
+                new string[] { "1", "Add your accounts", "Sign in with a browser, or paste cookies. They're encrypted and stay on this PC." },
+                new string[] { "2", "Pick a game", "Paste a game link, a place ID or a private server on the Launch page." },
+                new string[] { "3", "Press Launch", "Launch as many accounts as you want, then line the windows up on the Layout page." }
+            };
+            int cardW = 248, cardH = 158, gap = 14, x = 20, y = 96;
+            foreach (string[] s in steps)
+            {
+                RoundPanel card = new RoundPanel();
+                card.Tag = "card2";
+                card.BackColor = Theme.Panel2;
+                card.Size = new Size(cardW, cardH);
+                card.Location = new Point(x, y);
+                Label n = Ui.Lbl(s[0], "section"); n.Font = Theme.Big; n.Location = new Point(16, 12); card.Controls.Add(n);
+                Label h = Ui.Lbl(s[1], ""); h.Font = Theme.CardName; h.Location = new Point(16, 56); card.Controls.Add(h);
+                Label d = Ui.Lbl(s[2], "muted"); d.AutoSize = false; d.Size = new Size(cardW - 32, 72); d.Location = new Point(16, 84); card.Controls.Add(d);
+                page.Controls.Add(card);
+                x += cardW + gap;
+            }
+
+            RoundButton add = Ui.Btn("+  Add account", 170, null, "primary");
+            add.Height = 40; add.Location = new Point(20, y + cardH + 24);
+            add.Click += delegate { if (addMenu != null) addMenu.Show(add, new Point(0, add.Height)); };
+            page.Controls.Add(add);
+
+            RoundButton goLaunch = Ui.Btn("Go to Launch", 140, delegate { ShowPage("Launch"); }, "");
+            goLaunch.Height = 40; goLaunch.Location = new Point(206, y + cardH + 24);
+            page.Controls.Add(goLaunch);
         }
 
         void ShowPage(string key)
@@ -386,6 +435,7 @@ namespace RobloxMultiHub
                     UpdateStatusCells();
                     UpdateMemUi();
                     MaxAlts.Tick();
+                    DiscordRpc.Update(UsageMonitor.Count, Store.Accounts.Count);
                 }
                 if (currentPage == "Layout" && tickN % 2 == 0) RefreshWindowList();
                 if (currentPage == "Monitor" && tickN % 2 == 0) RefreshMonitor();
@@ -537,6 +587,7 @@ namespace RobloxMultiHub
                 Store.SaveSettings();
                 Store.SaveAccounts();
                 UnregisterHotkeys();
+                DiscordRpc.Stop();
                 if (Store.Settings.MaxAlts) MaxAlts.Reset();
                 if (browserCts != null) browserCts.Cancel();
             }
@@ -554,7 +605,7 @@ namespace RobloxMultiHub
             t.ColumnCount = 1;
             t.RowCount = 4;
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 46F));
+            t.RowStyles.Add(new RowStyle(SizeType.AutoSize));          // toolbar: grows to a 2nd row when the panel is narrow
             t.RowStyles.Add(new RowStyle(SizeType.Absolute, 42F));
             t.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             t.RowStyles.Add(new RowStyle(SizeType.Absolute, 48F));
@@ -567,7 +618,10 @@ namespace RobloxMultiHub
             // ---- toolbar ----
             FlowLayoutPanel bar = new FlowLayoutPanel();
             bar.Dock = DockStyle.Fill;
-            bar.WrapContents = false;                 // keep the toolbar on one row (it fits the panel's minimum width)
+            bar.AutoSize = true;
+            bar.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            bar.WrapContents = true;                  // buttons wrap to a second row instead of being cut off
+            bar.MinimumSize = new Size(0, 44);
             bar.Margin = Padding.Empty;
             bar.Tag = "card";
             RoundButton bAdd = Ui.Btn("+ Add", 72, null, "primary");
