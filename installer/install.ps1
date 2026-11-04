@@ -19,7 +19,7 @@ if (-not (Test-Path $exe)) {
     if (-not (Test-Path $csc)) { $csc = "$env:windir\Microsoft.NET\Framework\v4.0.30319\csc.exe" }
     if (-not (Test-Path $csc)) { Write-Host '  Could not find the .NET Framework 4 compiler. Run Windows Update and try again.' -ForegroundColor Red; Read-Host '  Press Enter to close'; exit 1 }
     Push-Location $root
-    & $csc /nologo /target:winexe /optimize+ /debug- /warn:1 /nowarn:0168,0219,0414,0649,0169,0067 /out:"$exe" /win32icon:app.ico /win32manifest:app.manifest /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll /r:System.Net.Http.dll /r:System.Security.dll /recurse:src\*.cs
+    & $csc /nologo /target:winexe /optimize+ /debug- /warn:1 /nowarn:0168,0219,0414,0649,0169,0067 /out:"$exe" /win32icon:app.ico /win32manifest:app.manifest /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll /r:System.Net.Http.dll /r:System.Security.dll /r:System.Management.dll /recurse:src\*.cs
     Pop-Location
     if (-not (Test-Path $exe)) { Write-Host '  Build failed - see the messages above.' -ForegroundColor Red; Read-Host '  Press Enter to close'; exit 1 }
 }

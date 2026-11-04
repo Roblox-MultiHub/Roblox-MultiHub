@@ -13,7 +13,7 @@ if not exist "%CSC%" (
 )
 
 echo Compiling Roblox MultiHub - this takes a few seconds...
-"%CSC%" /nologo /target:winexe /optimize+ /debug- /warn:1 /nowarn:0168,0219,0414,0649,0169,0067 /out:RobloxMultiHub.exe /win32icon:app.ico /win32manifest:app.manifest /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll /r:System.Net.Http.dll /r:System.Security.dll /recurse:src\*.cs
+"%CSC%" /nologo /target:winexe /optimize+ /debug- /warn:1 /nowarn:0168,0219,0414,0649,0169,0067 /out:RobloxMultiHub.exe /win32icon:app.ico /win32manifest:app.manifest /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Web.Extensions.dll /r:System.Net.Http.dll /r:System.Security.dll /r:System.Management.dll /recurse:src\*.cs
 if errorlevel 1 (
   echo.
   echo ============================ BUILD FAILED ============================

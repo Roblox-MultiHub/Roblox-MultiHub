@@ -214,6 +214,56 @@ namespace RobloxMultiHub
             return Instances.FirstOrDefault(i => i.Pid == pid);
         }
 
+        // Finds the Roblox client that carries this account's stable browser-tracker id on its command line.
+        // This identifies the right process even when Roblox reused a background process (no new PID appears).
+        // Returns 0 if command lines can't be read (e.g. the process is protected) - the caller then falls back.
+        public static int FindByTracker(long tracker)
+        {
+            if (tracker <= 0) return 0;
+            string needle = tracker.ToString();
+            try
+            {
+                using (System.Management.ManagementObjectSearcher searcher = new System.Management.ManagementObjectSearcher(
+                    "SELECT ProcessId, CommandLine FROM Win32_Process WHERE Name = 'RobloxPlayerBeta.exe'"))
+                using (System.Management.ManagementObjectCollection results = searcher.Get())
+                {
+                    foreach (System.Management.ManagementObject mo in results)
+                    {
+                        try
+                        {
+                            object cl = mo["CommandLine"];
+                            if (cl == null) continue;
+                            if (cl.ToString().IndexOf(needle, StringComparison.Ordinal) >= 0)
+                            {
+                                object pidObj = mo["ProcessId"];
+                                if (pidObj != null) return Convert.ToInt32(pidObj);
+                            }
+                        }
+                        finally { mo.Dispose(); }
+                    }
+                }
+            }
+            catch (Exception) { }
+            return 0;
+        }
+
+        // True if WMI lets us read any RobloxPlayerBeta command line at all (used for diagnostics).
+        public static bool CanReadCommandLines()
+        {
+            try
+            {
+                using (System.Management.ManagementObjectSearcher s = new System.Management.ManagementObjectSearcher(
+                    "SELECT CommandLine FROM Win32_Process WHERE Name = 'RobloxPlayerBeta.exe'"))
+                using (System.Management.ManagementObjectCollection r = s.Get())
+                    foreach (System.Management.ManagementObject mo in r)
+                    {
+                        try { if (mo["CommandLine"] != null) return true; } finally { mo.Dispose(); }
+                    }
+            }
+            catch (Exception) { }
+            return false;
+        }
+
         // ---------- locating Roblox ----------
         static string ExtractExe(string command)
         {
@@ -614,28 +664,30 @@ namespace RobloxMultiHub
                 foreach (WinInfo w0 in WindowLayout.FindRobloxWindows())
                     if (w0.HasWindow) windowedBefore.Add(w0.Pid);
 
-                // Poll for the client on the UI thread (Roblox is STARTED on a background thread above, so the
-                // message pump is not blocked and these awaits resume normally). The poll stays on the UI thread
-                // because it reads the shared Instances list, which the watcher also changes on the UI thread.
+                // Poll for the client (UI thread - Roblox is STARTED on a background thread above, so the pump
+                // isn't blocked; and the shared Instances list is only touched on the UI thread).
                 int pid = 0;
-                int adopted = 0;
+                bool already = false;
                 for (int i = 0; i < 120 && pid == 0; i++)
                 {
                     await Task.Delay(500);
-                    // 1. a brand-new process (the normal multi-instance case)
+
+                    // Best signal: the process whose command line carries this account's tracker id. This finds
+                    // the right client whether Roblox spawned a new process or REUSED a background one.
+                    int tp = FindByTracker(a.TrackerId);
+                    if (tp != 0)
+                    {
+                        Instance ex = FindInstance(tp);
+                        if (ex == null) { pid = tp; break; }
+                        if (ex.Account == a) { pid = tp; already = true; break; }
+                    }
+                    // Fallback 1: a brand-new process.
                     foreach (int p in RobloxPids())
                         if (!before.Contains(p) && FindInstance(p) == null) { pid = p; break; }
-                    // 2. otherwise: when you had closed this account's window by hand, Roblox often keeps the
-                    //    process alive in the background and REUSES it on relaunch - no new PID appears, but an
-                    //    untracked process gets a window back. Adopt that one.
-                    if (pid == 0 && adopted == 0)
+                    // Fallback 2: an untracked process that just gained a window (reuse, when the tracker can't be read).
+                    if (pid == 0)
                         foreach (WinInfo w in WindowLayout.FindRobloxWindows())
-                            if (w.HasWindow && !windowedBefore.Contains(w.Pid) && FindInstance(w.Pid) == null) { adopted = w.Pid; break; }
-                }
-                if (pid == 0 && adopted != 0)
-                {
-                    pid = adopted;
-                    log(who + "re-attached to a Roblox process that was running in the background.");
+                            if (w.HasWindow && !windowedBefore.Contains(w.Pid) && FindInstance(w.Pid) == null) { pid = w.Pid; break; }
                 }
 
                 a.LastUsedTicks = DateTime.UtcNow.Ticks;
@@ -643,9 +695,24 @@ namespace RobloxMultiHub
 
                 if (pid == 0)
                 {
-                    log(who + "launch command sent, but no new Roblox process appeared within 60 s (not tracked). Check that Roblox is installed and up to date.");
+                    // Diagnostic dump so the real cause is visible in the log instead of guessed at.
+                    System.Text.StringBuilder diag = new System.Text.StringBuilder();
+                    foreach (int p in RobloxPids()) diag.Append(p).Append(FindInstance(p) != null ? "(tracked) " : " ");
+                    int win = 0; foreach (WinInfo w in WindowLayout.FindRobloxWindows()) if (w.HasWindow) win++;
+                    log(who + "NOT detected. Roblox procs: [" + diag.ToString().Trim() + "]  windows:" + win
+                        + "  trackerId:" + a.TrackerId + "  cmdline-readable:" + Launcher.CanReadCommandLines()
+                        + ". If a window is actually open, press 'Stop all' or close it in Task Manager, then relaunch.");
                     if (guard != null) { guard.Dispose(); ApplyFpsCap(log); }
                     return false;
+                }
+                if (already)
+                {
+                    Instance exi = FindInstance(pid);
+                    if (exi != null) { exi.UserClosed = false; exi.Spec = spec.Copy(); exi.Account = a; }
+                    ApplyPriority(pid, false);
+                    log(who + "re-used its running window (PID " + pid + ").");
+                    if (guard != null) { guard.Dispose(); ApplyFpsCap(log); }
+                    return true;
                 }
                 Instance inst = new Instance();
                 inst.Account = a;
