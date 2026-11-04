@@ -609,19 +609,33 @@ namespace RobloxMultiHub
                 }
 
                 log(who + "Roblox is starting (" + spec.Describe() + ")...");
-                // Poll for the new Roblox process on the UI thread. Roblox is STARTED on a background thread
-                // (above), so the message pump is not blocked and these awaits resume normally - that was the
-                // real fix for "only the first account launches until you click". The poll must stay on the UI
-                // thread because it reads the shared Instances list, which the watcher also changes there:
-                // reading it from a background thread raced with the watcher and broke instance tracking.
+                // Which Roblox processes already had a visible window before we launched.
+                HashSet<int> windowedBefore = new HashSet<int>();
+                foreach (WinInfo w0 in WindowLayout.FindRobloxWindows())
+                    if (w0.HasWindow) windowedBefore.Add(w0.Pid);
+
+                // Poll for the client on the UI thread (Roblox is STARTED on a background thread above, so the
+                // message pump is not blocked and these awaits resume normally). The poll stays on the UI thread
+                // because it reads the shared Instances list, which the watcher also changes on the UI thread.
                 int pid = 0;
+                int adopted = 0;
                 for (int i = 0; i < 120 && pid == 0; i++)
                 {
                     await Task.Delay(500);
+                    // 1. a brand-new process (the normal multi-instance case)
                     foreach (int p in RobloxPids())
-                    {
                         if (!before.Contains(p) && FindInstance(p) == null) { pid = p; break; }
-                    }
+                    // 2. otherwise: when you had closed this account's window by hand, Roblox often keeps the
+                    //    process alive in the background and REUSES it on relaunch - no new PID appears, but an
+                    //    untracked process gets a window back. Adopt that one.
+                    if (pid == 0 && adopted == 0)
+                        foreach (WinInfo w in WindowLayout.FindRobloxWindows())
+                            if (w.HasWindow && !windowedBefore.Contains(w.Pid) && FindInstance(w.Pid) == null) { adopted = w.Pid; break; }
+                }
+                if (pid == 0 && adopted != 0)
+                {
+                    pid = adopted;
+                    log(who + "re-attached to a Roblox process that was running in the background.");
                 }
 
                 a.LastUsedTicks = DateTime.UtcNow.Ticks;
