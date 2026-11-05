@@ -56,13 +56,13 @@ namespace RobloxMultiHub
                 if (!Native.ForceForeground(h)) { if (minimized) Native.ShowWindow(h, Native.SW_MINIMIZE); return false; }
             }
             await Task.Delay(120);                          // let Roblox notice it has the focus
-            await DoAction();
+            await DoAction(h);
             await Task.Delay(80);
             if (minimized) Native.ShowWindow(h, Native.SW_MINIMIZE);
             return true;
         }
 
-        static async Task DoAction()
+        static async Task DoAction(IntPtr h)
         {
             string act = Store.Settings.AntiAfkAction ?? "Nudge";
             if (act == "Space")
@@ -77,11 +77,33 @@ namespace RobloxMultiHub
             }
             else
             {
-                // Mouse nudge: move the cursor a few pixels and back. Counts as input (resets the idle timer),
-                // but does not move the character, so auto-hatch / auto-farm keeps running.
-                Native.mouse_event(Native.MOUSEEVENTF_MOVE, 4, 0, 0, UIntPtr.Zero);
-                await Task.Delay(40);
-                Native.mouse_event(Native.MOUSEEVENTF_MOVE, -4, 0, 0, UIntPtr.Zero);
+                // Mouse nudge. Roblox only sees mouse movement that happens OVER its own window, so first move
+                // the cursor to the middle of this window (the old code nudged wherever the cursor happened to
+                // be, which did nothing unless it was already on top of the window), nudge a few pixels, then
+                // put the cursor back where you had it. No character movement, so auto-hatch / auto-farm keeps
+                // running.
+                Native.POINT orig;
+                bool haveOrig = Native.GetCursorPos(out orig);
+                Native.RECT r;
+                if (Native.GetWindowRect(h, out r) && r.Width > 20 && r.Height > 20)
+                {
+                    int cx = (r.Left + r.Right) / 2;
+                    int cy = (r.Top + r.Bottom) / 2;
+                    Native.SetCursorPos(cx, cy);
+                    await Task.Delay(30);
+                    Native.mouse_event(Native.MOUSEEVENTF_MOVE, 4, 2, 0, UIntPtr.Zero);
+                    await Task.Delay(40);
+                    Native.mouse_event(Native.MOUSEEVENTF_MOVE, -4, -2, 0, UIntPtr.Zero);
+                    await Task.Delay(20);
+                    if (haveOrig) Native.SetCursorPos(orig.X, orig.Y);   // restore your cursor
+                }
+                else
+                {
+                    // fallback if the window rectangle is unavailable: plain relative nudge
+                    Native.mouse_event(Native.MOUSEEVENTF_MOVE, 4, 0, 0, UIntPtr.Zero);
+                    await Task.Delay(40);
+                    Native.mouse_event(Native.MOUSEEVENTF_MOVE, -4, 0, 0, UIntPtr.Zero);
+                }
             }
         }
 

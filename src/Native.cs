@@ -130,6 +130,15 @@ namespace RobloxMultiHub
         [DllImport("user32.dll")]
         public static extern void mouse_event(uint flags, int dx, int dy, uint data, UIntPtr extra);
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct POINT { public int X; public int Y; }
+
+        [DllImport("user32.dll")]
+        public static extern bool GetCursorPos(out POINT p);
+
+        [DllImport("user32.dll")]
+        public static extern bool SetCursorPos(int x, int y);
+
         [DllImport("user32.dll")]
         public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool attach);
 
