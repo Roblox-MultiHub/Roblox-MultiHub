@@ -22,6 +22,10 @@ namespace RobloxMultiHub
         StatBlock statRun, statCpu, statRam;
         TextBox logBox;
         Panel pageHost;
+        RoundPanel logHost;
+        TableLayoutPanel rightTable;
+        Label logHeader;
+        bool logOpen;
         string currentPage = "";
         readonly Dictionary<string, Panel> pages = new Dictionary<string, Panel>();
         readonly Dictionary<string, RoundButton> navButtons = new Dictionary<string, RoundButton>();
@@ -156,30 +160,37 @@ namespace RobloxMultiHub
             };
             root.Controls.Add(topBar, 0, 0);
 
-            // ---- body: accounts | pages, with a draggable splitter ----
-            Panel body = new Panel();
+            // ---- body: sidebar | (accounts | page), with a draggable splitter ----
+            TableLayoutPanel body = new TableLayoutPanel();
             body.Dock = DockStyle.Fill;
+            body.ColumnCount = 2;
+            body.RowCount = 1;
+            body.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 202F));   // sidebar
+            body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            body.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             body.Padding = new Padding(10);
             body.Margin = Padding.Empty;
             root.Controls.Add(body, 0, 1);
 
-            // ---- body: accounts | pages, with a draggable splitter ----
+            BuildSidebar(body);
+
             split = new SplitContainer();
-            split.Size = new Size(1100, 600);
+            split.Size = new Size(900, 600);
             try
             {
                 split.Orientation = Orientation.Vertical;
                 split.SplitterWidth = 10;
                 split.FixedPanel = FixedPanel.Panel1;
-                split.Panel1MinSize = 360;
-                split.Panel2MinSize = 740;
+                split.Panel1MinSize = 300;
+                split.Panel2MinSize = 470;
             }
             catch (Exception ex) { Log.Error("split", ex); }
             split.BorderStyle = BorderStyle.None;
             split.TabStop = false;
             split.Dock = DockStyle.Fill;
+            split.Margin = Padding.Empty;
             split.SplitterMoved += delegate { LayoutCards(); };
-            body.Controls.Add(split);
+            body.Controls.Add(split, 1, 0);
 
             leftHost = new RoundPanel();
             leftHost.Dock = DockStyle.Fill;
@@ -187,64 +198,30 @@ namespace RobloxMultiHub
             leftHost.Padding = new Padding(8);
             split.Panel1.Controls.Add(leftHost);
 
-            TableLayoutPanel right = new TableLayoutPanel();
-            right.Dock = DockStyle.Fill;
-            right.ColumnCount = 1;
-            right.RowCount = 3;
-            right.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            right.RowStyles.Add(new RowStyle(SizeType.AutoSize));            // nav: wraps to a 2nd row when narrow
-            right.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            right.RowStyles.Add(new RowStyle(SizeType.Absolute, 150F));
-            right.Margin = Padding.Empty;
-            split.Panel2.Controls.Add(right);
-
-            FlowLayoutPanel nav = new FlowLayoutPanel();
-            nav.Dock = DockStyle.Fill;
-            nav.AutoSize = true;
-            nav.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            nav.WrapContents = true;
-            nav.Margin = new Padding(0, 0, 0, 6);
-            string[][] items = new string[][]
-            {
-                new string[] { "Home", "\U0001F3E0  Home", "80" },
-                new string[] { "Launch", "\U0001F680  Launch", "94" },
-                new string[] { "Servers", "\U0001F310  Servers", "102" },
-                new string[] { "Layout", "\U0001FA9F  Layout", "94" },
-                new string[] { "Monitor", "\U0001F4CA  Monitor", "104" },
-                new string[] { "Presets", "\U0001F4BE  Presets", "98" },
-                new string[] { "Perf", "⚡  Perf", "78" },
-                new string[] { "Settings", "⚙  Settings", "100" },
-                new string[] { "Help", "❓  Help", "78" },
-                new string[] { "Macro", "\U0001F3AC  Macro", "90" }      // opens its own window instead of a page
-            };
-            foreach (string[] it in items)
-            {
-                string key = it[0];
-                string label = Lang.T(it[1]);
-                int w = int.Parse(it[2]);
-                int measured = TextRenderer.MeasureText(label, Theme.Base).Width + 34;
-                RoundButton b = Ui.Btn(label, Math.Max(w, measured), null, "nav");
-                b.Height = 34;
-                b.Margin = new Padding(0, 2, 6, 2);
-                b.Click += delegate { if (key == "Macro") OpenMacro(); else ShowPage(key); };
-                if (key == "Macro") Ui.Tips.SetToolTip(b, "Opens the macro recorder (record and replay mouse + keyboard, like TinyTask) in its own window.");
-                navButtons[key] = b;
-                nav.Controls.Add(b);
-            }
-            right.Controls.Add(nav, 0, 0);
+            rightTable = new TableLayoutPanel();
+            rightTable.Dock = DockStyle.Fill;
+            rightTable.ColumnCount = 1;
+            rightTable.RowCount = 2;
+            rightTable.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            rightTable.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));     // page
+            rightTable.RowStyles.Add(new RowStyle(SizeType.Absolute, 34F));     // log (collapsed by default)
+            rightTable.Margin = Padding.Empty;
+            split.Panel2.Controls.Add(rightTable);
 
             pageHost = new RoundPanel();
             pageHost.Dock = DockStyle.Fill;
             pageHost.Tag = "card";
             pageHost.Padding = new Padding(6);
             pageHost.Margin = Padding.Empty;
-            right.Controls.Add(pageHost, 0, 1);
+            rightTable.Controls.Add(pageHost, 0, 0);
 
-            RoundPanel logHost = new RoundPanel();
+            // ---- collapsible activity log (closed by default to keep the screen calm) ----
+            logHost = new RoundPanel();
             logHost.Dock = DockStyle.Fill;
             logHost.Tag = "card";
-            logHost.Padding = new Padding(8, 4, 8, 8);
+            logHost.Padding = new Padding(8, 2, 8, 8);
             logHost.Margin = new Padding(0, 10, 0, 0);
+
             logBox = new TextBox();
             logBox.Multiline = true;
             logBox.ReadOnly = true;
@@ -252,13 +229,89 @@ namespace RobloxMultiHub
             logBox.Dock = DockStyle.Fill;
             logBox.Font = Theme.Mono;
             logBox.Tag = "log";
+            logBox.Visible = false;
             logHost.Controls.Add(logBox);
-            Label logTitle = Ui.Lbl("Activity log  (everything the app does is written here)", "muted");
-            logTitle.AutoSize = false;
-            logTitle.Dock = DockStyle.Top;
-            logTitle.Height = 20;
-            logHost.Controls.Add(logTitle);
-            right.Controls.Add(logHost, 0, 2);
+
+            logHeader = Ui.Lbl("▸  Activity log", "muted");
+            logHeader.AutoSize = false;
+            logHeader.Dock = DockStyle.Top;
+            logHeader.Height = 22;
+            logHeader.Cursor = Cursors.Hand;
+            logHeader.Click += delegate { ToggleLog(); };
+            Ui.Tips.SetToolTip(logHeader, "Everything the app does is written here. Click to open or close it.");
+            logHost.Controls.Add(logHeader);
+            rightTable.Controls.Add(logHost, 0, 1);
+        }
+
+        // Left navigation sidebar. Main pages on top, Settings / Help / Macro pinned at the bottom
+        // so they are always in the same place and easy to find.
+        void BuildSidebar(TableLayoutPanel body)
+        {
+            RoundPanel side = new RoundPanel();
+            side.Dock = DockStyle.Fill;
+            side.Tag = "card";
+            side.Padding = new Padding(11, 12, 11, 12);
+            side.Margin = new Padding(0, 0, 10, 0);
+            body.Controls.Add(side, 0, 0);
+
+            // bottom group first, so Dock=Bottom keeps it pinned under the top group
+            FlowLayoutPanel bottom = NewNavFlow();
+            bottom.Dock = DockStyle.Bottom;
+            Panel sep = new Panel();
+            sep.Tag = "line";
+            sep.Height = 1;
+            sep.Width = 178;
+            sep.Margin = new Padding(1, 6, 1, 8);
+            bottom.Controls.Add(sep);
+            bottom.Controls.Add(NavBtn("Settings", Lang.T("⚙  Settings"), false, "Open all options and toggles. Multi-instance, performance, alerts, startup and more."));
+            bottom.Controls.Add(NavBtn("Help", Lang.T("❓  Help"), false, "Guides, FAQ and troubleshooting."));
+            bottom.Controls.Add(NavBtn("Macro", Lang.T("\U0001F3AC  Macro"), true, "Record and replay mouse + keyboard (like TinyTask) in its own window."));
+
+            FlowLayoutPanel top = NewNavFlow();
+            top.Dock = DockStyle.Top;
+            top.Controls.Add(NavBtn("Home", Lang.T("\U0001F3E0  Home"), false, null));
+            top.Controls.Add(NavBtn("Launch", Lang.T("\U0001F680  Launch"), false, null));
+            top.Controls.Add(NavBtn("Servers", Lang.T("\U0001F310  Servers"), false, null));
+            top.Controls.Add(NavBtn("Layout", Lang.T("\U0001FA9F  Layout"), false, null));
+            top.Controls.Add(NavBtn("Monitor", Lang.T("\U0001F4CA  Monitor"), false, null));
+            top.Controls.Add(NavBtn("Presets", Lang.T("\U0001F4BE  Presets"), false, null));
+            top.Controls.Add(NavBtn("Perf", Lang.T("⚡  Perf"), false, null));
+
+            side.Controls.Add(bottom);
+            side.Controls.Add(top);
+        }
+
+        FlowLayoutPanel NewNavFlow()
+        {
+            FlowLayoutPanel f = new FlowLayoutPanel();
+            f.FlowDirection = FlowDirection.TopDown;
+            f.WrapContents = false;
+            f.AutoSize = true;
+            f.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            f.Margin = Padding.Empty;
+            f.Tag = "card";
+            return f;
+        }
+
+        RoundButton NavBtn(string key, string label, bool macro, string tip)
+        {
+            RoundButton b = Ui.Btn(label, 178, null, "nav");
+            b.Width = 178;
+            b.Height = 40;
+            b.LeftAlign = true;
+            b.Margin = new Padding(0, 2, 0, 2);
+            b.Click += delegate { if (macro) OpenMacro(); else ShowPage(key); };
+            if (!string.IsNullOrEmpty(tip)) Ui.Tips.SetToolTip(b, tip);
+            navButtons[key] = b;
+            return b;
+        }
+
+        void ToggleLog()
+        {
+            logOpen = !logOpen;
+            logBox.Visible = logOpen;
+            logHeader.Text = (logOpen ? "▾" : "▸") + "  Activity log";
+            if (rightTable != null) rightTable.RowStyles[1].Height = logOpen ? 190F : 34F;
         }
 
         Panel NewPage(string key)
@@ -292,7 +345,7 @@ namespace RobloxMultiHub
                 new string[] { "2", "Pick a game", "Paste a game link, a place ID or a private server on the Launch page." },
                 new string[] { "3", "Press Launch", "Launch as many accounts as you want, then line the windows up on the Layout page." }
             };
-            int cardW = 248, cardH = 158, gap = 14, x = 20, y = 96;
+            int cardW = 206, cardH = 158, gap = 12, x = 20, y = 96;
             foreach (string[] s in steps)
             {
                 RoundPanel card = new RoundPanel();
@@ -606,9 +659,9 @@ namespace RobloxMultiHub
             t.RowCount = 4;
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             t.RowStyles.Add(new RowStyle(SizeType.AutoSize));          // toolbar: grows to a 2nd row when the panel is narrow
-            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 42F));
+            t.RowStyles.Add(new RowStyle(SizeType.AutoSize));          // search / group / view: grows instead of clipping
             t.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            t.RowStyles.Add(new RowStyle(SizeType.Absolute, 48F));
+            t.RowStyles.Add(new RowStyle(SizeType.AutoSize));          // footer buttons: grow instead of clipping
             t.Margin = Padding.Empty;
             t.Tag = "card";
             leftHost.Controls.Add(t);
@@ -646,6 +699,10 @@ namespace RobloxMultiHub
             // ---- search / group / view switch ----
             FlowLayoutPanel filt = new FlowLayoutPanel();
             filt.Dock = DockStyle.Fill;
+            filt.AutoSize = true;
+            filt.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            filt.WrapContents = true;
+            filt.MinimumSize = new Size(0, 40);
             filt.Margin = Padding.Empty;
             filt.Tag = "card";
             Label l1 = Ui.Lbl("Search", "muted");
@@ -729,6 +786,10 @@ namespace RobloxMultiHub
             // ---- footer ----
             FlowLayoutPanel foot = new FlowLayoutPanel();
             foot.Dock = DockStyle.Fill;
+            foot.AutoSize = true;
+            foot.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            foot.WrapContents = true;
+            foot.MinimumSize = new Size(0, 46);
             foot.Margin = Padding.Empty;
             foot.Tag = "card";
             GradientButton bLaunch = new GradientButton();
