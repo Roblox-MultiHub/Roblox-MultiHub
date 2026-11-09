@@ -40,6 +40,12 @@ namespace RobloxMultiHub
             step(0f);
         }
 
+        public static bool Running(object tag)
+        {
+            foreach (Job j in jobs) if (Equals(j.Tag, tag)) return true;
+            return false;
+        }
+
         public static void Cancel(object tag)
         {
             for (int i = jobs.Count - 1; i >= 0; i--)

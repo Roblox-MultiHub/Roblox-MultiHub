@@ -30,6 +30,8 @@ namespace RobloxMultiHub
         public bool LeftAlign;          // left-align the text (sidebar items) instead of centering
         public float Opacity = 1f;      // 0..1, applied while painting (used for show/hide animations)
         public float TextOpacity = 1f;  // text can fade faster than the body while a button shrinks
+        public float Wipe;              // nav only: how much of the active highlight is shown (0..1)
+        public int WipeDir = 1;         // nav only: +1 arriving from above / leaving downward, -1 mirrored
         bool hover;
         bool pressed;
         Color curFill, curText, curBorder;   // smoothly animated toward their target each frame
@@ -106,10 +108,8 @@ namespace RobloxMultiHub
             }
             else if (Kind == "nav")
             {
-                // the sliding accent pill behind the buttons IS the active highlight; an active
-                // button paints no body of its own so the pill shows through, just white text
-                fill = hover ? Theme.Panel2 : Theme.Panel;
-                text = Active ? Color.White : (hover ? Theme.Text : Theme.Muted);
+                if (Active) { fill = Theme.Accent; text = Color.White; }
+                else { fill = hover ? Theme.Panel2 : Theme.Panel; text = hover ? Theme.Text : Theme.Muted; }
                 border = fill;
             }
             else if (hover) fill = Tint.Shift(fill, Theme.Dark ? 14 : -10);
@@ -128,10 +128,27 @@ namespace RobloxMultiHub
             Color drawFill = Fade(curFill, Opacity);
             Color drawBorder = Fade(curBorder, Opacity);
             Color drawText = Fade(curText, Opacity);
-            bool noBody = Kind == "nav" && Active;         // the sliding pill supplies the body
             using (GraphicsPath path = Shapes.Round(r, Math.Min(10, Height / 2)))
             {
-                if (!noBody)
+                if (Kind == "nav")
+                {
+                    // nav body: the plain panel colour, then the active highlight on top - but only
+                    // the part the travelling wipe currently covers, so the blue rectangle slides
+                    // out of the old tab and into the new one while every label stays where it is
+                    using (SolidBrush b = new SolidBrush(hover && !Active ? Theme.Panel2 : Theme.Panel)) g.FillPath(b, path);
+                    if (Active || Wipe > 0.01f)
+                    {
+                        float w = Math.Max(0f, Math.Min(1f, Active ? Math.Max(Wipe, 0.001f) : Wipe));
+                        int h = (int)(Height * w);
+                        bool fromTop = Active ? WipeDir >= 0 : WipeDir < 0;
+                        Rectangle clip = fromTop ? new Rectangle(0, 0, Width, h) : new Rectangle(0, Height - h, Width, h);
+                        g.SetClip(path);
+                        g.SetClip(clip, System.Drawing.Drawing2D.CombineMode.Intersect);
+                        using (SolidBrush ab = new SolidBrush(Theme.Accent)) g.FillPath(ab, path);
+                        g.ResetClip();
+                    }
+                }
+                else
                     using (SolidBrush b = new SolidBrush(drawFill)) g.FillPath(b, path);
                 if (rippling)
                 {

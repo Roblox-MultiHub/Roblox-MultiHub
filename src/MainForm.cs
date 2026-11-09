@@ -30,9 +30,7 @@ namespace RobloxMultiHub
         RoundPanel topBarRef;
         Label topTitleRef, topSubRef;
         Control[] headerInteractive = new Control[0];
-        RoundPanel navIndicator;                  // slides to the active nav button
-        RoundPanel navSideRef;
-        Label navLabel;                           // the active tab's text, riding on the pill
+        string lastNavKey;                        // direction of the last tab switch (for the wipe)
         RoundButton btnWinMin, btnWinClose;
         System.Windows.Forms.Timer logAnim;
         float logHFrom, logHTo;
@@ -384,27 +382,6 @@ namespace RobloxMultiHub
 
             side.Controls.Add(bottom);
             side.Controls.Add(top);
-
-            // the active-tab highlight: one accent pill the size of a nav button that SLIDES to the
-            // clicked tab (one clock with the page slide and the ripple). It sits ON TOP of the
-            // buttons (Enabled=false, so clicks fall through) and carries the tab's text with it;
-            // the button underneath paints nothing while active.
-            navSideRef = side;
-            navIndicator = new NavPill();
-            navIndicator.Radius = 10;
-            navIndicator.BackColor = Theme.Accent;
-            navIndicator.Size = new Size(178, 40);
-            navIndicator.Visible = false;
-            navLabel = new Label();
-            navLabel.Dock = DockStyle.Fill;
-            navLabel.BackColor = Color.Transparent;
-            navLabel.ForeColor = Color.White;
-            navLabel.Font = Theme.Base;
-            navLabel.TextAlign = ContentAlignment.MiddleLeft;
-            navLabel.Padding = new Padding(12, 0, 0, 0);
-            navIndicator.Controls.Add(navLabel);
-            side.Controls.Add(navIndicator);
-            navIndicator.BringToFront();
         }
 
         FlowLayoutPanel NewNavFlow()
@@ -657,33 +634,38 @@ namespace RobloxMultiHub
             macroForm.Activate();
         }
 
+        // The active highlight is painted by the buttons themselves, exactly like it always was.
+        // The only change: on a switch the OLD tab's highlight wipes out toward the direction of
+        // travel while the NEW tab's wipes in from the same side - the blue rectangle appears to
+        // slide between tabs, with no overlay control and no text movement.
         void StyleNav()
         {
-            RoundButton act = null;
+            int dir = 1;
+            if (lastNavKey != null)
+            {
+                int prev = Array.IndexOf(PageOrder, lastNavKey);
+                int cur = Array.IndexOf(PageOrder, currentPage);
+                if (prev >= 0 && cur >= 0) dir = cur >= prev ? 1 : -1;
+            }
             foreach (KeyValuePair<string, RoundButton> kv in navButtons)
             {
-                kv.Value.Active = kv.Key == currentPage;
-                kv.Value.Invalidate();
-                if (kv.Key == currentPage) act = kv.Value;
+                bool act = kv.Key == currentPage;
+                RoundButton b = kv.Value;
+                if (b.Active != act)
+                {
+                    b.WipeDir = dir;
+                    float from = b.Wipe, to = act ? 1f : 0f;
+                    Anim.Go("navwipe" + kv.Key, Anim.Ms, delegate(float e)
+                    {
+                        b.Wipe = from + (to - from) * e;
+                        b.Invalidate();
+                    }, delegate { b.Wipe = to; b.Invalidate(); });
+                }
+                else if (act && b.Wipe != 1f && !Anim.Running("navwipe" + kv.Key)) { b.Wipe = 1f; }
+                b.Active = act;
+                b.Invalidate();
             }
-            if (act == null || navIndicator == null || navSideRef == null) return;
-            // where the pill has to go, in the sidebar's own coordinates (works across both flows)
-            Point loc = navSideRef.PointToClient(act.Parent.PointToScreen(act.Location));
-            int tx = loc.X, ty = loc.Y;
-            if (navLabel != null && navLabel.Text != act.Text) navLabel.Text = act.Text;
-            navIndicator.Size = act.Size;
-            if (!navIndicator.Visible)
-            {
-                navIndicator.Location = new Point(tx, ty);
-                navIndicator.Visible = true;
-                return;
-            }
-            int x0 = navIndicator.Location.X, y0 = navIndicator.Location.Y;
-            if (x0 == tx && y0 == ty) return;
-            Anim.Go("navind", Anim.Ms, delegate(float e)
-            {
-                navIndicator.Location = new Point(x0 + (int)((tx - x0) * e), y0 + (int)((ty - y0) * e));
-            }, null);
+            lastNavKey = currentPage;
         }
 
         void StyleViewButtons()
