@@ -45,18 +45,18 @@ namespace RobloxMultiHub
         }
 
         // ---- live status embed: sent once, then EDITED in place on every refresh ----
-        static string statusMessageId;
+        // The message id is persisted in settings, so an app restart keeps editing the SAME message
+        // instead of posting a new one. The chart PNG rides along as an attachment the embed
+        // references (attachment://chart.png) and is re-uploaded on every refresh.
 
-        // Returns the message id, or "" when the post failed. Only the webhook's own message can
-        // be edited, and editing is authorized by the URL alone - that is the whole point.
-        static async Task<string> PostAsync(string url, Dictionary<string, object> body)
+        // Returns the message id, or "" when the post failed.
+        static async Task<string> PostStatusAsync(string url, Dictionary<string, object> embed, byte[] chart)
         {
-            StringContent content = new StringContent(Json.To(body), Encoding.UTF8, "application/json");
-            HttpResponseMessage r = await Http.PostAsync(url.Trim(), content);
+            HttpResponseMessage r = await Http.PostAsync(url.Trim(), StatusForm(embed, chart));
             if ((int)r.StatusCode == 429)
             {
                 await Task.Delay(1500);
-                r = await Http.PostAsync(url.Trim(), new StringContent(Json.To(body), Encoding.UTF8, "application/json"));
+                r = await Http.PostAsync(url.Trim(), StatusForm(embed, chart));
             }
             r.EnsureSuccessStatusCode();
             IDictionary<string, object> msg = Json.Obj(Json.Parse(await r.Content.ReadAsStringAsync()));
@@ -64,49 +64,25 @@ namespace RobloxMultiHub
             return msg != null && msg.TryGetValue("id", out id) && id != null ? id.ToString() : "";
         }
 
-        public static void SendStatus(string title, string desc, int color)
-        {
-            if (!Enabled) return;
-            Dictionary<string, object> embed = StatusEmbed(title, desc, color);
-            string url = Store.Settings.WebhookUrl;
-            string id = statusMessageId;
-            Task.Run(async delegate
-            {
-                try
-                {
-                    if (id != null && id.Length > 0)
-                    {
-                        // edit the existing status message in place; if it was deleted, send a new one
-                        Dictionary<string, object> editBody = new Dictionary<string, object>();
-                        editBody["embeds"] = new object[] { embed };
-                        HttpRequestMessage patch = new HttpRequestMessage(new HttpMethod("PATCH"),
-                            url.TrimEnd('/') + "/messages/" + id);
-                        patch.Content = new StringContent(Json.To(editBody), Encoding.UTF8, "application/json");
-                        HttpResponseMessage r = await Http.SendAsync(patch);
-                        if ((int)r.StatusCode != 404)
-                        {
-                            r.EnsureSuccessStatusCode();
-                            return;
-                        }
-                        statusMessageId = null;
-                    }
-                    string newId = await PostAsync(url, Wrap(embed));
-                    if (newId.Length > 0) statusMessageId = newId;
-                }
-                catch (Exception ex) { Log.Error("WebhookStatus", ex); }
-            });
-        }
-
-        static Dictionary<string, object> Wrap(Dictionary<string, object> embed)
+        static MultipartFormDataContent StatusForm(Dictionary<string, object> embed, byte[] chart)
         {
             Dictionary<string, object> body = new Dictionary<string, object>();
             body["username"] = "Roblox MultiHub";
             body["embeds"] = new object[] { embed };
-            return body;
+            MultipartFormDataContent form = new MultipartFormDataContent();
+            form.Add(new StringContent(Json.To(body), Encoding.UTF8), "payload_json");
+            if (chart != null && chart.Length > 0)
+            {
+                ByteArrayContent file = new ByteArrayContent(chart);
+                file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+                form.Add(file, "files[0]", "chart.png");
+            }
+            return form;
         }
 
-        static Dictionary<string, object> StatusEmbed(string title, string desc, int color)
+        public static void SendStatus(string title, string desc, int color, byte[] chart)
         {
+            if (!Enabled) return;
             Dictionary<string, object> embed = new Dictionary<string, object>();
             embed["title"] = title ?? "";
             embed["description"] = desc ?? "";
@@ -115,7 +91,40 @@ namespace RobloxMultiHub
             Dictionary<string, object> foot = new Dictionary<string, object>();
             foot["text"] = "Roblox MultiHub";
             embed["footer"] = foot;
-            return embed;
+            if (chart != null && chart.Length > 0)
+            {
+                Dictionary<string, object> img = new Dictionary<string, object>();
+                img["url"] = "attachment://chart.png";
+                embed["image"] = img;
+            }
+            string url = Store.Settings.WebhookUrl;
+            string id = Store.Settings.WebhookStatusMsgId;
+            Task.Run(async delegate
+            {
+                try
+                {
+                    if (id != null && id.Length > 0)
+                    {
+                        // edit the existing status message in place; if it was deleted, send a new one
+                        HttpRequestMessage patch = new HttpRequestMessage(new HttpMethod("PATCH"),
+                            url.TrimEnd('/') + "/messages/" + id);
+                        patch.Content = StatusForm(embed, chart);
+                        HttpResponseMessage r = await Http.SendAsync(patch);
+                        if ((int)r.StatusCode != 404)
+                        {
+                            r.EnsureSuccessStatusCode();
+                            return;
+                        }
+                    }
+                    string newId = await PostStatusAsync(url, embed, chart);
+                    if (newId.Length > 0)
+                    {
+                        Store.Settings.WebhookStatusMsgId = newId;
+                        Store.SaveSettings();
+                    }
+                }
+                catch (Exception ex) { Log.Error("WebhookStatus", ex); }
+            });
         }
 
         // Always sent (used by the "Send a test message" button, which passes its own URL).
