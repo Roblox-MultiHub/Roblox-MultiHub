@@ -303,7 +303,29 @@ namespace RobloxMultiHub
             FlatStyle = FlatStyle.Flat;
             ItemHeight = 22;
             Font = Theme.Base;
+            BackColor = Theme.Panel2;             // the typing area is drawn by Windows from these
+            ForeColor = Theme.Text;
+            // Windows paints the typing area of a DISABLED editable combo with its own white brush
+            // and ignores BackColor (measured). While disabled we switch to DropDownList style,
+            // which the control's own dark painting fully covers, and restore style + text after.
+            EnabledChanged += delegate
+            {
+                if (!Enabled)
+                {
+                    wasEditable = DropDownStyle == ComboBoxStyle.DropDown;
+                    savedText = Text;
+                    if (wasEditable) DropDownStyle = ComboBoxStyle.DropDownList;
+                }
+                else if (wasEditable)
+                {
+                    DropDownStyle = ComboBoxStyle.DropDown;
+                    Text = savedText;
+                }
+            };
         }
+
+        bool wasEditable;
+        string savedText;
 
         protected override void OnDrawItem(DrawItemEventArgs e)
         {
