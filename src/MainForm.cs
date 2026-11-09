@@ -372,16 +372,17 @@ namespace RobloxMultiHub
             side.Controls.Add(bottom);
             side.Controls.Add(top);
 
-            // the active-tab highlight: one accent bar that SLIDES to the clicked tab (one clock
-            // with the page slide and the ripple). Sits on top, at the buttons' left edge.
+            // the active-tab highlight: one accent pill the size of a nav button that SLIDES to the
+            // clicked tab (one clock with the page slide and the ripple). Sits BEHIND the buttons,
+            // so it looks like the button's own highlight travelling.
             navSideRef = side;
             navIndicator = new RoundPanel();
-            navIndicator.Radius = 3;
+            navIndicator.Radius = 10;
             navIndicator.BackColor = Theme.Accent;
-            navIndicator.Size = new Size(5, 26);
+            navIndicator.Size = new Size(178, 40);
             navIndicator.Visible = false;
             side.Controls.Add(navIndicator);
-            navIndicator.BringToFront();
+            navIndicator.SendToBack();
         }
 
         FlowLayoutPanel NewNavFlow()
@@ -644,20 +645,21 @@ namespace RobloxMultiHub
                 if (kv.Key == currentPage) act = kv.Value;
             }
             if (act == null || navIndicator == null || navSideRef == null) return;
-            // where the bar has to go, in the sidebar's own coordinates (works across both flows)
+            // where the pill has to go, in the sidebar's own coordinates (works across both flows)
             Point loc = navSideRef.PointToClient(act.Parent.PointToScreen(act.Location));
-            int ty = loc.Y + (act.Height - navIndicator.Height) / 2;
+            int tx = loc.X, ty = loc.Y;
             if (!navIndicator.Visible)
             {
-                navIndicator.Location = new Point(3, ty);
+                navIndicator.Location = new Point(tx, ty);
                 navIndicator.Visible = true;
                 return;
             }
-            int y0 = navIndicator.Location.Y;
-            if (y0 == ty) return;
+            int x0 = navIndicator.Location.X, y0 = navIndicator.Location.Y;
+            if (x0 == tx && y0 == ty) return;
+            navIndicator.Size = act.Size;
             Anim.Go("navind", Anim.Ms, delegate(float e)
             {
-                navIndicator.Location = new Point(3, y0 + (int)((ty - y0) * e));
+                navIndicator.Location = new Point(x0 + (int)((tx - x0) * e), y0 + (int)((ty - y0) * e));
             }, null);
         }
 

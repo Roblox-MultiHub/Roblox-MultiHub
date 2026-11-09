@@ -106,10 +106,10 @@ namespace RobloxMultiHub
             }
             else if (Kind == "nav")
             {
-                // the moving indicator bar on the sidebar is the active highlight now; the button
-                // itself only switches between muted and bright text so nothing "jumps"
+                // the sliding accent pill behind the buttons IS the active highlight; an active
+                // button paints no body of its own so the pill shows through, just white text
                 fill = hover ? Theme.Panel2 : Theme.Panel;
-                text = (Active || hover) ? Theme.Text : Theme.Muted;
+                text = Active ? Color.White : (hover ? Theme.Text : Theme.Muted);
                 border = fill;
             }
             else if (hover) fill = Tint.Shift(fill, Theme.Dark ? 14 : -10);
@@ -128,9 +128,11 @@ namespace RobloxMultiHub
             Color drawFill = Fade(curFill, Opacity);
             Color drawBorder = Fade(curBorder, Opacity);
             Color drawText = Fade(curText, Opacity);
+            bool noBody = Kind == "nav" && Active;         // the sliding pill supplies the body
             using (GraphicsPath path = Shapes.Round(r, Math.Min(10, Height / 2)))
             {
-                using (SolidBrush b = new SolidBrush(drawFill)) g.FillPath(b, path);
+                if (!noBody)
+                    using (SolidBrush b = new SolidBrush(drawFill)) g.FillPath(b, path);
                 if (rippling)
                 {
                     float rt = (Environment.TickCount - rippleT0) / (float)RippleMs;
