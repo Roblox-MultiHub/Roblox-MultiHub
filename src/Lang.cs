@@ -73,7 +73,7 @@ namespace RobloxMultiHub
             // navigation (the buttons grow to fit, so Dutch may be a little longer)
             { "\U0001F680  Launch", "\U0001F680  Starten" },
             { "\U0001F310  Servers", "\U0001F310  Servers" },
-            { "\U0001FA9F  Layout", "\U0001FA9F  Indeling" },
+            { "\u25A6  Layout", "\u25A6  Indeling" },
             { "\U0001F4CA  Monitor", "\U0001F4CA  Monitor" },
             { "\U0001F4BE  Presets", "\U0001F4BE  Presets" },
             { "⚡  Perf", "⚡  Prestaties" },

@@ -117,6 +117,7 @@ namespace RobloxMultiHub
         public bool FirstRunDone = false;
         public bool MultiInstance = false;
         public string Theme = "Dark";
+        public bool Animations = true;               // eased UI transitions; off = everything snaps
         public string Language = "en";               // UI language code; "en" = English (default)
         public string LaunchMethod = "Protocol";    // Protocol (roblox-player: link, like Roblox Account Manager) | Direct
         public bool LaunchDefaultsV2 = false;       // set once the launch method was switched to the RAM-style default

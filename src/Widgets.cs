@@ -29,6 +29,7 @@ namespace RobloxMultiHub
         public bool Active;             // highlighted state of nav / toggle buttons
         public bool LeftAlign;          // left-align the text (sidebar items) instead of centering
         public float Opacity = 1f;      // 0..1, applied while painting (used for show/hide animations)
+        public float TextOpacity = 1f;  // text can fade faster than the body while a button shrinks
         bool hover;
         bool pressed;
         Color curFill, curText, curBorder;   // smoothly animated toward their target each frame
@@ -57,6 +58,11 @@ namespace RobloxMultiHub
         protected override void OnMouseUp(MouseEventArgs e) { pressed = false; Invalidate(); base.OnMouseUp(e); }
         protected override void OnEnabledChanged(EventArgs e) { Invalidate(); base.OnEnabledChanged(e); }
         protected override void OnTextChanged(EventArgs e) { Invalidate(); base.OnTextChanged(e); }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && anim != null) { anim.Stop(); anim.Dispose(); anim = null; }
+            base.Dispose(disposing);
+        }
 
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -115,7 +121,7 @@ namespace RobloxMultiHub
             TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis;
             if (LeftAlign) { tr = new Rectangle(r.Left + 12, r.Top, r.Width - 16, r.Height); flags |= TextFormatFlags.Left; }
             else flags |= TextFormatFlags.HorizontalCenter;
-            TextRenderer.DrawText(g, Text, Font, tr, drawText, flags);
+            TextRenderer.DrawText(g, Text, Font, tr, Fade(curText, TextOpacity * Opacity), flags);
 
             // keep animating until the colours have settled, then stop the timer
             if (Diff(curFill, fill) + Diff(curText, text) + Diff(curBorder, border) > 4) RunAnim();

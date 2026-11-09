@@ -35,6 +35,8 @@ namespace RobloxMultiHub
         int logT0;
         const int LogAnimMs = 220;
         const float LogClosedH = 34F, LogOpenH = 190F;
+        int logClosedPx = 34, logOpenPx = 190;         // real pixel heights (DPI scaled in ScaleLayout)
+        TableLayoutPanel bodyTable;
         string currentPage = "";
         readonly Dictionary<string, Panel> pages = new Dictionary<string, Panel>();
         readonly Dictionary<string, RoundButton> navButtons = new Dictionary<string, RoundButton>();
@@ -63,7 +65,7 @@ namespace RobloxMultiHub
         HashSet<string> runningIds = new HashSet<string>();
         System.Threading.CancellationTokenSource browserCts;
         GradientButton footLaunch;
-        RoundButton footAll, footStop;
+        RoundButton footAll, footStop, footUp, footDown;
 
         public MainForm(bool minimized)
         {
@@ -136,7 +138,7 @@ namespace RobloxMultiHub
             topBar.Controls.Add(sub);
             topSubRef = sub;
             DiscordIcon disc = new DiscordIcon();
-            disc.Location = new Point(sub.Right + 10, 41);
+            disc.Location = new Point(sub.Right + 10, sub.Top + (sub.Height - disc.Height) / 2);
             disc.Click += delegate { OpenLink(DiscordUrl, "Discord"); };
             Ui.Tips.SetToolTip(disc, "Join our Discord - news, help and support tickets.");
             topBar.Controls.Add(disc);
@@ -190,6 +192,7 @@ namespace RobloxMultiHub
 
             // ---- body: sidebar | (accounts | page), with a draggable splitter ----
             TableLayoutPanel body = new TableLayoutPanel();
+            bodyTable = body;
             body.Dock = DockStyle.Fill;
             body.ColumnCount = 2;
             body.RowCount = 1;
@@ -273,6 +276,21 @@ namespace RobloxMultiHub
 
         // Left navigation sidebar. Main pages on top, Settings / Help / Macro pinned at the bottom
         // so they are always in the same place and easy to find.
+        // TableLayoutPanel Absolute row/column sizes are NOT scaled by Windows DPI scaling - only the
+        // controls inside them are. At 125%/150% the rows then clip their contents (window buttons on
+        // top of the top bar, the nav highlight cut off on the right). Re-applied with the real factor
+        // once the form has been scaled. Also fixes the log heights for the same reason.
+        void ScaleLayout()
+        {
+            float sx = AutoScaleFactor.Width, sy = AutoScaleFactor.Height;
+            if (root != null) root.RowStyles[0] = new RowStyle(SizeType.Absolute, 68F * sy);
+            if (bodyTable != null) bodyTable.ColumnStyles[0] = new ColumnStyle(SizeType.Absolute, 202F * sx);
+            logClosedPx = Math.Max(34, (int)(LogClosedH * sy));
+            logOpenPx = Math.Max(60, (int)(LogOpenH * sy));
+            if (rightTable != null && !logOpen)
+                rightTable.RowStyles[1] = new RowStyle(SizeType.Absolute, logClosedPx);
+        }
+
         void BuildSidebar(TableLayoutPanel body)
         {
             RoundPanel side = new RoundPanel();
@@ -300,7 +318,7 @@ namespace RobloxMultiHub
             top.Controls.Add(NavBtn("Home", Lang.T("\U0001F3E0  Home"), false, null));
             top.Controls.Add(NavBtn("Launch", Lang.T("\U0001F680  Launch"), false, null));
             top.Controls.Add(NavBtn("Servers", Lang.T("\U0001F310  Servers"), false, null));
-            top.Controls.Add(NavBtn("Layout", Lang.T("\U0001FA9F  Layout"), false, null));
+            top.Controls.Add(NavBtn("Layout", Lang.T("\u25A6  Layout"), false, null));
             top.Controls.Add(NavBtn("Monitor", Lang.T("\U0001F4CA  Monitor"), false, null));
             top.Controls.Add(NavBtn("Presets", Lang.T("\U0001F4BE  Presets"), false, null));
             top.Controls.Add(NavBtn("Perf", Lang.T("⚡  Perf"), false, null));
@@ -342,7 +360,7 @@ namespace RobloxMultiHub
             logHeader.Text = (logOpen ? "▾" : "▸") + "  Activity log";
             if (rightTable == null) return;
             logHFrom = rightTable.RowStyles[1].Height;
-            logHTo = logOpen ? LogOpenH : LogClosedH;
+            logHTo = logOpen ? logOpenPx : logClosedPx;
             if (logHFrom == logHTo) { logBox.Visible = logOpen; return; }
             if (logAnim == null)
             {
@@ -435,6 +453,7 @@ namespace RobloxMultiHub
             p.Dock = DockStyle.Fill;
             p.Tag = "card";
             p.Visible = false;
+            Util.SetBuf(p);                     // pages slide; without buffering they tear
             pages[key] = p;
             pageHost.Controls.Add(p);
             return p;
@@ -520,11 +539,11 @@ namespace RobloxMultiHub
             toP.Visible = true;
             toP.BringToFront();
             int travel = 46;
+            Util.SetBuf(toP);
             Anim.Cancel("page");
-            Anim.Go("page", 230, delegate(float e)
+            Anim.Go("page", 220, delegate(float e)
             {
                 toP.Location = new Point(home.X + (int)((1f - e) * travel * dir), home.Y);
-                fromP.Location = new Point(home.X - (int)((1f - e) * 16 * dir), home.Y);
             }, delegate
             {
                 fromP.Visible = false;
@@ -726,6 +745,7 @@ namespace RobloxMultiHub
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
+            ScaleLayout();
             // never let the window be bigger than the screen (small laptops / high DPI scaling)
             Rectangle wa = Screen.FromControl(this).WorkingArea;
             MinimumSize = new Size(Math.Min(MinimumSize.Width, wa.Width), Math.Min(MinimumSize.Height, wa.Height));
@@ -776,7 +796,7 @@ namespace RobloxMultiHub
             {
                 if (Store.Settings.MultiInstance && Launcher.RobloxPids().Count > 0 && Launcher.Instances.Count == 0)
                     AddLog("NOTE: Roblox is already running (started by Windows or by you earlier). Multi-instance only works for clients started AFTER this app is holding the lock. Use Settings > 'Close all Roblox processes'.");
-                if (Launcher.FindRobloxExe() == null)
+                if (Launcher.FindRobloxExe() == null && !Launcher.ProtocolRegistered())
                     AddLog("NOTE: Roblox does not seem to be installed for this Windows user. Install it from roblox.com first.");
             }
             catch (Exception ex) { Log.Error("StartupChecks", ex); }
@@ -923,6 +943,7 @@ namespace RobloxMultiHub
             };
 
             cardHost = new FlowLayoutPanel();
+            Util.SetBuf(cardHost);                 // cards glide to new slots; buffer so they do not tear
             cardHost.Dock = DockStyle.Fill;
             cardHost.AutoScroll = true;
             cardHost.WrapContents = true;
@@ -958,10 +979,10 @@ namespace RobloxMultiHub
             Ui.Tips.SetToolTip(bAll, "Launch every account that is currently visible in the list.");
             RoundButton bStop = Ui.Btn(Lang.T("Stop all"), 80, delegate { StopAll(); }, "danger");
             Ui.Tips.SetToolTip(bStop, "Close every Roblox window that this app started (windows you opened yourself are left alone).");
-            RoundButton bUp = Ui.Btn("Up", 44, delegate { MoveSelected(-1); }, "");
-            RoundButton bDown = Ui.Btn("Down", 54, delegate { MoveSelected(1); }, "");
-            Ui.Tips.SetToolTip(bUp, "Move the selected account up in your own order.");
-            Ui.Tips.SetToolTip(bDown, "Move the selected account down in your own order.");
+            RoundButton bUp = Ui.Btn("\u2191", 44, delegate { MoveSelected(-1); }, "");
+            RoundButton bDown = Ui.Btn("\u2193", 44, delegate { MoveSelected(1); }, "");
+            Ui.Tips.SetToolTip(bUp, "Move the selected account(s) up in your own order.");
+            Ui.Tips.SetToolTip(bDown, "Move the selected account(s) down in your own order.");
             lblCount = Ui.Lbl("", "muted");              // kept for the counters; not shown (the Launch page lists the selection)
             foreach (RoundButton b in new RoundButton[] { bAll, bStop, bUp, bDown }) b.Margin = new Padding(0, 8, 6, 6);
             foot.Controls.Add(bLaunch);
@@ -973,14 +994,18 @@ namespace RobloxMultiHub
             footLaunch = bLaunch;
             footAll = bAll;
             footStop = bStop;
+            footUp = bUp;
+            footDown = bDown;
             bAll.Tag = bAll.Width;                 // real width for the show/hide animation
             bStop.Tag = bStop.Width;
+            bUp.Tag = bUp.Width;
+            bDown.Tag = bDown.Width;
             UpdateFooterButtons();
         }
 
-        // Footer of the accounts panel: the red Stop button only exists while something is running
-        // ("Stop" for one window, "Stop all" for several), and 'Launch all' hides when every listed
-        // account is already running. Both appear/disappear with a small grow-and-fade.
+        // Footer of the accounts panel, every button only present when it can be used:
+        // Stop while something is running ("Stop" / "Stop all"), 'Launch all' while at least one
+        // listed account is not running, and the order arrows while an account is selected.
         void UpdateFooterButtons()
         {
             if (footStop == null || footAll == null) return;
@@ -992,23 +1017,36 @@ namespace RobloxMultiHub
             foreach (Account a in FilteredAccounts())
                 if (!runningIds.Contains(a.Id)) { anyToLaunch = true; break; }
             SetFooterBtn(footAll, anyToLaunch);
+            bool hasSel = selected.Count > 0;
+            SetFooterBtn(footUp, hasSel);
+            SetFooterBtn(footDown, hasSel);
         }
 
-        // Tag holds the button's real width, set when the footer is built.
+        // Tag holds the button's real width, set when the footer is built. The text fades twice as
+        // fast as the width so letters never look sliced while the button grows or shrinks.
         void SetFooterBtn(RoundButton b, bool show)
         {
             int target = b.Tag is int ? (int)b.Tag : 80;
             if (show)
             {
-                if (b.Visible && b.Opacity > 0.99f) return;
-                if (!b.Visible) { b.Visible = true; b.Width = 0; b.Opacity = 0f; }
-                Anim.Go(b, 180, delegate(float e) { b.Width = Math.Max(target, (int)(target * e)); b.Opacity = e; }, null);
+                if (b.Visible && b.Width == target && b.Opacity > 0.99f) return;
+                if (!b.Visible) { b.Visible = true; b.Width = 1; b.Opacity = 0f; }
+                Anim.Go(b, 170, delegate(float e)
+                {
+                    b.Width = Math.Max(1, (int)(target * e));
+                    b.Opacity = Math.Min(1f, e * 2f);
+                    b.TextOpacity = Math.Min(1f, e * 2f);
+                }, delegate { b.Width = target; b.Opacity = 1f; b.TextOpacity = 1f; });
             }
             else
             {
                 if (!b.Visible) return;
-                Anim.Go(b, 160, delegate(float e) { b.Width = (int)(target * (1f - e)); b.Opacity = 1f - e; },
-                    delegate { b.Visible = false; b.Width = target; b.Opacity = 1f; });
+                Anim.Go(b, 150, delegate(float e)
+                {
+                    b.Width = Math.Max(1, (int)(target * (1f - e)));
+                    b.Opacity = 1f - Math.Min(1f, e * 2f);
+                    b.TextOpacity = Math.Max(0f, 1f - e * 2f);
+                }, delegate { b.Visible = false; b.Width = target; b.Opacity = 1f; b.TextOpacity = 1f; });
             }
         }
 
@@ -1197,6 +1235,7 @@ namespace RobloxMultiHub
             }
             selected = ids;
             UpdateCount();
+            UpdateFooterButtons();
             OnAccountSelectionChanged();
         }
 
@@ -1748,20 +1787,32 @@ namespace RobloxMultiHub
 
         void MoveSelected(int dir)
         {
-            Account a = FirstSelected();
-            if (a == null) return;
+            if (selected.Count == 0) return;
             sortCol = -1;
             List<Account> vis = FilteredAccounts();
-            int idx = vis.IndexOf(a);
-            int to = idx + dir;
-            if (idx < 0 || to < 0 || to >= vis.Count) return;
-            Account other = vis[to];
-            int tmp = a.Order;
-            a.Order = other.Order;
-            other.Order = tmp;
-            if (a.Order == other.Order) a.Order += dir;
+            if (vis.Count < 2) return;
+            // every selected account shifts one slot; selected accounts that touch each other move
+            // as one block (they only swap with an unselected neighbour), keeping their relative order
+            if (dir < 0)
+            {
+                for (int i = 1; i < vis.Count; i++)
+                    if (selected.Contains(vis[i].Id) && !selected.Contains(vis[i - 1].Id))
+                    {
+                        Account t = vis[i]; vis[i] = vis[i - 1]; vis[i - 1] = t;
+                    }
+            }
+            else
+            {
+                for (int i = vis.Count - 2; i >= 0; i--)
+                    if (selected.Contains(vis[i].Id) && !selected.Contains(vis[i + 1].Id))
+                    {
+                        Account t = vis[i]; vis[i] = vis[i + 1]; vis[i + 1] = t;
+                    }
+            }
+            for (int i = 0; i < vis.Count; i++) vis[i].Order = (i + 1) * 10;
             Store.SaveAccounts();
             RefreshAccountList();
+            NudgeList();
         }
 
         void CopyField(Func<Account, string> get)

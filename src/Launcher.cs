@@ -281,34 +281,51 @@ namespace RobloxMultiHub
 
         public static string FindRobloxExe()
         {
-            try
+            // the protocol handler can be registered per-user or per-machine; HKCR shows both
+            RegistryKey[][] roots = new RegistryKey[][]
             {
-                using (RegistryKey k = Registry.CurrentUser.OpenSubKey(@"Software\Classes\roblox-player\shell\open\command"))
+                new RegistryKey[] { Registry.CurrentUser, Registry.CurrentUser.OpenSubKey(@"Software\Classes") },
+                new RegistryKey[] { Registry.ClassesRoot, Registry.ClassesRoot }
+            };
+            foreach (RegistryKey[] pair in roots)
+            {
+                try
                 {
-                    if (k != null)
+                    using (RegistryKey classes = pair[1])
                     {
-                        string handler = ExtractExe(k.GetValue("") as string);
-                        if (handler != null)
+                        if (classes == null) continue;
+                        using (RegistryKey k = classes.OpenSubKey(@"roblox-player\shell\open\command"))
                         {
-                            string dir = Path.GetDirectoryName(handler);
-                            if (dir != null)
+                            if (k == null) continue;
+                            string handler = ExtractExe(k.GetValue("") as string);
+                            if (handler != null)
                             {
-                                string beta = Path.Combine(dir, ProcName + ".exe");
-                                if (File.Exists(beta)) return beta;
+                                string dir = Path.GetDirectoryName(handler);
+                                if (dir != null)
+                                {
+                                    string beta = Path.Combine(dir, ProcName + ".exe");
+                                    if (File.Exists(beta)) return beta;
+                                }
                             }
                         }
                     }
                 }
+                catch (Exception) { }
             }
-            catch (Exception) { }
             try
             {
-                string root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Roblox", "Versions");
-                if (Directory.Exists(root))
+                // Roblox installs per-user into LocalAppData and per-machine into Program Files
+                foreach (string rootDir in new string[]
                 {
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Roblox", "Versions"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Roblox", "Versions"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Roblox", "Versions")
+                })
+                {
+                    if (!Directory.Exists(rootDir)) continue;
                     string best = null;
                     DateTime bestTime = DateTime.MinValue;
-                    foreach (string d in Directory.GetDirectories(root))
+                    foreach (string d in Directory.GetDirectories(rootDir))
                     {
                         string exe = Path.Combine(d, ProcName + ".exe");
                         if (!File.Exists(exe)) continue;
@@ -320,6 +337,17 @@ namespace RobloxMultiHub
             }
             catch (Exception) { }
             return null;
+        }
+
+        // True when the roblox-player: protocol is registered at all (per-user or per-machine).
+        public static bool ProtocolRegistered()
+        {
+            try
+            {
+                using (RegistryKey k = Registry.ClassesRoot.OpenSubKey("roblox-player"))
+                    return k != null;
+            }
+            catch (Exception) { return false; }
         }
 
         // True if the roblox-player URL handler points at the old bootstrapper, which closes other clients.

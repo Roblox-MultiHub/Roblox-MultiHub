@@ -23,6 +23,7 @@ namespace RobloxMultiHub
 
         public static void Go(object tag, int ms, Action<float> step, Action done)
         {
+            if (!Store.Settings.Animations) { step(1f); if (done != null) done(); return; }
             Cancel(tag);
             jobs.Add(new Job { Tag = tag, Start = Environment.TickCount, Ms = Math.Max(1, ms), Step = step, Done = done });
             if (tick == null)

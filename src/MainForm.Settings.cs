@@ -22,6 +22,7 @@ namespace RobloxMultiHub
         CheckBox chkPresence, chkRelaunch, chkWatcherPresence, chkStartup, chkAntiAfk, chkCheckLogins;
         CheckBox chkCheckUpdates;
         CheckBox chkCrashBreaker;
+        CheckBox chkAnimations;
         NumericUpDown numCrashMax;
         CheckBox chkWebhook, chkWebhookCrash, chkWebhookRelaunch, chkWebhookBatch, chkWebhookLocked;
         RoundTextBox tbWebhook;
@@ -42,6 +43,19 @@ namespace RobloxMultiHub
             Panel page = NewPage("Settings");
             PageBuilder p = new PageBuilder(page, PageW);
             p.Title("Settings", "Changes are saved immediately.");
+
+            p.Section("Interface");
+            chkAnimations = Ui.Chk("Smooth animations (pages, lists, buttons)", S.Animations, null);
+            p.Opt("Turn off if you prefer everything to switch instantly.",
+                "Pages slide in, re-sorted lists settle into place and buttons appear with a short eased motion. "
+                + "Turning this off makes every change immediate; nothing else about the app changes.",
+                chkAnimations);
+            chkAnimations.CheckedChanged += delegate
+            {
+                if (loadingSettings) return;
+                Store.Settings.Animations = chkAnimations.Checked;
+                Store.SaveSettings();
+            };
 
             p.Section("Multi-instance");
             chkMulti = Ui.Chk("Enable multi-instance", S.MultiInstance, null);

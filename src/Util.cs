@@ -202,5 +202,13 @@ namespace RobloxMultiHub
             Guid g;
             return !string.IsNullOrEmpty(s) && Guid.TryParse(s.Trim(), out g);
         }
+
+        // DoubleBuffered is protected; this switches it on for any control so moving it does not tear.
+        public static void SetBuf(Control c)
+        {
+            typeof(Control).GetProperty("DoubleBuffered",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .SetValue(c, true, null);
+        }
     }
 }
