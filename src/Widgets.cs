@@ -43,6 +43,7 @@ namespace RobloxMultiHub
         // per-button WinForms timers delivered uneven ~15.6ms WM_TIMERs, which read as judder
         static readonly System.Collections.Generic.HashSet<RoundButton> animating = new System.Collections.Generic.HashSet<RoundButton>();
         static bool frameHooked;
+        int animUntil;                          // safety: no animation legitimately runs this long
         Point rippleAt;                      // click ripple (material-style), expanding fading disc
         int rippleT0;
         bool rippling;
@@ -264,14 +265,29 @@ namespace RobloxMultiHub
         void RunAnim()
         {
             animating.Add(this);
-            Anim.FrameDemand = true;
+            animUntil = Environment.TickCount + 1500;   // nothing animates longer than this; if a
+            Anim.FrameDemand = true;                    // settle is ever missed the loop still winds down
             Anim.EnsureClock();                 // starts the shared frame loop on first need
             if (frameHooked) return;
             frameHooked = true;
             Anim.Frame += delegate
             {
-                foreach (RoundButton b in animating) { b.Advance(); b.Invalidate(); }
+                foreach (RoundButton b in animating)
+                {
+                    if (Environment.TickCount > b.animUntil) b.ForceSettle();
+                    else { b.Advance(); b.Invalidate(); }
+                }
+                if (animating.Count == 0) Anim.FrameDemand = false;
             };
+        }
+
+        // failsafe settle: leaves the animating set even if the normal settle was never reached
+        internal void ForceSettle()
+        {
+            rippling = false;
+            if (growing) { Wipe = growTo; growing = false; }
+            animating.Remove(this);
+            Invalidate();
         }
     }
 

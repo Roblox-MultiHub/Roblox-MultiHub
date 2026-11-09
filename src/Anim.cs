@@ -30,6 +30,7 @@ namespace RobloxMultiHub
         /// <summary>Set true while any control needs repaint ticks (button ripples). The loop only
         /// runs while this is true or jobs exist, so idle cost is zero.</summary>
         internal static volatile bool FrameDemand;
+        static bool suspended;                    // window move/resize: no frames, or drag lags
 
         /// <summary>Raised on the UI thread every frame while animating - for controls that repaint
         /// themselves (button ripples), instead of each owning a timer.</summary>
@@ -43,6 +44,11 @@ namespace RobloxMultiHub
             EnsureClock();
             step(0f);
         }
+
+        // called around window move/resize: the 250fps loop posts into the move loop's queue and
+        // makes the drag fight a stream of messages - suspend frames for the duration
+        internal static void Suspend() { suspended = true; }
+        internal static void Resume() { suspended = false; }
 
         internal static void EnsureClock()
         {
@@ -64,6 +70,7 @@ namespace RobloxMultiHub
             sw.Start();
             Application.Idle += delegate
             {
+                if (suspended) return;                          // dragging the window: no frames
                 if (jobs.Count == 0 && !FrameDemand) return;    // nothing animates: stop posting
                 if (sw.ElapsedMilliseconds >= 4)
                 {

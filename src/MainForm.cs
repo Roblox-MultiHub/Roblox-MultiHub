@@ -301,7 +301,8 @@ namespace RobloxMultiHub
             logHeader = Ui.Lbl("▸  Activity log", "muted");
             logHeader.AutoSize = false;
             logHeader.Dock = DockStyle.Top;
-            logHeader.Height = 22;
+            logHeader.Height = 24;                       // fills the collapsed band minus its padding,
+            logHeader.TextAlign = ContentAlignment.MiddleLeft;   // text centered on the strip's middle
             logHeader.Cursor = Cursors.Hand;
             logHeader.Click += delegate { ToggleLog(); };
             Ui.Tips.SetToolTip(logHeader, "Everything the app does is written here. Click to open or close it.");
@@ -931,21 +932,22 @@ namespace RobloxMultiHub
             bar.MinimumSize = new Size(0, 44);
             bar.Margin = Padding.Empty;
             bar.Tag = "card";
-            RoundButton bAdd = Ui.Btn("+ Add", 72, null, "primary");
+            RoundButton bAdd = Ui.Btn("+ Add", 62, null, "primary");
             bAdd.Click += delegate { addMenu.Show(bAdd, new Point(0, bAdd.Height)); };
             Ui.Tips.SetToolTip(bAdd, "Add accounts: log in with a browser, paste cookies, or import a file.");
-            RoundButton bEdit = Ui.Btn("Edit", 54, delegate { EditSelected(); }, "");
-            Ui.Tips.SetToolTip(bEdit, "Edit alias, group, notes, password and the game of the selected account.");
-            RoundButton bRemove = Ui.Btn("Remove", 74, delegate { RemoveSelected(); }, "danger");
+            RoundButton bEdit = Ui.Btn("Edit", 48, delegate { EditSelected(); }, "");
+            Ui.Tips.SetToolTip(bEdit, "Edit alias, group, notes, password and the game of each account.");
+            RoundButton bRemove = Ui.Btn("Remove", 66, delegate { RemoveSelected(); }, "danger");
             Ui.Tips.SetToolTip(bRemove, "Delete the selected account(s) from this app (does not touch the Roblox account itself).");
-            RoundButton bCheck = Ui.Btn("Check", 60, delegate { CheckAccounts(); }, "");
+            RoundButton bCheck = Ui.Btn("Check", 54, delegate { CheckAccounts(); }, "");
             Ui.Tips.SetToolTip(bCheck, "Check cookies: tests whether the saved login of the selected accounts (or all, if none selected) still works.");
-            RoundButton bActions = Ui.Btn("More", 58, null, "");
+            RoundButton bActions = Ui.Btn("More", 52, null, "");
             bActions.Click += delegate { accMenu.Show(bActions, new Point(0, bActions.Height)); };
             Ui.Tips.SetToolTip(bActions, "Copy username/password/cookie, account details, refresh cookie, groups, sorting ... (also on right-click).");
+            bar.WrapContents = false;                    // the five buttons stay on one row
             foreach (RoundButton b in new RoundButton[] { bAdd, bEdit, bRemove, bCheck, bActions })
             {
-                b.Margin = new Padding(0, 7, 6, 7);     // centered in the 44px band, like the row below
+                b.Margin = new Padding(0, 7, 4, 7);     // centered in the 44px band, like the row below
                 bar.Controls.Add(b);
             }
             bar.Padding = new Padding(12, 0, 12, 0);     // line up with the account rows below
@@ -968,11 +970,9 @@ namespace RobloxMultiHub
             tbSearch.Margin = new Padding(0, 8, 12, 0);
             tbSearch.TextChanged += delegate { RefreshAccountList(); NudgeList(); };
             tbSearch.Tip("Type to filter by username, alias, notes or group.");
-            Label l2 = Ui.Lbl("Group", "muted");
-            l2.Margin = new Padding(0, 15, 4, 0);
             cbGroupFilter = new DarkCombo();
-            cbGroupFilter.Width = 130;
-            cbGroupFilter.Margin = new Padding(0, 8, 14, 0);
+            cbGroupFilter.Width = 140;
+            cbGroupFilter.Margin = new Padding(0, 8, 14, 0);   // no label: the dropdown says it all
             cbGroupFilter.SelectedIndexChanged += delegate { if (!suspendSel) { RefreshAccountList(); NudgeList(); } };
             btnViewList = Ui.Btn(Lang.T("List"), 52, delegate { SetView(false); }, "toggle");
             btnViewList.Margin = new Padding(0, 7, 2, 0);
@@ -983,7 +983,6 @@ namespace RobloxMultiHub
             Ui.Tips.SetToolTip(btnViewCards, "Expanded cards: big profile picture, status, a game for each account and a Launch button.");
             filt.Controls.Add(l1);
             filt.Controls.Add(tbSearch);
-            filt.Controls.Add(l2);
             filt.Controls.Add(cbGroupFilter);
             filt.Controls.Add(btnViewList);
             filt.Controls.Add(btnViewCards);

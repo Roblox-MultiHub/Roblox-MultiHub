@@ -735,14 +735,16 @@ namespace RobloxMultiHub
             if (m.Msg == 0x84) { ChromeHitTest(ref m); return; }   // borderless drag / resize
             if (m.Msg == 0xA3) { m.Result = IntPtr.Zero; return; } // WM_NCLBUTTONDBLCLK: no caption double-click maximize, so a quick drag-release-drag keeps working
             if (m.Msg == 0x231)                                     // WM_ENTERSIZEMOVE: drop the shaped-window
-            {                                                       // region and pause the timer so nothing competes
-                if (tick != null) tick.Stop();                      // with the move loop - both made fast drags lag
+            {                                                       // region and pause timers/animation frames so
+                if (tick != null) tick.Stop();                      // nothing competes with the move loop
+                Anim.Suspend();
                 SetWindowRgn(Handle, IntPtr.Zero, false);
             }
             else if (m.Msg == 0x232)                                // WM_EXITSIZEMOVE: put it all back
             {
                 ApplyRoundRegion();
                 if (tick != null) tick.Start();
+                Anim.Resume();
             }
             base.WndProc(ref m);
         }
