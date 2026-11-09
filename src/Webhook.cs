@@ -52,11 +52,11 @@ namespace RobloxMultiHub
         // Returns the message id, or "" when the post failed.
         static async Task<string> PostStatusAsync(string url, Dictionary<string, object> embed, byte[] chart)
         {
-            HttpResponseMessage r = await Http.PostAsync(url.Trim(), StatusForm(embed, chart));
+            HttpResponseMessage r = await Http.PostAsync(url.Trim(), StatusForm(embed, chart, false));
             if ((int)r.StatusCode == 429)
             {
                 await Task.Delay(1500);
-                r = await Http.PostAsync(url.Trim(), StatusForm(embed, chart));
+                r = await Http.PostAsync(url.Trim(), StatusForm(embed, chart, false));
             }
             r.EnsureSuccessStatusCode();
             IDictionary<string, object> msg = Json.Obj(Json.Parse(await r.Content.ReadAsStringAsync()));
@@ -64,11 +64,20 @@ namespace RobloxMultiHub
             return msg != null && msg.TryGetValue("id", out id) && id != null ? id.ToString() : "";
         }
 
-        static MultipartFormDataContent StatusForm(Dictionary<string, object> embed, byte[] chart)
+        static MultipartFormDataContent StatusForm(Dictionary<string, object> embed, byte[] chart, bool forEdit)
         {
             Dictionary<string, object> body = new Dictionary<string, object>();
             body["username"] = "Roblox MultiHub";
             body["embeds"] = new object[] { embed };
+            if (chart != null && chart.Length > 0 && forEdit)
+            {
+                // on EDIT, attachments not listed here are dropped and files[] are APPENDED -
+                // without this the old chart stayed and every refresh piled up a new file
+                Dictionary<string, object> keep = new Dictionary<string, object>();
+                keep["id"] = 0;                     // 0 = the index of files[0] being uploaded now
+                keep["filename"] = "chart.png";
+                body["attachments"] = new object[] { keep };
+            }
             MultipartFormDataContent form = new MultipartFormDataContent();
             form.Add(new StringContent(Json.To(body), Encoding.UTF8), "payload_json");
             if (chart != null && chart.Length > 0)
@@ -108,7 +117,7 @@ namespace RobloxMultiHub
                         // edit the existing status message in place; if it was deleted, send a new one
                         HttpRequestMessage patch = new HttpRequestMessage(new HttpMethod("PATCH"),
                             url.TrimEnd('/') + "/messages/" + id);
-                        patch.Content = StatusForm(embed, chart);
+                        patch.Content = StatusForm(embed, chart, true);
                         HttpResponseMessage r = await Http.SendAsync(patch);
                         if ((int)r.StatusCode != 404)
                         {

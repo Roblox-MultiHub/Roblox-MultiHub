@@ -736,6 +736,7 @@ namespace RobloxMultiHub
                 {
                     UsageMonitor.Update();
                     WebhookStatus.Tick();
+                    Launcher.SweepZombies();
                     UpdateStatusCells();
                     UpdateMemUi();
                     MaxAlts.Tick();

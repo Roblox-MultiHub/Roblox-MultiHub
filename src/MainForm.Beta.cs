@@ -38,8 +38,44 @@ namespace RobloxMultiHub
                 UpdateBetaLive();
             };
 
+            p.Opt("Measures this PC and suggests values for the cap.",
+                "Reads cores, RAM, GPU counters and the clients currently running, then suggests how many Roblox windows this PC can run reliably and what to set 'Max RAM per window' to. 'Use suggestion' fills the box above with the recommended number.",
+                Ui.Btn("Run diagnostics", 150, delegate { BetaDiagnostics(); }, ""),
+                Ui.Btn("Use suggestion", 140, delegate { if (betaSuggestMb > 0) numMaxRam.Value = betaSuggestMb; }, ""));
+
             loadingBeta = false;
             UpdateBetaLive();
+        }
+
+        int betaSuggestMb;
+
+        void BetaDiagnostics()
+        {
+            int load; long total, avail;
+            MemClean.Status(out load, out total, out avail);
+            double totalGb = total / 1073741824.0;
+            double freeGb = avail / 1073741824.0;
+            int cores = Environment.ProcessorCount;
+            int running = UsageMonitor.Count;
+
+            // budget: keep 4 GB for Windows and everything else that runs next to the farm
+            double budgetGb = Math.Max(2.0, totalGb - 4.0);
+            // measured per client when running, else a conservative idle-farm estimate
+            double perClientGb = running > 0 ? Math.Max(0.4, UsageMonitor.TotalRam / 1073741824.0 / running) : 0.75;
+            int byRam = (int)(budgetGb / perClientGb);
+            int byCpu = (int)(cores * 1.5);                 // idle farms use well under a core each
+            int n = Math.Max(1, Math.Min(byRam, byCpu));
+            int suggest = Math.Max(400, Math.Min(1200, (int)(budgetGb * 1024 / n)));
+
+            AddLog("Diagnostics: " + cores + " CPU cores, " + (GpuMeter.Available ? "GPU counters available" : "no GPU counters")
+                + ", RAM " + totalGb.ToString("0.0") + " GB total / " + freeGb.ToString("0.0") + " GB free.");
+            if (running > 0)
+                AddLog("Running now: " + running + " client(s), avg " + (UsageMonitor.TotalCpu / running).ToString("0.0") + "% CPU"
+                    + (GpuMeter.Available ? ", " + (UsageMonitor.TotalGpu / running).ToString("0.0") + "% GPU" : "")
+                    + ", " + (UsageMonitor.TotalRam / running / 1048576) + " MB RAM each.");
+            AddLog("Suggestion: this PC can run about " + n + " account(s) reliably; set Max RAM per window to "
+                + suggest + " MB (currently " + Store.Settings.MaxRamMb + ").");
+            betaSuggestMb = suggest;
         }
 
         void UpdateBetaLive()

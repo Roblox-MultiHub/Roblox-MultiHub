@@ -578,6 +578,48 @@ namespace RobloxMultiHub
         }
 
         // Same encoding as .NET's HttpUtility.UrlEncode (lower-case hex, space = '+'), which Roblox Account Manager uses.
+        // Start time of a process (local time), or DateTime.MinValue when Windows will not tell us.
+        static DateTime ProcessStartTime(int pid)
+        {
+            IntPtr h = Native.OpenProcess(0x1000, false, pid);   // PROCESS_QUERY_LIMITED_INFORMATION
+            if (h == IntPtr.Zero) return DateTime.MinValue;
+            try
+            {
+                Native.FILETIME c, e, k, u;
+                if (!Native.GetProcessTimes(h, out c, out e, out k, out u)) return DateTime.MinValue;
+                return DateTime.FromFileTime(((long)c.High << 32) | (long)c.Low);
+            }
+            finally { Native.CloseHandle(h); }
+        }
+
+        static bool HasWindow(int pid)
+        {
+            foreach (WinInfo w in WindowLayout.FindRobloxWindows())
+                if (w.Pid == pid && w.HasWindow) return true;
+            return false;
+        }
+
+        static int sweepAt;
+
+        // Roblox leaves windowless background processes behind. They show up as "no window yet"
+        // rows, and the next launch can mistake one for its client (that is how an account ends
+        // up with a nameless window plus a second real client). Anything untracked and windowless
+        // for over two minutes is closed.
+        public static void SweepZombies()
+        {
+            if (Environment.TickCount < sweepAt) return;
+            sweepAt = Environment.TickCount + 15000;
+            foreach (int pid in RobloxPids())
+            {
+                if (FindInstance(pid) != null) continue;              // ours: the watcher owns it
+                if (HasWindow(pid)) continue;
+                DateTime st = ProcessStartTime(pid);
+                if (st == DateTime.MinValue || (DateTime.Now - st).TotalSeconds < 120) continue;
+                KillPid(pid);
+                Log.Write("Closed a leftover background Roblox process (PID " + pid + ", no window for over 2 minutes).");
+            }
+        }
+
         static string UrlEncode(string s)
         {
             StringBuilder sb = new StringBuilder();
@@ -694,6 +736,10 @@ namespace RobloxMultiHub
 
                 // Poll for the client (UI thread - Roblox is STARTED on a background thread above, so the pump
                 // isn't blocked; and the shared Instances list is only touched on the UI thread).
+                // A candidate must have a WINDOW before it is believed: Roblox keeps windowless
+                // background processes around, and adopting one as "the client" leaves a window
+                // that never gets its name, plus a second real client on the next launch.
+                DateTime minStart = DateTime.Now.AddSeconds(-2);   // our client cannot be older than the spawn
                 int pid = 0;
                 bool already = false;
                 for (int i = 0; i < 120 && pid == 0; i++)
@@ -703,15 +749,19 @@ namespace RobloxMultiHub
                     // Best signal: the process whose command line carries this account's tracker id. This finds
                     // the right client whether Roblox spawned a new process or REUSED a background one.
                     int tp = FindByTracker(a.TrackerId);
-                    if (tp != 0)
+                    if (tp != 0 && HasWindow(tp))
                     {
                         Instance ex = FindInstance(tp);
                         if (ex == null) { pid = tp; break; }
                         if (ex.Account == a) { pid = tp; already = true; break; }
                     }
-                    // Fallback 1: a brand-new process.
+                    // Fallback 1: a brand-new process (younger than this launch, with a window).
                     foreach (int p in RobloxPids())
-                        if (!before.Contains(p) && FindInstance(p) == null) { pid = p; break; }
+                        if (!before.Contains(p) && FindInstance(p) == null && HasWindow(p) && ProcessStartTime(p) >= minStart)
+                        {
+                            pid = p;
+                            break;
+                        }
                     // Fallback 2: an untracked process that just gained a window (reuse, when the tracker can't be read).
                     if (pid == 0)
                         foreach (WinInfo w in WindowLayout.FindRobloxWindows())
