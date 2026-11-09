@@ -44,10 +44,11 @@ namespace RobloxMultiHub
         static readonly System.Collections.Generic.HashSet<RoundButton> animating = new System.Collections.Generic.HashSet<RoundButton>();
         static bool frameHooked;
         int animUntil;                          // safety: no animation legitimately runs this long
-        Point rippleAt;                      // click ripple (material-style), expanding fading disc
+        Point rippleAt;                      // click ripple origin (the press point)
+        float rippleR;                       // press point -> farthest corner, the radius the circle reaches
         int rippleT0;
         bool rippling;
-        const int RippleMs = Anim.Ms;        // same clock and duration as everything else a click triggers
+        const int RippleMs = 400;            // the ripple law: r * sqrt(t) grows, 0.15*(1-t)^2 fades, 0.4s
 
         public RoundButton()
         {
@@ -102,6 +103,10 @@ namespace RobloxMultiHub
             {
                 rippleAt = e.Location;
                 growAt = e.Location;
+                // farthest corner from the press point - the radius the circle has at t = 1
+                float dx = Math.Max(e.X, Width - e.X);
+                float dy = Math.Max(e.Y, Height - e.Y);
+                rippleR = (float)Math.Sqrt(dx * dx + dy * dy);
                 rippleT0 = Environment.TickCount;
                 rippling = true;
             }
@@ -214,15 +219,17 @@ namespace RobloxMultiHub
                     if (rt >= 1f) rippling = false;
                     else
                     {
-                        float ease = 1f - (1f - rt) * (1f - rt) * (1f - rt);
-                        int rr = Math.Max(2, (int)(Math.Sqrt(Width * (double)Width + Height * (double)Height) * ease));
-                        // alpha eased too - the hard linear cut at the end was what looked choppy
-                        using (SolidBrush rb = new SolidBrush(Color.FromArgb((int)(70 * Math.Pow(1f - rt, 1.7)), Color.White)))
-                        {
-                            g.SetClip(path);
-                            g.FillEllipse(rb, rippleAt.X - rr, rippleAt.Y - rr, rr * 2, rr * 2);
-                            g.ResetClip();
-                        }
+                        // the law: radius grows as r*sqrt(t) (fast burst, gentle landing) and the
+                        // alpha fades as 0.15*(1-t)^2 from the press point to the farthest corner
+                        float rr = rippleR * (float)Math.Sqrt(rt);
+                        int alpha = (int)(255 * 0.15f * (1f - rt) * (1f - rt));
+                        if (alpha > 0)
+                            using (SolidBrush rb = new SolidBrush(Color.FromArgb(alpha, Color.White)))
+                            {
+                                g.SetClip(path);
+                                g.FillEllipse(rb, rippleAt.X - rr, rippleAt.Y - rr, rr * 2, rr * 2);
+                                g.ResetClip();
+                            }
                     }
                 }
                 if (Diff(curBorder, curFill) > 6)
