@@ -38,7 +38,7 @@ namespace RobloxMultiHub
         Point rippleAt;                      // click ripple (material-style), expanding fading disc
         int rippleT0;
         bool rippling;
-        const int RippleMs = 520;
+        const int RippleMs = 460;
 
         public RoundButton()
         {
@@ -135,21 +135,15 @@ namespace RobloxMultiHub
                     if (rt >= 1f) rippling = false;
                     else
                     {
-                        // watery: a soft filled disc that blooms quickly (sqrt ease) plus a trailing
-                        // ring (quad ease); both alpha curves fall off faster than the radius grows
-                        double diag = Math.Sqrt(Width * (double)Width + Height * (double)Height);
-                        float ed = (float)Math.Sqrt(rt);
-                        float eg = 1f - (1f - rt) * (1f - rt);
-                        int rd = Math.Max(2, (int)(diag * ed));
-                        int rg = Math.Max(2, (int)(diag * eg));
-                        int aDisc = (int)(44 * Math.Pow(1f - rt, 1.5));
-                        int aRing = (int)(96 * Math.Pow(1f - rt, 2.2));
-                        g.SetClip(path);
-                        using (SolidBrush rb = new SolidBrush(Color.FromArgb(aDisc, Color.White)))
-                            g.FillEllipse(rb, rippleAt.X - rd, rippleAt.Y - rd, rd * 2, rd * 2);
-                        using (Pen rp = new Pen(Color.FromArgb(aRing, Color.White), 2.2f))
-                            g.DrawEllipse(rp, rippleAt.X - rg, rippleAt.Y - rg, rg * 2, rg * 2);
-                        g.ResetClip();
+                        float ease = 1f - (1f - rt) * (1f - rt) * (1f - rt);
+                        int rr = Math.Max(2, (int)(Math.Sqrt(Width * (double)Width + Height * (double)Height) * ease));
+                        // alpha eased too - the hard linear cut at the end was what looked choppy
+                        using (SolidBrush rb = new SolidBrush(Color.FromArgb((int)(70 * Math.Pow(1f - rt, 1.7)), Color.White)))
+                        {
+                            g.SetClip(path);
+                            g.FillEllipse(rb, rippleAt.X - rr, rippleAt.Y - rr, rr * 2, rr * 2);
+                            g.ResetClip();
+                        }
                     }
                 }
                 if (Diff(curBorder, curFill) > 6)

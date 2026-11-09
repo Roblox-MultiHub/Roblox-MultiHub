@@ -163,15 +163,32 @@ namespace RobloxMultiHub
             Ui.Tips.SetToolTip(lblMulti, "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.");
             topBar.Controls.Add(lblMulti);
 
-            // real clicks over child controls never reach the form's hit-test, so the header itself
-            // starts the drag when the mouse goes down on it or on the (non-interactive) labels
+            // real clicks over child controls never reach the form's hit-test, so every header control
+            // starts the drag itself. Exceptions: the Discord icon and the window buttons keep their
+            // clicks; the multi-instance label only drags once the mouse actually MOVES, so a plain
+            // click still opens Settings.
             MouseEventHandler dragDown = delegate(object s, MouseEventArgs me)
             {
                 if (me.Button == MouseButtons.Left) Native.DragWindow((Control)s);
             };
-            topBar.MouseDown += dragDown;
-            title.MouseDown += dragDown;
-            sub.MouseDown += dragDown;
+            HookHeaderDrag(topBar, dragDown, disc, btnWinMin, btnWinClose, lblMulti);
+            Point multiDown = new Point(int.MinValue, int.MinValue);
+            bool multiDragging = false;
+            lblMulti.MouseDown += delegate(object s, MouseEventArgs me)
+            {
+                multiDown = me.Location;
+                multiDragging = false;
+            };
+            lblMulti.MouseMove += delegate(object s, MouseEventArgs me)
+            {
+                if (multiDragging || me.Button != MouseButtons.Left || multiDown.X == int.MinValue) return;
+                if (Math.Abs(me.X - multiDown.X) > 4 || Math.Abs(me.Y - multiDown.Y) > 4)
+                {
+                    multiDragging = true;
+                    Native.DragWindow(lblMulti);
+                }
+            };
+            lblMulti.MouseUp += delegate { multiDown = new Point(int.MinValue, int.MinValue); multiDragging = false; };
             root.RowStyles[0].Height = Math.Max(68, statRun.NeededHeight() + 14);
             topBar.Resize += delegate
             {
@@ -203,8 +220,8 @@ namespace RobloxMultiHub
             Ui.Tips.SetToolTip(btnWinClose, "Close Roblox MultiHub");
             topBar.Controls.Add(btnWinClose);
 
-            // header controls that must keep their own clicks (everything but the title labels)
-            headerInteractive = new Control[] { statRun, statCpu, statRam, lblMulti, disc, btnWinMin, btnWinClose };
+            // header controls that must keep their own clicks
+            headerInteractive = new Control[] { disc, btnWinMin, btnWinClose };
             root.Controls.Add(topBar, 0, 0);
 
             // ---- body: sidebar | (accounts | page), with a draggable splitter ----
@@ -307,6 +324,14 @@ namespace RobloxMultiHub
             logOpenPx = Math.Max(60, (int)(LogOpenH * sy));
             if (rightTable != null && !logOpen)
                 rightTable.RowStyles[1] = new RowStyle(SizeType.Absolute, logClosedPx);
+        }
+
+        // attaches the drag handler to a header control and all its children, except the listed ones
+        void HookHeaderDrag(Control c, MouseEventHandler handler, params Control[] skip)
+        {
+            foreach (Control x in skip) if (x == c) return;
+            c.MouseDown += handler;
+            foreach (Control ch in c.Controls) HookHeaderDrag(ch, handler, skip);
         }
 
         void BuildSidebar(TableLayoutPanel body)
