@@ -301,8 +301,8 @@ namespace RobloxMultiHub
             logHeader = Ui.Lbl("▸  Activity log", "muted");
             logHeader.AutoSize = false;
             logHeader.Dock = DockStyle.Top;
-            logHeader.Height = 24;                       // fills the collapsed band minus its padding,
-            logHeader.TextAlign = ContentAlignment.MiddleLeft;   // text centered on the strip's middle
+            logHeader.Height = 30;                       // 2px top padding + 30 of the 34px band:
+            logHeader.TextAlign = ContentAlignment.MiddleLeft;   // text center lands on the band center
             logHeader.Cursor = Cursors.Hand;
             logHeader.Click += delegate { ToggleLog(); };
             Ui.Tips.SetToolTip(logHeader, "Everything the app does is written here. Click to open or close it.");
@@ -960,7 +960,7 @@ namespace RobloxMultiHub
             filt.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             filt.WrapContents = true;
             filt.MinimumSize = new Size(0, 44);            // same band height as the toolbar above
-            filt.Margin = Padding.Empty;
+            filt.Margin = new Padding(0, 6, 0, 0);       // breathing room below the toolbar band
             filt.Tag = "card";
             // every control centered in the 44px band: 28px inputs -> top 8, 30px buttons -> top 7,
             // 13px labels -> top 15 so their text baseline sits on the input's middle
@@ -991,7 +991,7 @@ namespace RobloxMultiHub
             // ---- the two views share one cell ----
             Panel viewHost = new Panel();
             viewHost.Dock = DockStyle.Fill;
-            viewHost.Margin = Padding.Empty;
+            viewHost.Margin = new Padding(0, 6, 0, 0);   // breathing room below the filter band
             viewHost.Tag = "card";
 
             lv = new BufferedListView();
