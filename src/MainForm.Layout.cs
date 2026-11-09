@@ -718,6 +718,8 @@ namespace RobloxMultiHub
         {
             base.OnHandleCreated(e);
             RegisterHotkeys();
+            int round = 2;                              // DWMWCP_ROUND (Windows 11; older Windows ignores it)
+            DwmSetWindowAttribute(Handle, 33, ref round, 4);   // DWMWA_WINDOW_CORNER_PREFERENCE
         }
 
         protected override void WndProc(ref Message m)
@@ -729,7 +731,11 @@ namespace RobloxMultiHub
                 else if (id == HK_PREV) FocusStep(-1);
                 else if (id == HK_NEXT) FocusStep(1);
             }
+            if (m.Msg == 0x84) { ChromeHitTest(ref m); return; }   // borderless drag / resize
             base.WndProc(ref m);
         }
+
+        [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+        static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
     }
 }

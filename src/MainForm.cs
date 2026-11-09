@@ -26,6 +26,14 @@ namespace RobloxMultiHub
         TableLayoutPanel rightTable;
         Label logHeader;
         bool logOpen;
+        RoundPanel topBarRef;
+        Label topTitleRef, topSubRef;
+        RoundButton btnWinMin, btnWinClose;
+        System.Windows.Forms.Timer logAnim;
+        float logHFrom, logHTo;
+        int logT0;
+        const int LogAnimMs = 220;
+        const float LogClosedH = 34F, LogOpenH = 190F;
         string currentPage = "";
         readonly Dictionary<string, Panel> pages = new Dictionary<string, Panel>();
         readonly Dictionary<string, RoundButton> navButtons = new Dictionary<string, RoundButton>();
@@ -67,6 +75,7 @@ namespace RobloxMultiHub
             StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(Math.Max(1180, Store.Settings.WinW), Math.Max(660, Store.Settings.WinH));
             MinimumSize = new Size(1180, 660);
+            FormBorderStyle = FormBorderStyle.None;          // custom chrome: the top bar is the title bar
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch (Exception) { }
 
             BuildShell();
@@ -116,12 +125,15 @@ namespace RobloxMultiHub
             topBar.Dock = DockStyle.Fill;
             topBar.Tag = "card";
             topBar.Margin = Padding.Empty;
+            topBarRef = topBar;
             Label title = Ui.Lbl("Roblox MultiHub", "title");
             title.Location = new Point(18, 7);
             topBar.Controls.Add(title);
+            topTitleRef = title;
             Label sub = Ui.Lbl(Lang.T("Multi-account launcher"), "muted");
             sub.Location = new Point(21, 43);
             topBar.Controls.Add(sub);
+            topSubRef = sub;
             DiscordIcon disc = new DiscordIcon();
             disc.Location = new Point(sub.Right + 10, 41);
             disc.Click += delegate { OpenLink(DiscordUrl, "Discord"); };
@@ -159,8 +171,20 @@ namespace RobloxMultiHub
                     sb.Location = new Point(x, top);
                     x = sb.Right + 10;
                 }
-                lblMulti.Location = new Point(topBar.Width - lblMulti.Width - 18, 12);
+                lblMulti.Location = new Point(topBar.Width - lblMulti.Width - 118, 12);
+                btnWinMin.Location = new Point(topBar.Width - 74, 10);
+                btnWinClose.Location = new Point(topBar.Width - 38, 10);
             };
+
+            // window buttons (borderless form): minimize + close, laid out by topBar.Resize above
+            btnWinMin = Ui.Btn("\u2014", 30, delegate { WindowState = FormWindowState.Minimized; }, "nav");
+            btnWinMin.Height = 30;
+            Ui.Tips.SetToolTip(btnWinMin, "Minimize");
+            topBar.Controls.Add(btnWinMin);
+            btnWinClose = Ui.Btn("\u2715", 30, delegate { Close(); }, "danger");
+            btnWinClose.Height = 30;
+            Ui.Tips.SetToolTip(btnWinClose, "Close Roblox MultiHub");
+            topBar.Controls.Add(btnWinClose);
             root.Controls.Add(topBar, 0, 0);
 
             // ---- body: sidebar | (accounts | page), with a draggable splitter ----
@@ -313,9 +337,78 @@ namespace RobloxMultiHub
         void ToggleLog()
         {
             logOpen = !logOpen;
-            logBox.Visible = logOpen;
+            logBox.Visible = true;                     // stays visible while animating; clipped by the shrinking row
             logHeader.Text = (logOpen ? "▾" : "▸") + "  Activity log";
-            if (rightTable != null) rightTable.RowStyles[1].Height = logOpen ? 190F : 34F;
+            if (rightTable == null) return;
+            logHFrom = rightTable.RowStyles[1].Height;
+            logHTo = logOpen ? LogOpenH : LogClosedH;
+            if (logHFrom == logHTo) { logBox.Visible = logOpen; return; }
+            if (logAnim == null)
+            {
+                logAnim = new System.Windows.Forms.Timer();
+                logAnim.Interval = 15;
+                logAnim.Tick += delegate { LogAnimTick(); };
+            }
+            logT0 = Environment.TickCount;
+            logAnim.Start();
+        }
+
+        // One frame of the log collapse/expand: ease-out cubic over ~220 ms. New RowStyle objects each
+        // frame (assigning .Height alone never re-runs the table layout - see FitAccountBars).
+        void LogAnimTick()
+        {
+            float t = Math.Min(1f, (Environment.TickCount - logT0) / (float)LogAnimMs);
+            float e = 1f - (1f - t) * (1f - t) * (1f - t);
+            rightTable.RowStyles[1] = new RowStyle(SizeType.Absolute, logHFrom + (logHTo - logHFrom) * e);
+            if (t >= 1f)
+            {
+                logAnim.Stop();
+                if (!logOpen) logBox.Visible = false;
+            }
+        }
+
+        // ---- custom chrome for the borderless window ----
+
+        // subtle drop shadow behind the borderless window
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                CreateParams cp = base.CreateParams;
+                cp.ClassStyle |= 0x20000;               // CS_DROPSHADOW
+                return cp;
+            }
+        }
+
+        // Dragging = top bar (except its interactive controls); resizing = a thin band at every edge.
+        // Called from the shared WndProc in MainForm.Layout.cs after the hotkey handling.
+        void ChromeHitTest(ref Message m)
+        {
+            base.WndProc(ref m);
+            if ((int)m.Result != 1) return;             // HTCLIENT
+            long lp = m.LParam.ToInt64();
+            Point screen = new Point((short)(lp & 0xFFFF), (short)((lp >> 16) & 0xFFFF));
+            Point c = PointToClient(screen);
+            const int edge = 6, corner = 14;
+            bool l = c.X < edge, r = c.X >= ClientSize.Width - edge, t = c.Y < edge, b = c.Y >= ClientSize.Height - edge;
+            if (t && l) { m.Result = (IntPtr)13; return; }        // HTTOPLEFT
+            if (t && r) { m.Result = (IntPtr)14; return; }        // HTTOPRIGHT
+            if (b && l) { m.Result = (IntPtr)16; return; }        // HTBOTTOMLEFT
+            if (b && r) { m.Result = (IntPtr)17; return; }        // HTBOTTOMRIGHT
+            if (l) { m.Result = (IntPtr)10; return; }             // HTLEFT
+            if (r) { m.Result = (IntPtr)11; return; }             // HTRIGHT
+            if (t) { m.Result = (IntPtr)12; return; }             // HTTOP
+            if (b) { m.Result = (IntPtr)15; return; }             // HTBOTTOM
+            if (c.Y < corner && topBarRef != null)
+            {
+                Point inBar = topBarRef.PointToClient(screen);
+                if (inBar.X >= 0 && inBar.Y >= 0 && inBar.X < topBarRef.Width && inBar.Y < topBarRef.Height)
+                {
+                    Control hit = topBarRef.GetChildAtPoint(inBar);
+                    if (hit == null || hit == topTitleRef || hit == topSubRef)
+                        m.Result = (IntPtr)2;                      // HTCAPTION - drag / snap / double-click
+                }
+            }
         }
 
         Panel NewPage(string key)
