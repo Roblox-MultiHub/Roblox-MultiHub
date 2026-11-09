@@ -9,6 +9,10 @@ namespace RobloxMultiHub
     // same tag cancels the old job, and the caller decides what "from current state" means.
     public static class Anim
     {
+        // one clock for everything the user triggers: page slides, the nav indicator, ripples.
+        // Same duration + same ease everywhere is what makes a sequence feel synchronized.
+        public const int Ms = 220;
+
         class Job
         {
             public object Tag;

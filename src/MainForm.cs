@@ -30,6 +30,8 @@ namespace RobloxMultiHub
         RoundPanel topBarRef;
         Label topTitleRef, topSubRef;
         Control[] headerInteractive = new Control[0];
+        RoundPanel navIndicator;                  // slides to the active nav button
+        RoundPanel navSideRef;
         RoundButton btnWinMin, btnWinClose;
         System.Windows.Forms.Timer logAnim;
         float logHFrom, logHTo;
@@ -369,6 +371,17 @@ namespace RobloxMultiHub
 
             side.Controls.Add(bottom);
             side.Controls.Add(top);
+
+            // the active-tab highlight: one accent bar that SLIDES to the clicked tab (one clock
+            // with the page slide and the ripple). Sits on top, at the buttons' left edge.
+            navSideRef = side;
+            navIndicator = new RoundPanel();
+            navIndicator.Radius = 3;
+            navIndicator.BackColor = Theme.Accent;
+            navIndicator.Size = new Size(5, 26);
+            navIndicator.Visible = false;
+            side.Controls.Add(navIndicator);
+            navIndicator.BringToFront();
         }
 
         FlowLayoutPanel NewNavFlow()
@@ -443,14 +456,22 @@ namespace RobloxMultiHub
         }
 
         // Rounded window shape on every Windows version (DWM corner preference is 11+ only).
-        protected override void OnResize(EventArgs e)
+        // DROPPED while the window is being dragged: a shaped window makes DWM re-composite the
+        // region on every move, which is what made the window trail the cursor on fast drags.
+        // (MainForm.Layout.cs removes the region on WM_ENTERSIZEMOVE and reapplies it after.)
+        void ApplyRoundRegion()
         {
-            base.OnResize(e);
             if (Width > 8 && Height > 8)
             {
                 IntPtr rgn = CreateRoundRectRgn(0, 0, Width + 1, Height + 1, 16, 16);
                 SetWindowRgn(Handle, rgn, true);
             }
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            ApplyRoundRegion();
         }
 
         [DllImport("gdi32.dll")]
@@ -592,7 +613,7 @@ namespace RobloxMultiHub
             int travel = 46;
             Util.SetBuf(toP);
             Anim.Cancel("page");
-            Anim.Go("page", 220, delegate(float e)
+            Anim.Go("page", Anim.Ms, delegate(float e)
             {
                 toP.Location = new Point(home.X + (int)((1f - e) * travel * dir), home.Y);
             }, delegate
@@ -615,11 +636,29 @@ namespace RobloxMultiHub
 
         void StyleNav()
         {
+            RoundButton act = null;
             foreach (KeyValuePair<string, RoundButton> kv in navButtons)
             {
                 kv.Value.Active = kv.Key == currentPage;
                 kv.Value.Invalidate();
+                if (kv.Key == currentPage) act = kv.Value;
             }
+            if (act == null || navIndicator == null || navSideRef == null) return;
+            // where the bar has to go, in the sidebar's own coordinates (works across both flows)
+            Point loc = navSideRef.PointToClient(act.Parent.PointToScreen(act.Location));
+            int ty = loc.Y + (act.Height - navIndicator.Height) / 2;
+            if (!navIndicator.Visible)
+            {
+                navIndicator.Location = new Point(3, ty);
+                navIndicator.Visible = true;
+                return;
+            }
+            int y0 = navIndicator.Location.Y;
+            if (y0 == ty) return;
+            Anim.Go("navind", Anim.Ms, delegate(float e)
+            {
+                navIndicator.Location = new Point(3, y0 + (int)((ty - y0) * e));
+            }, null);
         }
 
         void StyleViewButtons()

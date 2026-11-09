@@ -38,7 +38,7 @@ namespace RobloxMultiHub
         Point rippleAt;                      // click ripple (material-style), expanding fading disc
         int rippleT0;
         bool rippling;
-        const int RippleMs = 460;
+        const int RippleMs = Anim.Ms;                // same clock as the page slide and nav indicator
 
         public RoundButton()
         {
@@ -106,8 +106,10 @@ namespace RobloxMultiHub
             }
             else if (Kind == "nav")
             {
-                if (Active) { fill = Theme.Accent; text = Color.White; }
-                else { fill = hover ? Theme.Panel2 : Theme.Panel; text = hover ? Theme.Text : Theme.Muted; }
+                // the moving indicator bar on the sidebar is the active highlight now; the button
+                // itself only switches between muted and bright text so nothing "jumps"
+                fill = hover ? Theme.Panel2 : Theme.Panel;
+                text = (Active || hover) ? Theme.Text : Theme.Muted;
                 border = fill;
             }
             else if (hover) fill = Tint.Shift(fill, Theme.Dark ? 14 : -10);
