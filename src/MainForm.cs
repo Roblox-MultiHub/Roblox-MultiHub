@@ -32,6 +32,7 @@ namespace RobloxMultiHub
         Control[] headerInteractive = new Control[0];
         RoundPanel navIndicator;                  // slides to the active nav button
         RoundPanel navSideRef;
+        Label navLabel;                           // the active tab's text, riding on the pill
         RoundButton btnWinMin, btnWinClose;
         System.Windows.Forms.Timer logAnim;
         float logHFrom, logHTo;
@@ -329,6 +330,18 @@ namespace RobloxMultiHub
         }
 
         // attaches the drag handler to a header control and all its children, except the listed ones
+        // The sliding nav pill: fully transparent to the mouse (HTTRANSPARENT), so the buttons
+        // underneath stay clickable while the pill and its label ride on top of them.
+        class NavPill : RoundPanel
+        {
+            protected override void WndProc(ref Message m)
+            {
+                const int WM_NCHITTEST = 0x84;
+                if (m.Msg == WM_NCHITTEST) { m.Result = (IntPtr)(-1); return; }   // HTTRANSPARENT
+                base.WndProc(ref m);
+            }
+        }
+
         void HookHeaderDrag(Control c, MouseEventHandler handler, params Control[] skip)
         {
             foreach (Control x in skip) if (x == c) return;
@@ -373,16 +386,25 @@ namespace RobloxMultiHub
             side.Controls.Add(top);
 
             // the active-tab highlight: one accent pill the size of a nav button that SLIDES to the
-            // clicked tab (one clock with the page slide and the ripple). Sits BEHIND the buttons,
-            // so it looks like the button's own highlight travelling.
+            // clicked tab (one clock with the page slide and the ripple). It sits ON TOP of the
+            // buttons (Enabled=false, so clicks fall through) and carries the tab's text with it;
+            // the button underneath paints nothing while active.
             navSideRef = side;
-            navIndicator = new RoundPanel();
+            navIndicator = new NavPill();
             navIndicator.Radius = 10;
             navIndicator.BackColor = Theme.Accent;
             navIndicator.Size = new Size(178, 40);
             navIndicator.Visible = false;
+            navLabel = new Label();
+            navLabel.Dock = DockStyle.Fill;
+            navLabel.BackColor = Color.Transparent;
+            navLabel.ForeColor = Color.White;
+            navLabel.Font = Theme.Base;
+            navLabel.TextAlign = ContentAlignment.MiddleLeft;
+            navLabel.Padding = new Padding(12, 0, 0, 0);
+            navIndicator.Controls.Add(navLabel);
             side.Controls.Add(navIndicator);
-            navIndicator.SendToBack();
+            navIndicator.BringToFront();
         }
 
         FlowLayoutPanel NewNavFlow()
@@ -648,6 +670,8 @@ namespace RobloxMultiHub
             // where the pill has to go, in the sidebar's own coordinates (works across both flows)
             Point loc = navSideRef.PointToClient(act.Parent.PointToScreen(act.Location));
             int tx = loc.X, ty = loc.Y;
+            if (navLabel != null && navLabel.Text != act.Text) navLabel.Text = act.Text;
+            navIndicator.Size = act.Size;
             if (!navIndicator.Visible)
             {
                 navIndicator.Location = new Point(tx, ty);
@@ -656,7 +680,6 @@ namespace RobloxMultiHub
             }
             int x0 = navIndicator.Location.X, y0 = navIndicator.Location.Y;
             if (x0 == tx && y0 == ty) return;
-            navIndicator.Size = act.Size;
             Anim.Go("navind", Anim.Ms, delegate(float e)
             {
                 navIndicator.Location = new Point(x0 + (int)((tx - x0) * e), y0 + (int)((ty - y0) * e));
