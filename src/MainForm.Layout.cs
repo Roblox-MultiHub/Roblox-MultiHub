@@ -733,6 +733,7 @@ namespace RobloxMultiHub
                 else if (id == HK_NEXT) FocusStep(1);
             }
             if (m.Msg == 0x84) { ChromeHitTest(ref m); return; }   // borderless drag / resize
+            if (m.Msg == 0xA3) { m.Result = IntPtr.Zero; return; } // WM_NCLBUTTONDBLCLK: no caption double-click maximize, so a quick drag-release-drag keeps working
             base.WndProc(ref m);
         }
 

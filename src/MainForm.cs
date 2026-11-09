@@ -209,7 +209,7 @@ namespace RobloxMultiHub
             body.Dock = DockStyle.Fill;
             body.ColumnCount = 2;
             body.RowCount = 1;
-            body.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 202F));   // sidebar
+            body.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 208F));   // sidebar (178 button + padding + slack)
             body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             body.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             body.Padding = new Padding(0, 10, 10, 10);   // gap to the top bar; outer spacing comes from root.Padding
@@ -298,7 +298,7 @@ namespace RobloxMultiHub
         {
             float sx = AutoScaleFactor.Width, sy = AutoScaleFactor.Height;
             if (root != null) root.RowStyles[0] = new RowStyle(SizeType.Absolute, 68F * sy);
-            if (bodyTable != null) bodyTable.ColumnStyles[0] = new ColumnStyle(SizeType.Absolute, 202F * sx);
+            if (bodyTable != null) bodyTable.ColumnStyles[0] = new ColumnStyle(SizeType.Absolute, 208F * sx);
             logClosedPx = Math.Max(34, (int)(LogClosedH * sy));
             logOpenPx = Math.Max(60, (int)(LogOpenH * sy));
             if (rightTable != null && !logOpen)
@@ -311,7 +311,7 @@ namespace RobloxMultiHub
             side.Dock = DockStyle.Fill;
             side.Tag = "card";
             side.Padding = new Padding(11, 12, 11, 12);
-            side.Margin = new Padding(0, 0, 10, 0);
+            side.Margin = Padding.Empty;            // spacing to the accounts panel comes from body.Padding
             body.Controls.Add(side, 0, 0);
 
             // bottom group first, so Dock=Bottom keeps it pinned under the top group

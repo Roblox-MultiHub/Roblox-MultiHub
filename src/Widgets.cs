@@ -35,6 +35,10 @@ namespace RobloxMultiHub
         Color curFill, curText, curBorder;   // smoothly animated toward their target each frame
         bool colorsInit;
         System.Windows.Forms.Timer anim;
+        Point rippleAt;                      // click ripple (material-style), expanding fading disc
+        int rippleT0;
+        bool rippling;
+        const int RippleMs = 420;
 
         public RoundButton()
         {
@@ -54,7 +58,18 @@ namespace RobloxMultiHub
 
         protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
         protected override void OnMouseLeave(EventArgs e) { hover = false; pressed = false; Invalidate(); base.OnMouseLeave(e); }
-        protected override void OnMouseDown(MouseEventArgs e) { pressed = true; Invalidate(); base.OnMouseDown(e); }
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            pressed = true;
+            if (e.Button == MouseButtons.Left && Store.Settings.Animations)
+            {
+                rippleAt = e.Location;
+                rippleT0 = Environment.TickCount;
+                rippling = true;
+            }
+            Invalidate();
+            base.OnMouseDown(e);
+        }
         protected override void OnMouseUp(MouseEventArgs e) { pressed = false; Invalidate(); base.OnMouseUp(e); }
         protected override void OnEnabledChanged(EventArgs e) { Invalidate(); base.OnEnabledChanged(e); }
         protected override void OnTextChanged(EventArgs e) { Invalidate(); base.OnTextChanged(e); }
@@ -114,6 +129,22 @@ namespace RobloxMultiHub
             using (GraphicsPath path = Shapes.Round(r, Math.Min(10, Height / 2)))
             {
                 using (SolidBrush b = new SolidBrush(drawFill)) g.FillPath(b, path);
+                if (rippling)
+                {
+                    float rt = (Environment.TickCount - rippleT0) / (float)RippleMs;
+                    if (rt >= 1f) rippling = false;
+                    else
+                    {
+                        float ease = 1f - (1f - rt) * (1f - rt) * (1f - rt);
+                        int rr = Math.Max(2, (int)(Math.Sqrt(Width * (double)Width + Height * (double)Height) * ease));
+                        using (SolidBrush rb = new SolidBrush(Color.FromArgb((int)(70 * (1f - rt)), Color.White)))
+                        {
+                            g.SetClip(path);
+                            g.FillEllipse(rb, rippleAt.X - rr, rippleAt.Y - rr, rr * 2, rr * 2);
+                            g.ResetClip();
+                        }
+                    }
+                }
                 if (Diff(curBorder, curFill) > 6)
                     using (Pen pen = new Pen(drawBorder)) g.DrawPath(pen, path);
             }
@@ -123,8 +154,8 @@ namespace RobloxMultiHub
             else flags |= TextFormatFlags.HorizontalCenter;
             TextRenderer.DrawText(g, Text, Font, tr, Fade(curText, TextOpacity * Opacity), flags);
 
-            // keep animating until the colours have settled, then stop the timer
-            if (Diff(curFill, fill) + Diff(curText, text) + Diff(curBorder, border) > 4) RunAnim();
+            // keep animating until the colours have settled and the ripple is done, then stop the timer
+            if (rippling || Diff(curFill, fill) + Diff(curText, text) + Diff(curBorder, border) > 4) RunAnim();
             else if (anim != null) anim.Stop();
         }
 
