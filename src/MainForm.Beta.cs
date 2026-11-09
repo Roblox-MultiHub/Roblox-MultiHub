@@ -60,12 +60,23 @@ namespace RobloxMultiHub
 
             // budget: keep 4 GB for Windows and everything else that runs next to the farm
             double budgetGb = Math.Max(2.0, totalGb - 4.0);
-            // measured per client when running, else a conservative idle-farm estimate
-            double perClientGb = running > 0 ? Math.Max(0.4, UsageMonitor.TotalRam / 1073741824.0 / running) : 0.75;
+            double perClientGb = Math.Max(0.4, running > 0 ? UsageMonitor.TotalRam / 1073741824.0 / running : 0.75);
             int byRam = (int)(budgetGb / perClientGb);
             int byCpu = (int)(cores * 1.5);                 // idle farms use well under a core each
             int n = Math.Max(1, Math.Min(byRam, byCpu));
-            int suggest = Math.Max(400, Math.Min(1200, (int)(budgetGb * 1024 / n)));
+
+            // the cap should be the LOWEST reliable number, not a budget share: idle AFK clients
+            // settle around 450 MB under a cap, so that is the baseline. If clients are running
+            // with a cap already holding them, the measured average IS the floor - suggest one
+            // step below it, so every run of the diagnostics ratchets the number down until the
+            // user sees a stutter and steps back up.
+            int suggest;
+            int cur = Store.Settings.MaxRamMb;
+            int measured = running > 0 ? (int)(UsageMonitor.TotalRam / running / 1048576) : 0;
+            if (running > 0 && cur > 0 && measured <= cur + 30)
+                suggest = Math.Max(350, Math.Min(cur, measured) - 50);
+            else
+                suggest = 450;
 
             AddLog("Diagnostics: " + cores + " CPU cores, " + (GpuMeter.Available ? "GPU counters available" : "no GPU counters")
                 + ", RAM " + totalGb.ToString("0.0") + " GB total / " + freeGb.ToString("0.0") + " GB free.");
