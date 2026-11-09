@@ -174,9 +174,9 @@ namespace RobloxMultiHub
                     sb.Location = new Point(x, top);
                     x = sb.Right + 10;
                 }
-                lblMulti.Location = new Point(topBar.Width - lblMulti.Width - 118, 12);
-                btnWinMin.Location = new Point(topBar.Width - 74, 10);
-                btnWinClose.Location = new Point(topBar.Width - 38, 10);
+                lblMulti.Location = new Point(topBar.Width - lblMulti.Width - 130, 12);
+                btnWinMin.Location = new Point(topBar.Width - 80, 10);
+                btnWinClose.Location = new Point(topBar.Width - 46, 10);   // clear of the 16px corner curve
             };
 
             // window buttons (borderless form): minimize + close, laid out by topBar.Resize above
@@ -435,15 +435,15 @@ namespace RobloxMultiHub
             if (r) { m.Result = (IntPtr)11; return; }             // HTRIGHT
             if (t) { m.Result = (IntPtr)12; return; }             // HTTOP
             if (b) { m.Result = (IntPtr)15; return; }             // HTBOTTOM
-            if (c.Y < corner && topBarRef != null)
+            if (topBarRef != null && c.Y < topBarRef.Bottom)
             {
+                // the whole header band (bar plus its padding) is the title bar, except over its
+                // interactive controls - those keep their normal clicks
                 Point inBar = topBarRef.PointToClient(screen);
-                if (inBar.X >= 0 && inBar.Y >= 0 && inBar.X < topBarRef.Width && inBar.Y < topBarRef.Height)
-                {
-                    Control hit = topBarRef.GetChildAtPoint(inBar);
-                    if (hit == null || hit == topTitleRef || hit == topSubRef)
-                        m.Result = (IntPtr)2;                      // HTCAPTION - drag / snap / double-click
-                }
+                bool inside = inBar.X >= 0 && inBar.Y >= 0 && inBar.X < topBarRef.Width && inBar.Y < topBarRef.Height;
+                Control hit = inside ? topBarRef.GetChildAtPoint(inBar) : null;
+                if (hit == null || hit == topTitleRef || hit == topSubRef)
+                    m.Result = (IntPtr)2;                          // HTCAPTION - drag / snap / double-click
             }
         }
 
@@ -1022,30 +1022,33 @@ namespace RobloxMultiHub
             SetFooterBtn(footDown, hasSel);
         }
 
-        // Tag holds the button's real width, set when the footer is built. The text fades twice as
-        // fast as the width so letters never look sliced while the button grows or shrinks.
+        // Tag holds the button's real width, set when the footer is built. Always animates FROM the
+        // current size/opacity, so a button that is re-shown mid-collapse grows back from where it is.
         void SetFooterBtn(RoundButton b, bool show)
         {
             int target = b.Tag is int ? (int)b.Tag : 80;
             if (show)
             {
                 if (b.Visible && b.Width == target && b.Opacity > 0.99f) return;
-                if (!b.Visible) { b.Visible = true; b.Width = 1; b.Opacity = 0f; }
+                int w0 = b.Visible ? b.Width : 1;
+                float o0 = b.Visible ? b.Opacity : 0f;
+                if (!b.Visible) { b.Visible = true; b.Width = 1; }
                 Anim.Go(b, 170, delegate(float e)
                 {
-                    b.Width = Math.Max(1, (int)(target * e));
-                    b.Opacity = Math.Min(1f, e * 2f);
-                    b.TextOpacity = Math.Min(1f, e * 2f);
+                    b.Width = Math.Max(1, w0 + (int)((target - w0) * e));
+                    b.Opacity = Math.Min(1f, o0 + (1f - o0) * Math.Min(1f, e * 2f));
+                    b.TextOpacity = b.Opacity;
                 }, delegate { b.Width = target; b.Opacity = 1f; b.TextOpacity = 1f; });
             }
             else
             {
                 if (!b.Visible) return;
+                int w0 = b.Width;
                 Anim.Go(b, 150, delegate(float e)
                 {
-                    b.Width = Math.Max(1, (int)(target * (1f - e)));
-                    b.Opacity = 1f - Math.Min(1f, e * 2f);
-                    b.TextOpacity = Math.Max(0f, 1f - e * 2f);
+                    b.Width = Math.Max(1, w0 - (int)(w0 * e));
+                    b.Opacity = Math.Max(0f, 1f - e * 2f);
+                    b.TextOpacity = b.Opacity;
                 }, delegate { b.Visible = false; b.Width = target; b.Opacity = 1f; b.TextOpacity = 1f; });
             }
         }
@@ -1235,7 +1238,9 @@ namespace RobloxMultiHub
             }
             selected = ids;
             UpdateCount();
-            UpdateFooterButtons();
+            // one click raises this twice (row deselected, row selected); evaluate the footer once
+            // the burst is over, so the arrows never collapse for the empty in-between state
+            BeginInvoke((Action)delegate { UpdateFooterButtons(); });
             OnAccountSelectionChanged();
         }
 
