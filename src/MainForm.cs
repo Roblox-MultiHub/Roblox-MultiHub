@@ -30,7 +30,6 @@ namespace RobloxMultiHub
         RoundPanel topBarRef;
         Label topTitleRef, topSubRef;
         Control[] headerInteractive = new Control[0];
-        string lastNavKey;                        // direction of the last tab switch (for the wipe)
         RoundButton btnWinMin, btnWinClose;
         System.Windows.Forms.Timer logAnim;
         float logHFrom, logHTo;
@@ -635,25 +634,16 @@ namespace RobloxMultiHub
         }
 
         // The active highlight is painted by the buttons themselves, exactly like it always was.
-        // The only change: on a switch the OLD tab's highlight wipes out toward the direction of
-        // travel while the NEW tab's wipes in from the same side - the blue rectangle appears to
-        // slide between tabs, with no overlay control and no text movement.
+        // On a switch the new tab's highlight evolves out of the click point on the same clock as
+        // the ripple, and the old tab's dissolves.
         void StyleNav()
         {
-            int dir = 1;
-            if (lastNavKey != null)
-            {
-                int prev = Array.IndexOf(PageOrder, lastNavKey);
-                int cur = Array.IndexOf(PageOrder, currentPage);
-                if (prev >= 0 && cur >= 0) dir = cur >= prev ? 1 : -1;
-            }
             foreach (KeyValuePair<string, RoundButton> kv in navButtons)
             {
                 bool act = kv.Key == currentPage;
                 RoundButton b = kv.Value;
                 if (b.Active != act)
                 {
-                    b.WipeDir = dir;
                     float from = b.Wipe, to = act ? 1f : 0f;
                     Anim.Go("navwipe" + kv.Key, Anim.Ms, delegate(float e)
                     {
@@ -665,7 +655,6 @@ namespace RobloxMultiHub
                 b.Active = act;
                 b.Invalidate();
             }
-            lastNavKey = currentPage;
         }
 
         void StyleViewButtons()

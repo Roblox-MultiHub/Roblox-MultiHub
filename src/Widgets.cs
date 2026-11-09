@@ -31,7 +31,7 @@ namespace RobloxMultiHub
         public float Opacity = 1f;      // 0..1, applied while painting (used for show/hide animations)
         public float TextOpacity = 1f;  // text can fade faster than the body while a button shrinks
         public float Wipe;              // nav only: how much of the active highlight is shown (0..1)
-        public int WipeDir = 1;         // nav only: +1 arriving from above / leaving downward, -1 mirrored
+        Point? growAt;                  // where the highlight evolves out from (the click point)
         bool hover;
         bool pressed;
         Color curFill, curText, curBorder;   // smoothly animated toward their target each frame
@@ -66,6 +66,7 @@ namespace RobloxMultiHub
             if (e.Button == MouseButtons.Left && Store.Settings.Animations)
             {
                 rippleAt = e.Location;
+                growAt = e.Location;
                 rippleT0 = Environment.TickCount;
                 rippling = true;
             }
@@ -132,20 +133,32 @@ namespace RobloxMultiHub
             {
                 if (Kind == "nav")
                 {
-                    // nav body: the plain panel colour, then the active highlight on top - but only
-                    // the part the travelling wipe currently covers, so the blue rectangle slides
-                    // out of the old tab and into the new one while every label stays where it is
+                    // nav body: the plain panel colour, then the active highlight. When a tab is
+                    // clicked the highlight EVOLVES out of the click point (the ripple's origin,
+                    // same clock): the accent fills a circle that grows with the ripple until it
+                    // covers the whole rounded rectangle. The tab being left just dissolves.
                     using (SolidBrush b = new SolidBrush(hover && !Active ? Theme.Panel2 : Theme.Panel)) g.FillPath(b, path);
                     if (Active || Wipe > 0.01f)
                     {
-                        float w = Math.Max(0f, Math.Min(1f, Active ? Math.Max(Wipe, 0.001f) : Wipe));
-                        int h = (int)(Height * w);
-                        bool fromTop = Active ? WipeDir >= 0 : WipeDir < 0;
-                        Rectangle clip = fromTop ? new Rectangle(0, 0, Width, h) : new Rectangle(0, Height - h, Width, h);
-                        g.SetClip(path);
-                        g.SetClip(clip, System.Drawing.Drawing2D.CombineMode.Intersect);
-                        using (SolidBrush ab = new SolidBrush(Theme.Accent)) g.FillPath(ab, path);
-                        g.ResetClip();
+                        if (Active)
+                        {
+                            float w = Math.Max(0f, Math.Min(1f, Wipe));
+                            Point o = growAt ?? new Point(Width / 2, Height / 2);
+                            int rr = Math.Max(1, (int)(Math.Sqrt(Width * (double)Width + Height * (double)Height) * w));
+                            g.SetClip(path);
+                            using (System.Drawing.Drawing2D.GraphicsPath c = new System.Drawing.Drawing2D.GraphicsPath())
+                            {
+                                c.AddEllipse(o.X - rr, o.Y - rr, rr * 2, rr * 2);
+                                g.SetClip(c, System.Drawing.Drawing2D.CombineMode.Intersect);
+                            }
+                            using (SolidBrush ab = new SolidBrush(Theme.Accent)) g.FillPath(ab, path);
+                            g.ResetClip();
+                        }
+                        else
+                        {
+                            int a = (int)(255 * Math.Max(0f, Math.Min(1f, Wipe)));
+                            using (SolidBrush ab = new SolidBrush(Color.FromArgb(a, Theme.Accent))) g.FillPath(ab, path);
+                        }
                     }
                 }
                 else
