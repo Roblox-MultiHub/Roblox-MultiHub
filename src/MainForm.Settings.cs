@@ -173,9 +173,7 @@ namespace RobloxMultiHub
                 if (loadingSettings) return;
                 Store.Settings.WebhookStatus = chkWebhookStatus.Checked;
                 Store.SaveSettings();
-                numStatusSec.Visible = chkWebhookStatus.Checked;
             };
-            numStatusSec.Visible = S.WebhookStatus;
             p.Opt("How often the status message refreshes.",
                 "Seconds between refreshes (15 - 600). Smaller = livelier, but every refresh is a Discord API call.",
                 Ui.Fld("Refresh every (seconds)", 190), numStatusSec);

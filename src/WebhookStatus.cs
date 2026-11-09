@@ -28,6 +28,7 @@ namespace RobloxMultiHub
             List<Instance> live = Launcher.Instances.Where(i => Launcher.IsAlive(i.Pid)).ToList();
             string title = "Accounts: " + live.Count + "/" + Store.Accounts.Count
                 + " | CPU: " + UsageMonitor.TotalCpu.ToString("0.0") + "%"
+                + (GpuMeter.Available ? " | GPU: " + UsageMonitor.TotalGpu.ToString("0.0") + "%" : "")
                 + " | RAM: " + Util.FormatBytes(UsageMonitor.TotalRam);
             Webhook.SendStatus(title, BuildDescription(live, every), Webhook.Green, live.Count == 0 ? null : RenderChart());
         }
@@ -71,10 +72,11 @@ namespace RobloxMultiHub
                     UsageMonitor.Samples.TryGetValue(inst.Pid, out s);
                     double cpu = Avg(UsageMonitor.CpuHist, inst.Pid, samples, s != null ? s.Cpu : 0);
                     long ram = (long)Avg(UsageMonitor.RamHist, inst.Pid, samples, s != null ? s.Ram / 1048576.0 : 0);
+                    string gpu = GpuMeter.Available && s != null ? s.Gpu.ToString("0.0") + "% / " : "";
                     sb.Append("\n").Append(profile)
                       .Append(' ', Math.Max(1, nameW - name.Length + 2))     // column-ish alignment
                       .Append("<t:").Append(start).Append(":R>   ")
-                      .Append(cpu.ToString("0.0")).Append("% / ").Append(ram).Append("MB");
+                      .Append(gpu).Append(cpu.ToString("0.0")).Append("% / ").Append(ram).Append("MB");
                 }
             }
             return sb.ToString();

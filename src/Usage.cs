@@ -7,6 +7,7 @@ namespace RobloxMultiHub
     public class UsageSample
     {
         public double Cpu;      // percent of the WHOLE PC's CPU (like Task Manager)
+        public double Gpu;      // percent of the whole GPU (sum of the process's engine counters)
         public long Ram;        // working set in bytes
     }
 
@@ -17,6 +18,7 @@ namespace RobloxMultiHub
         static DateTime lastAt = DateTime.MinValue;
         public static Dictionary<int, UsageSample> Samples = new Dictionary<int, UsageSample>();
         public static double TotalCpu;
+        public static double TotalGpu;
         public static long TotalRam;
         public static int Count;
         public static bool CpuAvailable = true;
@@ -75,10 +77,19 @@ namespace RobloxMultiHub
                 finally { p.Dispose(); }
             }
             CpuAvailable = !(count > 0 && cpuFailures == count);
+            // GPU: one snapshot for all pids (the engine counters are per process instance)
+            Dictionary<int, double> gpu = GpuMeter.Sample();
+            double gpuTotal = 0;
+            foreach (KeyValuePair<int, UsageSample> kv in fresh)
+            {
+                double g;
+                if (gpu.TryGetValue(kv.Key, out g)) { kv.Value.Gpu = g; gpuTotal += g; }
+            }
             lastCpu = cpuNow;
             lastAt = now;
             Samples = fresh;
             TotalCpu = total;
+            TotalGpu = gpuTotal;
             TotalRam = ram;
             Count = count;
 
