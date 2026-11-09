@@ -86,18 +86,25 @@ namespace RobloxMultiHub
 
         static void Pump()
         {
-            for (int i = jobs.Count - 1; i >= 0; i--)
+            // A frame is derived state, recomputed from timestamps on every tick - so a bad frame is
+            // DROPPED, never propagated: one frame's exception must never take the app down, and the
+            // next tick redraws the correct state by itself.
+            try
             {
-                Job j = jobs[i];
-                float t = Math.Min(1f, (Environment.TickCount - j.Start) / (float)j.Ms);
-                j.Step(EaseOutCubic(t));
-                if (t >= 1f)
+                for (int i = jobs.Count - 1; i >= 0; i--)
                 {
-                    jobs.RemoveAt(i);
-                    if (j.Done != null) j.Done();
+                    Job j = jobs[i];
+                    float t = Math.Min(1f, (Environment.TickCount - j.Start) / (float)j.Ms);
+                    j.Step(EaseOutCubic(t));
+                    if (t >= 1f)
+                    {
+                        jobs.RemoveAt(i);
+                        if (j.Done != null) j.Done();
+                    }
                 }
+                if (Frame != null) Frame();
             }
-            if (Frame != null) Frame();
+            catch (Exception ex) { Log.Error("Anim frame dropped", ex); }
         }
 
         public static bool Running(object tag)

@@ -279,7 +279,11 @@ namespace RobloxMultiHub
             frameHooked = true;
             Anim.Frame += delegate
             {
-                foreach (RoundButton b in animating)
+                // iterate a SNAPSHOT: ForceSettle removes from the set, and mutating a HashSet
+                // during enumeration throws (that exact crash took the app down)
+                RoundButton[] snap = new RoundButton[animating.Count];
+                animating.CopyTo(snap);
+                foreach (RoundButton b in snap)
                 {
                     if (Environment.TickCount > b.animUntil) b.ForceSettle();
                     else { b.Advance(); b.Invalidate(); }
