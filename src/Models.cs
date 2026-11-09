@@ -175,6 +175,8 @@ namespace RobloxMultiHub
         public bool WebhookRelaunch = true;         // the watcher brought a window back
         public bool WebhookBatch = true;            // a Launch all / preset batch finished
         public bool WebhookLocked = true;           // an account came back locked (HTTP 403)
+        public bool WebhookStatus = false;          // keep a live status embed updated in the channel
+        public int WebhookStatusSec = 60;           // how often the status embed refreshes
 
         // Discord Rich Presence ("Playing Roblox MultiHub" on your profile). Needs a Discord Application ID.
         public bool DiscordRpc = true;

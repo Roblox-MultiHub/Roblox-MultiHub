@@ -735,6 +735,7 @@ namespace RobloxMultiHub
                 if (tickN % 2 == 0)
                 {
                     UsageMonitor.Update();
+                    WebhookStatus.Tick();
                     UpdateStatusCells();
                     UpdateMemUi();
                     MaxAlts.Tick();

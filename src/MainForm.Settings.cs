@@ -24,7 +24,7 @@ namespace RobloxMultiHub
         CheckBox chkCrashBreaker;
         CheckBox chkAnimations;
         NumericUpDown numCrashMax;
-        CheckBox chkWebhook, chkWebhookCrash, chkWebhookRelaunch, chkWebhookBatch, chkWebhookLocked;
+        CheckBox chkWebhook, chkWebhookCrash, chkWebhookRelaunch, chkWebhookBatch, chkWebhookLocked, chkWebhookStatus;
         RoundTextBox tbWebhook;
         CheckBox chkDiscordRpc;
         RoundTextBox tbDiscordAppId;
@@ -155,6 +155,39 @@ namespace RobloxMultiHub
             p.Opt("When Roblox blocks one of your accounts.",
                 "Posted when a check or launch finds that Roblox has locked or blocked an account (HTTP 403), so you notice straight away which account needs attention.",
                 chkWebhookLocked);
+
+            chkWebhookStatus = Ui.Chk("Log status", S.WebhookStatus, null);
+            p.Opt("Keeps ONE live status message updated in the channel.",
+                "ON: MultiHub posts one message listing every running account - username (linked to its profile), uptime as a live Discord timestamp, the game it is in (linked) and average CPU / RAM since the last update - and EDITS that same message on every refresh instead of posting again. Needs the webhook above. Minimum 15 seconds.",
+                chkWebhookStatus);
+            TrackBar trackStatus = new TrackBar();
+            trackStatus.Minimum = 15;
+            trackStatus.Maximum = 600;
+            trackStatus.TickFrequency = 60;
+            trackStatus.SmallChange = 15;
+            trackStatus.LargeChange = 60;
+            trackStatus.Width = 220;
+            trackStatus.Height = 30;
+            trackStatus.Value = Math.Max(15, Math.Min(600, S.WebhookStatusSec));
+            Label lblStatusSec = Ui.Lbl("every " + trackStatus.Value + " s", "");
+            lblStatusSec.AutoSize = true;
+            trackStatus.ValueChanged += delegate
+            {
+                if (loadingSettings) return;
+                Store.Settings.WebhookStatusSec = trackStatus.Value;
+                Store.SaveSettings();
+                lblStatusSec.Text = "every " + trackStatus.Value + " s";
+            };
+            chkWebhookStatus.CheckedChanged += delegate
+            {
+                if (loadingSettings) return;
+                Store.Settings.WebhookStatus = chkWebhookStatus.Checked;
+                Store.SaveSettings();
+                trackStatus.Visible = lblStatusSec.Visible = chkWebhookStatus.Checked;
+            };
+            trackStatus.Visible = lblStatusSec.Visible = S.WebhookStatus;
+            p.RowTip("How often the status message refreshes (15 - 600 seconds).",
+                Ui.Fld("Refresh", 120), trackStatus, lblStatusSec);
 
             p.Section("Discord status (Rich Presence)");
             chkDiscordRpc = Ui.Chk("Show \"Playing Roblox MultiHub\" on my Discord profile", S.DiscordRpc, null);

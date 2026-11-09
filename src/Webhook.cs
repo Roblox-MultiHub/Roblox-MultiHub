@@ -44,6 +44,80 @@ namespace RobloxMultiHub
             Post(Store.Settings.WebhookUrl, title, desc, color);
         }
 
+        // ---- live status embed: sent once, then EDITED in place on every refresh ----
+        static string statusMessageId;
+
+        // Returns the message id, or "" when the post failed. Only the webhook's own message can
+        // be edited, and editing is authorized by the URL alone - that is the whole point.
+        static async Task<string> PostAsync(string url, Dictionary<string, object> body)
+        {
+            StringContent content = new StringContent(Json.To(body), Encoding.UTF8, "application/json");
+            HttpResponseMessage r = await Http.PostAsync(url.Trim(), content);
+            if ((int)r.StatusCode == 429)
+            {
+                await Task.Delay(1500);
+                r = await Http.PostAsync(url.Trim(), new StringContent(Json.To(body), Encoding.UTF8, "application/json"));
+            }
+            r.EnsureSuccessStatusCode();
+            IDictionary<string, object> msg = Json.Obj(Json.Parse(await r.Content.ReadAsStringAsync()));
+            object id;
+            return msg != null && msg.TryGetValue("id", out id) && id != null ? id.ToString() : "";
+        }
+
+        public static void SendStatus(string title, string desc, int color)
+        {
+            if (!Enabled) return;
+            Dictionary<string, object> embed = StatusEmbed(title, desc, color);
+            string url = Store.Settings.WebhookUrl;
+            string id = statusMessageId;
+            Task.Run(async delegate
+            {
+                try
+                {
+                    if (id != null && id.Length > 0)
+                    {
+                        // edit the existing status message in place; if it was deleted, send a new one
+                        Dictionary<string, object> editBody = new Dictionary<string, object>();
+                        editBody["embeds"] = new object[] { embed };
+                        HttpRequestMessage patch = new HttpRequestMessage(new HttpMethod("PATCH"),
+                            url.TrimEnd('/') + "/messages/" + id);
+                        patch.Content = new StringContent(Json.To(editBody), Encoding.UTF8, "application/json");
+                        HttpResponseMessage r = await Http.SendAsync(patch);
+                        if ((int)r.StatusCode != 404)
+                        {
+                            r.EnsureSuccessStatusCode();
+                            return;
+                        }
+                        statusMessageId = null;
+                    }
+                    string newId = await PostAsync(url, Wrap(embed));
+                    if (newId.Length > 0) statusMessageId = newId;
+                }
+                catch (Exception ex) { Log.Error("WebhookStatus", ex); }
+            });
+        }
+
+        static Dictionary<string, object> Wrap(Dictionary<string, object> embed)
+        {
+            Dictionary<string, object> body = new Dictionary<string, object>();
+            body["username"] = "Roblox MultiHub";
+            body["embeds"] = new object[] { embed };
+            return body;
+        }
+
+        static Dictionary<string, object> StatusEmbed(string title, string desc, int color)
+        {
+            Dictionary<string, object> embed = new Dictionary<string, object>();
+            embed["title"] = title ?? "";
+            embed["description"] = desc ?? "";
+            embed["color"] = color;
+            embed["timestamp"] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            Dictionary<string, object> foot = new Dictionary<string, object>();
+            foot["text"] = "Roblox MultiHub";
+            embed["footer"] = foot;
+            return embed;
+        }
+
         // Always sent (used by the "Send a test message" button, which passes its own URL).
         public static void SendTo(string url, string title, string desc, int color)
         {
