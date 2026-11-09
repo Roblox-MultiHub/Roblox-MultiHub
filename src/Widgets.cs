@@ -32,6 +32,9 @@ namespace RobloxMultiHub
         public float TextOpacity = 1f;  // text can fade faster than the body while a button shrinks
         public float Wipe;              // nav only: how much of the active highlight is shown (0..1)
         Point? growAt;                  // where the highlight evolves out from (the click point)
+        float growFrom, growTo;         // evolve animation, driven by the SAME clock and repaint
+        int growT0;                     // timer as the ripple so the two never beat against each other
+        bool growing;
         bool hover;
         bool pressed;
         Color curFill, curText, curBorder;   // smoothly animated toward their target each frame
@@ -51,6 +54,29 @@ namespace RobloxMultiHub
             Font = Theme.Base;
             Height = 30;
         }
+
+        // Starts (or reverses) the highlight evolve. Runs on the button's own animation timer with
+        // the same timestamp clock as the ripple, so the fill tracks the ripple edge exactly -
+        // two independent timers made the pair look like it was skipping frames.
+        public void Evolve(float to)
+        {
+            growFrom = CurrentGrow();
+            growTo = to;
+            growT0 = Environment.TickCount;
+            growing = true;
+            RunAnim();
+        }
+
+        float CurrentGrow()
+        {
+            if (!growing) return Wipe;
+            float t = Math.Min(1f, (Environment.TickCount - growT0) / (float)Anim.Ms);
+            if (t >= 1f) { growing = false; Wipe = growTo; return Wipe; }
+            float e = 1f - (1f - t) * (1f - t) * (1f - t);
+            return growFrom + (growTo - growFrom) * e;
+        }
+
+        public bool Evolving { get { return growing; } }
 
         public void FitText(int minWidth)
         {
@@ -142,7 +168,7 @@ namespace RobloxMultiHub
                     {
                         if (Active)
                         {
-                            float w = Math.Max(0f, Math.Min(1f, Wipe));
+                            float w = Math.Max(0f, Math.Min(1f, CurrentGrow()));
                             Point o = growAt ?? new Point(Width / 2, Height / 2);
                             int rr = Math.Max(1, (int)(Math.Sqrt(Width * (double)Width + Height * (double)Height) * w));
                             g.SetClip(path);
@@ -189,8 +215,9 @@ namespace RobloxMultiHub
             else flags |= TextFormatFlags.HorizontalCenter;
             TextRenderer.DrawText(g, Text, Font, tr, Fade(curText, TextOpacity * Opacity), flags);
 
-            // keep animating until the colours have settled and the ripple is done, then stop the timer
-            if (rippling || Diff(curFill, fill) + Diff(curText, text) + Diff(curBorder, border) > 4) RunAnim();
+            // keep animating until the colours have settled, the ripple is done and the highlight
+            // has finished evolving, then stop the timer
+            if (rippling || growing || Diff(curFill, fill) + Diff(curText, text) + Diff(curBorder, border) > 4) RunAnim();
             else if (anim != null) anim.Stop();
         }
 

@@ -642,16 +642,8 @@ namespace RobloxMultiHub
             {
                 bool act = kv.Key == currentPage;
                 RoundButton b = kv.Value;
-                if (b.Active != act)
-                {
-                    float from = b.Wipe, to = act ? 1f : 0f;
-                    Anim.Go("navwipe" + kv.Key, Anim.Ms, delegate(float e)
-                    {
-                        b.Wipe = from + (to - from) * e;
-                        b.Invalidate();
-                    }, delegate { b.Wipe = to; b.Invalidate(); });
-                }
-                else if (act && b.Wipe != 1f && !Anim.Running("navwipe" + kv.Key)) { b.Wipe = 1f; }
+                if (b.Active != act) b.Evolve(act ? 1f : 0f);
+                else if (act && b.Wipe != 1f && !b.Evolving) { b.Wipe = 1f; }
                 b.Active = act;
                 b.Invalidate();
             }
@@ -956,6 +948,7 @@ namespace RobloxMultiHub
                 b.Margin = new Padding(0, 5, 6, 5);
                 bar.Controls.Add(b);
             }
+            bar.Padding = new Padding(12, 0, 12, 0);     // line up with the account rows below
             t.Controls.Add(bar, 0, 0);
 
             // ---- search / group / view switch ----
@@ -984,6 +977,7 @@ namespace RobloxMultiHub
             Ui.Tips.SetToolTip(btnViewList, "Compact list with profile pictures.");
             btnViewCards = Ui.Btn(Lang.T("Cards"), 60, delegate { SetView(true); }, "nav");
             btnViewCards.Margin = new Padding(0, 5, 0, 0);
+            filt.Padding = new Padding(12, 0, 12, 0);        // same left edge as the toolbar and rows
             Ui.Tips.SetToolTip(btnViewCards, "Expanded cards: big profile picture, status, a game for each account and a Launch button.");
             filt.Controls.Add(l1);
             filt.Controls.Add(tbSearch);
@@ -1058,7 +1052,7 @@ namespace RobloxMultiHub
             GradientButton bLaunch = new GradientButton();
             bLaunch.Text = "\U0001F680  " + Lang.T("Launch selected");
             bLaunch.Size = new Size(158, 34);
-            bLaunch.Margin = new Padding(0, 7, 8, 5);
+            bLaunch.Margin = new Padding(12, 7, 8, 5);      // line up with the rows above
             bLaunch.Click += delegate { LaunchSelected(); };
             Ui.Tips.SetToolTip(bLaunch, "Launch the selected accounts. Accounts with their own game use it; the others use the Launch page.");
             RoundButton bAll = Ui.Btn(Lang.T("Launch all"), 90, delegate { LaunchAllListed(); }, "");
