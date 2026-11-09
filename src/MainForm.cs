@@ -161,6 +161,16 @@ namespace RobloxMultiHub
             lblMulti.Click += delegate { ShowPage("Settings"); };
             Ui.Tips.SetToolTip(lblMulti, "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.");
             topBar.Controls.Add(lblMulti);
+
+            // real clicks over child controls never reach the form's hit-test, so the header itself
+            // starts the drag when the mouse goes down on it or on the (non-interactive) labels
+            MouseEventHandler dragDown = delegate(object s, MouseEventArgs me)
+            {
+                if (me.Button == MouseButtons.Left) Native.DragWindow((Control)s);
+            };
+            topBar.MouseDown += dragDown;
+            title.MouseDown += dragDown;
+            sub.MouseDown += dragDown;
             root.RowStyles[0].Height = Math.Max(68, statRun.NeededHeight() + 14);
             topBar.Resize += delegate
             {
@@ -175,8 +185,11 @@ namespace RobloxMultiHub
                     x = sb.Right + 10;
                 }
                 lblMulti.Location = new Point(topBar.Width - lblMulti.Width - 130, 12);
-                btnWinMin.Location = new Point(topBar.Width - 80, 10);
-                btnWinClose.Location = new Point(topBar.Width - 46, 10);   // clear of the 16px corner curve
+                // spacing from the buttons' REAL (text-fitted) widths: close keeps an 18px margin to
+                // the bar edge (clear of the window's 16px corner curve), min sits left of it
+                int by = Math.Max(6, (topBar.Height - btnWinClose.Height) / 2);
+                btnWinClose.Location = new Point(topBar.Width - btnWinClose.Width - 18, by);
+                btnWinMin.Location = new Point(btnWinClose.Left - btnWinMin.Width - 8, by);
             };
 
             // window buttons (borderless form): minimize + close, laid out by topBar.Resize above
@@ -250,6 +263,7 @@ namespace RobloxMultiHub
             logHost = new RoundPanel();
             logHost.Dock = DockStyle.Fill;
             logHost.Tag = "card";
+            logHost.Radius = 8;                    // smaller radius: 14 on the collapsed strip looks like a pill
             logHost.Padding = new Padding(8, 2, 8, 8);
             logHost.Margin = new Padding(0, 10, 0, 0);
 
