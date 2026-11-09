@@ -235,7 +235,11 @@ namespace RobloxMultiHub
 
             // repaint on the shared clock while anything is in motion; settle = leave the animating set
             if (rippling || growing || Diff(curFill, fill) + Diff(curText, text) + Diff(curBorder, border) > 4) RunAnim();
-            else animating.Remove(this);
+            else
+            {
+                animating.Remove(this);
+                if (animating.Count == 0) Anim.FrameDemand = false;   // loop winds down when idle
+            }
         }
 
         static Color Lerp(Color a, Color b, float t)
@@ -260,10 +264,10 @@ namespace RobloxMultiHub
         void RunAnim()
         {
             animating.Add(this);
-            Anim.EnsureClock();                 // the clock only auto-started for Anim jobs; a lone
-            if (frameHooked) return;            // ripple/evolve must start it too or it never ticks
+            Anim.FrameDemand = true;
+            Anim.EnsureClock();                 // starts the shared frame loop on first need
+            if (frameHooked) return;
             frameHooked = true;
-            Anim.frameHasSubscribers = true;
             Anim.Frame += delegate
             {
                 foreach (RoundButton b in animating) { b.Advance(); b.Invalidate(); }

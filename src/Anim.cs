@@ -24,11 +24,15 @@ namespace RobloxMultiHub
         }
 
         static readonly List<Job> jobs = new List<Job>();
-        static System.Threading.Timer clock;       // 8ms, off the UI thread
         static SynchronizationContext ui;
+        static readonly System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 
-        /// <summary>Raised on the UI thread every tick (about 125 fps) - for controls that repaint
-        /// themselves while animating (button ripples), instead of each owning a timer.</summary>
+        /// <summary>Set true while any control needs repaint ticks (button ripples). The loop only
+        /// runs while this is true or jobs exist, so idle cost is zero.</summary>
+        internal static volatile bool FrameDemand;
+
+        /// <summary>Raised on the UI thread every frame while animating - for controls that repaint
+        /// themselves (button ripples), instead of each owning a timer.</summary>
         public static event Action Frame;
 
         public static void Go(object tag, int ms, Action<float> step, Action done)
@@ -42,17 +46,36 @@ namespace RobloxMultiHub
 
         internal static void EnsureClock()
         {
-            if (clock != null) return;
-            ui = SynchronizationContext.Current ?? new SynchronizationContext();
-            clock = new System.Threading.Timer(delegate(object s)
-            {
-                if (jobs.Count == 0 && !frameAlive()) return;     // nothing wants ticks - skip the post
-                ui.Post(delegate(object s2) { Pump(); }, null);
-            }, null, 0, 8);
+            if (ui == null) ui = SynchronizationContext.Current ?? new SynchronizationContext();
+            StartLoop();
         }
 
-        static bool frameAlive() { return Frame != null && frameHasSubscribers; }
-        internal static bool frameHasSubscribers;
+        // Frame source: an Application.Idle loop. Idle fires every time the message queue empties,
+        // so WM_PAINT and WM_TIMER always run BETWEEN frames (a self-posting loop starves them and
+        // freezes settles + the app tick). We re-post one message per frame to keep Idle coming,
+        // Stopwatch-spaced to ~250 fps. Timers on this machine bottom out at ~15.4ms regardless of
+        // interval (measured); the empty queue spins at 90kHz+, so the loop drives the frames.
+        static bool idleHooked;
+        static void StartLoop()
+        {
+            if (idleHooked) return;
+            idleHooked = true;
+            sw.Reset();
+            sw.Start();
+            Application.Idle += delegate
+            {
+                if (jobs.Count == 0 && !FrameDemand) return;    // nothing animates: stop posting
+                if (sw.ElapsedMilliseconds >= 4)
+                {
+                    Pump();
+                    sw.Reset();
+                    sw.Start();
+                }
+                ui.Post(delegate(object s) { }, null);          // queue one more spin
+            };
+        }
+
+        static bool frameAlive() { return FrameDemand; }
 
         static void Pump()
         {
