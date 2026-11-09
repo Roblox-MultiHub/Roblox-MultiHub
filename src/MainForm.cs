@@ -29,6 +29,7 @@ namespace RobloxMultiHub
         bool logOpen;
         RoundPanel topBarRef;
         Label topTitleRef, topSubRef;
+        Control[] headerInteractive = new Control[0];
         RoundButton btnWinMin, btnWinClose;
         System.Windows.Forms.Timer logAnim;
         float logHFrom, logHTo;
@@ -201,6 +202,9 @@ namespace RobloxMultiHub
             btnWinClose.Height = 30;
             Ui.Tips.SetToolTip(btnWinClose, "Close Roblox MultiHub");
             topBar.Controls.Add(btnWinClose);
+
+            // header controls that must keep their own clicks (everything but the title labels)
+            headerInteractive = new Control[] { statRun, statCpu, statRam, lblMulti, disc, btnWinMin, btnWinClose };
             root.Controls.Add(topBar, 0, 0);
 
             // ---- body: sidebar | (accounts | page), with a draggable splitter ----
@@ -451,12 +455,20 @@ namespace RobloxMultiHub
             if (b) { m.Result = (IntPtr)15; return; }             // HTBOTTOM
             if (topBarRef != null && c.Y < topBarRef.Bottom)
             {
-                // the whole header band (bar plus its padding) is the title bar, except over its
-                // interactive controls - those keep their normal clicks
+                // the whole header band is the title bar except over interactive controls. Pure
+                // rectangle math on a cached list - GetChildAtPoint is far too slow for a message
+                // (WM_NCHITTEST) that fires on every mouse move, which made dragging feel laggy.
                 Point inBar = topBarRef.PointToClient(screen);
-                bool inside = inBar.X >= 0 && inBar.Y >= 0 && inBar.X < topBarRef.Width && inBar.Y < topBarRef.Height;
-                Control hit = inside ? topBarRef.GetChildAtPoint(inBar) : null;
-                if (hit == null || hit == topTitleRef || hit == topSubRef)
+                bool interactive = false;
+                foreach (Control ic in headerInteractive)
+                {
+                    if (inBar.X >= ic.Left && inBar.X < ic.Right && inBar.Y >= ic.Top && inBar.Y < ic.Bottom)
+                    {
+                        interactive = true;
+                        break;
+                    }
+                }
+                if (!interactive)
                     m.Result = (IntPtr)2;                          // HTCAPTION - drag / snap / double-click
             }
         }
