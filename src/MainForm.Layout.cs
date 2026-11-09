@@ -165,6 +165,7 @@ namespace RobloxMultiHub
                 Store.Settings.Layout.SortMode = SortModeKeys[Math.Max(0, cbSortMode.SelectedIndex)];
                 Store.SaveSettings();
                 RefreshWindowList();
+                Anim.Go("winsnudge", 170, delegate(float e) { lvWins.Padding = new Padding(0, (int)((1f - e) * 10), 0, 0); }, null);
             };
             p.Opt("Moves every window into the layout above.",
                 "'Arrange now' applies the layout. 'Refresh list' reads the running windows again. 'Restore borders' brings back title bars removed by the borderless option.\n\n"

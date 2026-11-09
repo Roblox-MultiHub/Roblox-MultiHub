@@ -28,6 +28,7 @@ namespace RobloxMultiHub
         public string Kind = "";        // "", "primary", "danger", "nav"
         public bool Active;             // highlighted state of nav / toggle buttons
         public bool LeftAlign;          // left-align the text (sidebar items) instead of centering
+        public float Opacity = 1f;      // 0..1, applied while painting (used for show/hide animations)
         bool hover;
         bool pressed;
         Color curFill, curText, curBorder;   // smoothly animated toward their target each frame
@@ -101,17 +102,20 @@ namespace RobloxMultiHub
                 curBorder = Lerp(curBorder, border, 0.28f);
             }
 
+            Color drawFill = Fade(curFill, Opacity);
+            Color drawBorder = Fade(curBorder, Opacity);
+            Color drawText = Fade(curText, Opacity);
             using (GraphicsPath path = Shapes.Round(r, Math.Min(10, Height / 2)))
             {
-                using (SolidBrush b = new SolidBrush(curFill)) g.FillPath(b, path);
+                using (SolidBrush b = new SolidBrush(drawFill)) g.FillPath(b, path);
                 if (Diff(curBorder, curFill) > 6)
-                    using (Pen pen = new Pen(curBorder)) g.DrawPath(pen, path);
+                    using (Pen pen = new Pen(drawBorder)) g.DrawPath(pen, path);
             }
             Rectangle tr = r;
             TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis;
             if (LeftAlign) { tr = new Rectangle(r.Left + 12, r.Top, r.Width - 16, r.Height); flags |= TextFormatFlags.Left; }
             else flags |= TextFormatFlags.HorizontalCenter;
-            TextRenderer.DrawText(g, Text, Font, tr, curText, flags);
+            TextRenderer.DrawText(g, Text, Font, tr, drawText, flags);
 
             // keep animating until the colours have settled, then stop the timer
             if (Diff(curFill, fill) + Diff(curText, text) + Diff(curBorder, border) > 4) RunAnim();
@@ -124,6 +128,12 @@ namespace RobloxMultiHub
                 (int)(a.R + (b.R - a.R) * t),
                 (int)(a.G + (b.G - a.G) * t),
                 (int)(a.B + (b.B - a.B) * t));
+        }
+
+        static Color Fade(Color c, float o)
+        {
+            if (o >= 0.999f) return c;
+            return Color.FromArgb((int)(Math.Max(0f, Math.Min(1f, o)) * 255f), c);
         }
 
         static int Diff(Color a, Color b)

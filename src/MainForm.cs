@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace RobloxMultiHub
@@ -117,7 +118,7 @@ namespace RobloxMultiHub
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 68F));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             root.Margin = Padding.Empty;
-            root.Padding = Padding.Empty;
+            root.Padding = new Padding(10);          // the top bar ends where the body ends - no overhang
             Controls.Add(root);
 
             // ---- top bar: title, live usage, multi-instance status ----
@@ -195,7 +196,7 @@ namespace RobloxMultiHub
             body.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 202F));   // sidebar
             body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             body.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            body.Padding = new Padding(10);
+            body.Padding = new Padding(0, 10, 10, 10);   // gap to the top bar; outer spacing comes from root.Padding
             body.Margin = Padding.Empty;
             root.Controls.Add(body, 0, 1);
 
@@ -380,6 +381,23 @@ namespace RobloxMultiHub
             }
         }
 
+        // Rounded window shape on every Windows version (DWM corner preference is 11+ only).
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            if (Width > 8 && Height > 8)
+            {
+                IntPtr rgn = CreateRoundRectRgn(0, 0, Width + 1, Height + 1, 16, 16);
+                SetWindowRgn(Handle, rgn, true);
+            }
+        }
+
+        [DllImport("gdi32.dll")]
+        static extern IntPtr CreateRoundRectRgn(int x1, int y1, int x2, int y2, int w, int h);
+
+        [DllImport("user32.dll")]
+        static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool bRedraw);
+
         // Dragging = top bar (except its interactive controls); resizing = a thin band at every edge.
         // Called from the shared WndProc in MainForm.Layout.cs after the hotkey handling.
         void ChromeHitTest(ref Message m)
@@ -467,14 +485,51 @@ namespace RobloxMultiHub
             page.Controls.Add(goLaunch);
         }
 
+        static readonly string[] PageOrder = new string[] { "Home", "Launch", "Servers", "Layout", "Monitor", "Presets", "Perf", "Beta", "Settings", "Help" };
+
         void ShowPage(string key)
         {
+            // the page that is really visible right now (a page still sliding in is not docked)
+            Panel fromP = null;
+            foreach (KeyValuePair<string, Panel> kv in pages)
+            {
+                if (kv.Value.Visible && kv.Value.Dock == DockStyle.Fill && kv.Key != key) fromP = kv.Value;
+                else if (kv.Key != key) { kv.Value.Visible = false; kv.Value.Dock = DockStyle.None; }
+            }
             currentPage = key;
-            foreach (KeyValuePair<string, Panel> kv in pages) kv.Value.Visible = kv.Key == key;
+            Panel toP;
+            if (!pages.TryGetValue(key, out toP)) { StyleNav(); return; }
             StyleNav();
             if (key == "Layout") RefreshWindowList();
             if (key == "Monitor") RefreshMonitor();
             if (key == "Presets") RefreshPresetList();
+
+            if (fromP == null || toP == fromP) { toP.Visible = true; toP.Dock = DockStyle.Fill; toP.BringToFront(); return; }
+
+            // slide the new page in over the old one, from the side the button was on
+            int fromIdx = Array.IndexOf(PageOrder, pages.FirstOrDefault(x => x.Value == fromP).Key);
+            int toIdx = Array.IndexOf(PageOrder, key);
+            int dir = toIdx > fromIdx ? 1 : -1;
+            Padding pad = pageHost.Padding;
+            Size sz = new Size(pageHost.ClientSize.Width - pad.Horizontal, pageHost.ClientSize.Height - pad.Vertical);
+            Point home = new Point(pad.Left, pad.Top);
+            fromP.Dock = DockStyle.None;
+            fromP.Location = home;
+            fromP.Size = sz;
+            toP.Size = sz;
+            toP.Visible = true;
+            toP.BringToFront();
+            int travel = 46;
+            Anim.Cancel("page");
+            Anim.Go("page", 230, delegate(float e)
+            {
+                toP.Location = new Point(home.X + (int)((1f - e) * travel * dir), home.Y);
+                fromP.Location = new Point(home.X - (int)((1f - e) * 16 * dir), home.Y);
+            }, delegate
+            {
+                fromP.Visible = false;
+                toP.Dock = DockStyle.Fill;
+            });
         }
 
         // Separate top-level window (no owner), so its 'Stay on top' never lifts the hub with it.
@@ -810,14 +865,14 @@ namespace RobloxMultiHub
             l1.Margin = new Padding(0, 10, 4, 0);
             tbSearch = Ui.Txt(150, "");
             tbSearch.Margin = new Padding(0, 5, 12, 0);
-            tbSearch.TextChanged += delegate { RefreshAccountList(); };
+            tbSearch.TextChanged += delegate { RefreshAccountList(); NudgeList(); };
             tbSearch.Tip("Type to filter by username, alias, notes or group.");
             Label l2 = Ui.Lbl("Group", "muted");
             l2.Margin = new Padding(0, 10, 4, 0);
             cbGroupFilter = new DarkCombo();
             cbGroupFilter.Width = 130;
             cbGroupFilter.Margin = new Padding(0, 6, 14, 0);
-            cbGroupFilter.SelectedIndexChanged += delegate { if (!suspendSel) RefreshAccountList(); };
+            cbGroupFilter.SelectedIndexChanged += delegate { if (!suspendSel) { RefreshAccountList(); NudgeList(); } };
             btnViewList = Ui.Btn(Lang.T("List"), 52, delegate { SetView(false); }, "nav");
             btnViewList.Margin = new Padding(0, 5, 2, 0);
             Ui.Tips.SetToolTip(btnViewList, "Compact list with profile pictures.");
@@ -918,23 +973,43 @@ namespace RobloxMultiHub
             footLaunch = bLaunch;
             footAll = bAll;
             footStop = bStop;
+            bAll.Tag = bAll.Width;                 // real width for the show/hide animation
+            bStop.Tag = bStop.Width;
             UpdateFooterButtons();
         }
 
         // Footer of the accounts panel: the red Stop button only exists while something is running
         // ("Stop" for one window, "Stop all" for several), and 'Launch all' hides when every listed
-        // account is already running.
+        // account is already running. Both appear/disappear with a small grow-and-fade.
         void UpdateFooterButtons()
         {
             if (footStop == null || footAll == null) return;
             int running = runningIds.Count;
-            footStop.Visible = running > 0;
             string want = running == 1 ? Lang.T("Stop") : Lang.T("Stop all");
             if (footStop.Text != want) footStop.Text = want;
+            SetFooterBtn(footStop, running > 0);
             bool anyToLaunch = false;
             foreach (Account a in FilteredAccounts())
                 if (!runningIds.Contains(a.Id)) { anyToLaunch = true; break; }
-            footAll.Visible = anyToLaunch;
+            SetFooterBtn(footAll, anyToLaunch);
+        }
+
+        // Tag holds the button's real width, set when the footer is built.
+        void SetFooterBtn(RoundButton b, bool show)
+        {
+            int target = b.Tag is int ? (int)b.Tag : 80;
+            if (show)
+            {
+                if (b.Visible && b.Opacity > 0.99f) return;
+                if (!b.Visible) { b.Visible = true; b.Width = 0; b.Opacity = 0f; }
+                Anim.Go(b, 180, delegate(float e) { b.Width = Math.Max(target, (int)(target * e)); b.Opacity = e; }, null);
+            }
+            else
+            {
+                if (!b.Visible) return;
+                Anim.Go(b, 160, delegate(float e) { b.Width = (int)(target * (1f - e)); b.Opacity = 1f - e; },
+                    delegate { b.Visible = false; b.Width = target; b.Opacity = 1f; });
+            }
         }
 
         void FitListColumn()
@@ -1108,6 +1183,7 @@ namespace RobloxMultiHub
             else if (sortCol == col) sortAsc = !sortAsc;
             else { sortCol = col; sortAsc = true; }
             RefreshAccountList();
+            NudgeList();
         }
 
         void LvSelectionChanged(object sender, EventArgs e)
@@ -1143,6 +1219,9 @@ namespace RobloxMultiHub
         {
             if (cardHost == null) return;
             cardHost.SuspendLayout();
+            Dictionary<string, Point> oldPos = new Dictionary<string, Point>();
+            foreach (AccountCard c in cardHost.Controls.Cast<Control>().OfType<AccountCard>().ToList())
+                oldPos[c.Account.Id] = c.Location;
             foreach (Control old in cardHost.Controls.Cast<Control>().ToList())
             {
                 cardHost.Controls.Remove(old);
@@ -1164,6 +1243,27 @@ namespace RobloxMultiHub
             }
             LayoutCards();
             cardHost.ResumeLayout(true);
+            // cards that already existed glide to their new slot instead of teleporting (sorting, filtering)
+            foreach (KeyValuePair<string, AccountCard> kv in cards)
+            {
+                Point from;
+                if (!oldPos.TryGetValue(kv.Key, out from) || from == kv.Value.Location) continue;
+                AccountCard c = kv.Value;
+                Point to = c.Location;
+                Point d = new Point(to.X - from.X, to.Y - from.Y);
+                c.Location = from;
+                Anim.Go("card" + kv.Key, 260, delegate(float e)
+                {
+                    c.Location = new Point(from.X + (int)(d.X * e), from.Y + (int)(d.Y * e));
+                }, delegate { c.Location = to; });
+            }
+        }
+
+        // the list briefly settles down into place after its order changed (sort, filter, view switch)
+        void NudgeList()
+        {
+            if (lv == null || !lv.Visible) return;
+            Anim.Go("lvnudge", 170, delegate(float e) { lv.Padding = new Padding(0, (int)((1f - e) * 12), 0, 0); }, null);
         }
 
         // 1 column in a narrow panel, 2+ columns when you drag the splitter wider.
