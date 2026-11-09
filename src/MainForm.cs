@@ -945,7 +945,7 @@ namespace RobloxMultiHub
             Ui.Tips.SetToolTip(bActions, "Copy username/password/cookie, account details, refresh cookie, groups, sorting ... (also on right-click).");
             foreach (RoundButton b in new RoundButton[] { bAdd, bEdit, bRemove, bCheck, bActions })
             {
-                b.Margin = new Padding(0, 5, 6, 5);
+                b.Margin = new Padding(0, 7, 6, 7);     // centered in the 44px band, like the row below
                 bar.Controls.Add(b);
             }
             bar.Padding = new Padding(12, 0, 12, 0);     // line up with the account rows below
@@ -957,26 +957,28 @@ namespace RobloxMultiHub
             filt.AutoSize = true;
             filt.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             filt.WrapContents = true;
-            filt.MinimumSize = new Size(0, 40);
+            filt.MinimumSize = new Size(0, 44);            // same band height as the toolbar above
             filt.Margin = Padding.Empty;
             filt.Tag = "card";
+            // every control centered in the 44px band: 28px inputs -> top 8, 30px buttons -> top 7,
+            // 13px labels -> top 15 so their text baseline sits on the input's middle
             Label l1 = Ui.Lbl("Search", "muted");
-            l1.Margin = new Padding(0, 10, 4, 0);
+            l1.Margin = new Padding(0, 15, 4, 0);
             tbSearch = Ui.Txt(150, "");
-            tbSearch.Margin = new Padding(0, 5, 12, 0);
+            tbSearch.Margin = new Padding(0, 8, 12, 0);
             tbSearch.TextChanged += delegate { RefreshAccountList(); NudgeList(); };
             tbSearch.Tip("Type to filter by username, alias, notes or group.");
             Label l2 = Ui.Lbl("Group", "muted");
-            l2.Margin = new Padding(0, 10, 4, 0);
+            l2.Margin = new Padding(0, 15, 4, 0);
             cbGroupFilter = new DarkCombo();
             cbGroupFilter.Width = 130;
-            cbGroupFilter.Margin = new Padding(0, 6, 14, 0);
+            cbGroupFilter.Margin = new Padding(0, 8, 14, 0);
             cbGroupFilter.SelectedIndexChanged += delegate { if (!suspendSel) { RefreshAccountList(); NudgeList(); } };
-            btnViewList = Ui.Btn(Lang.T("List"), 52, delegate { SetView(false); }, "nav");
-            btnViewList.Margin = new Padding(0, 5, 2, 0);
+            btnViewList = Ui.Btn(Lang.T("List"), 52, delegate { SetView(false); }, "toggle");
+            btnViewList.Margin = new Padding(0, 7, 2, 0);
             Ui.Tips.SetToolTip(btnViewList, "Compact list with profile pictures.");
-            btnViewCards = Ui.Btn(Lang.T("Cards"), 60, delegate { SetView(true); }, "nav");
-            btnViewCards.Margin = new Padding(0, 5, 0, 0);
+            btnViewCards = Ui.Btn(Lang.T("Cards"), 60, delegate { SetView(true); }, "toggle");
+            btnViewCards.Margin = new Padding(0, 7, 0, 0);
             filt.Padding = new Padding(12, 0, 12, 0);        // same left edge as the toolbar and rows
             Ui.Tips.SetToolTip(btnViewCards, "Expanded cards: big profile picture, status, a game for each account and a Launch button.");
             filt.Controls.Add(l1);
@@ -1052,7 +1054,7 @@ namespace RobloxMultiHub
             GradientButton bLaunch = new GradientButton();
             bLaunch.Text = "\U0001F680  " + Lang.T("Launch selected");
             bLaunch.Size = new Size(158, 34);
-            bLaunch.Margin = new Padding(12, 7, 8, 5);      // line up with the rows above
+            bLaunch.Margin = new Padding(12, 6, 8, 6);      // centered in the 46px footer band
             bLaunch.Click += delegate { LaunchSelected(); };
             Ui.Tips.SetToolTip(bLaunch, "Launch the selected accounts. Accounts with their own game use it; the others use the Launch page.");
             RoundButton bAll = Ui.Btn(Lang.T("Launch all"), 90, delegate { LaunchAllListed(); }, "");
@@ -1064,7 +1066,7 @@ namespace RobloxMultiHub
             Ui.Tips.SetToolTip(bUp, "Move the selected account(s) up in your own order.");
             Ui.Tips.SetToolTip(bDown, "Move the selected account(s) down in your own order.");
             lblCount = Ui.Lbl("", "muted");              // kept for the counters; not shown (the Launch page lists the selection)
-            foreach (RoundButton b in new RoundButton[] { bAll, bStop, bUp, bDown }) b.Margin = new Padding(0, 8, 6, 6);
+            foreach (RoundButton b in new RoundButton[] { bAll, bStop, bUp, bDown }) b.Margin = new Padding(0, 8, 6, 8);
             foot.Controls.Add(bLaunch);
             foot.Controls.Add(bAll);
             foot.Controls.Add(bStop);

@@ -39,11 +39,14 @@ namespace RobloxMultiHub
         bool pressed;
         Color curFill, curText, curBorder;   // smoothly animated toward their target each frame
         bool colorsInit;
-        System.Windows.Forms.Timer anim;
+        // every animating button repaints on the ONE shared 8ms animation clock (Anim.Frame) -
+        // per-button WinForms timers delivered uneven ~15.6ms WM_TIMERs, which read as judder
+        static readonly System.Collections.Generic.HashSet<RoundButton> animating = new System.Collections.Generic.HashSet<RoundButton>();
+        static bool frameHooked;
         Point rippleAt;                      // click ripple (material-style), expanding fading disc
         int rippleT0;
         bool rippling;
-        const int RippleMs = Anim.Ms;                // same clock as the page slide and nav indicator
+        const int RippleMs = Anim.Ms;        // same clock and duration as everything else a click triggers
 
         public RoundButton()
         {
@@ -55,9 +58,7 @@ namespace RobloxMultiHub
             Height = 30;
         }
 
-        // Starts (or reverses) the highlight evolve. Runs on the button's own animation timer with
-        // the same timestamp clock as the ripple, so the fill tracks the ripple edge exactly -
-        // two independent timers made the pair look like it was skipping frames.
+        // Starts (or reverses) the highlight evolve, on the shared animation clock.
         public void Evolve(float to)
         {
             growFrom = CurrentGrow();
@@ -67,6 +68,8 @@ namespace RobloxMultiHub
             RunAnim();
         }
 
+        // The CURRENT highlight amount (0..1); advances from its timestamps so the painted frame is
+        // always correct no matter when repaints arrive, and settles Wipe when finished.
         float CurrentGrow()
         {
             if (!growing) return Wipe;
@@ -77,6 +80,11 @@ namespace RobloxMultiHub
         }
 
         public bool Evolving { get { return growing; } }
+
+        // called by the shared clock every frame: advances (and settles) the highlight value from
+        // its timestamps, INDEPENDENT of painting - so the state can never get stuck even if a
+        // button is not repainted by the branch that would normally advance it
+        internal void Advance() { CurrentGrow(); }
 
         public void FitText(int minWidth)
         {
@@ -104,7 +112,7 @@ namespace RobloxMultiHub
         protected override void OnTextChanged(EventArgs e) { Invalidate(); base.OnTextChanged(e); }
         protected override void Dispose(bool disposing)
         {
-            if (disposing && anim != null) { anim.Stop(); anim.Dispose(); anim = null; }
+            if (disposing) animating.Remove(this);
             base.Dispose(disposing);
         }
 
@@ -138,6 +146,12 @@ namespace RobloxMultiHub
                 if (Active) { fill = Theme.Accent; text = Color.White; }
                 else { fill = hover ? Theme.Panel2 : Theme.Panel; text = hover ? Theme.Text : Theme.Muted; }
                 border = fill;
+            }
+            else if (Kind == "toggle")
+            {
+                // outlined like a normal button, filled when it is the active choice (List / Cards)
+                if (Active) { fill = Theme.Accent; border = Theme.Accent; text = Color.White; }
+                else { fill = Theme.Panel2; border = hover ? Theme.Accent : Theme.Border; text = Theme.Text; }
             }
             else if (hover) fill = Tint.Shift(fill, Theme.Dark ? 14 : -10);
             if (pressed) fill = Tint.Shift(fill, -14);
@@ -182,8 +196,12 @@ namespace RobloxMultiHub
                         }
                         else
                         {
-                            int a = (int)(255 * Math.Max(0f, Math.Min(1f, Wipe)));
-                            using (SolidBrush ab = new SolidBrush(Color.FromArgb(a, Theme.Accent))) g.FillPath(ab, path);
+                            // dissolving: must ALSO advance here (CurrentGrow), or Wipe stays at its
+                            // stale value forever and the tab keeps its highlight - that was the bug
+                            float w = Math.Max(0f, Math.Min(1f, CurrentGrow()));
+                            int a = (int)(255 * w);
+                            if (a > 2)
+                                using (SolidBrush ab = new SolidBrush(Color.FromArgb(a, Theme.Accent))) g.FillPath(ab, path);
                         }
                     }
                 }
@@ -215,10 +233,9 @@ namespace RobloxMultiHub
             else flags |= TextFormatFlags.HorizontalCenter;
             TextRenderer.DrawText(g, Text, Font, tr, Fade(curText, TextOpacity * Opacity), flags);
 
-            // keep animating until the colours have settled, the ripple is done and the highlight
-            // has finished evolving, then stop the timer
+            // repaint on the shared clock while anything is in motion; settle = leave the animating set
             if (rippling || growing || Diff(curFill, fill) + Diff(curText, text) + Diff(curBorder, border) > 4) RunAnim();
-            else if (anim != null) anim.Stop();
+            else animating.Remove(this);
         }
 
         static Color Lerp(Color a, Color b, float t)
@@ -242,13 +259,15 @@ namespace RobloxMultiHub
 
         void RunAnim()
         {
-            if (anim == null)
+            animating.Add(this);
+            Anim.EnsureClock();                 // the clock only auto-started for Anim jobs; a lone
+            if (frameHooked) return;            // ripple/evolve must start it too or it never ticks
+            frameHooked = true;
+            Anim.frameHasSubscribers = true;
+            Anim.Frame += delegate
             {
-                anim = new System.Windows.Forms.Timer();
-                anim.Interval = 16;                         // ~60 fps while a button is transitioning
-                anim.Tick += delegate { Invalidate(); };
-            }
-            if (!anim.Enabled) anim.Start();
+                foreach (RoundButton b in animating) { b.Advance(); b.Invalidate(); }
+            };
         }
     }
 
