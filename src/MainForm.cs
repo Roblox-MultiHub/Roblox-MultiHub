@@ -53,6 +53,8 @@ namespace RobloxMultiHub
         HashSet<string> selected = new HashSet<string>();
         HashSet<string> runningIds = new HashSet<string>();
         System.Threading.CancellationTokenSource browserCts;
+        GradientButton footLaunch;
+        RoundButton footAll, footStop;
 
         public MainForm(bool minimized)
         {
@@ -78,6 +80,7 @@ namespace RobloxMultiHub
             BuildPerfPage();
             BuildSettingsPage();
             BuildHelpPage();
+            BuildBetaPage();
             ApplyTheme();
             ShowPage("Home");
             RefreshAccountList();
@@ -276,6 +279,7 @@ namespace RobloxMultiHub
             top.Controls.Add(NavBtn("Monitor", Lang.T("\U0001F4CA  Monitor"), false, null));
             top.Controls.Add(NavBtn("Presets", Lang.T("\U0001F4BE  Presets"), false, null));
             top.Controls.Add(NavBtn("Perf", Lang.T("⚡  Perf"), false, null));
+            top.Controls.Add(NavBtn("Beta", Lang.T("\U0001F9EA  Beta"), false, "New features that are still being tested. They move to their proper page once proven."));
 
             side.Controls.Add(bottom);
             side.Controls.Add(top);
@@ -488,6 +492,8 @@ namespace RobloxMultiHub
                     UpdateStatusCells();
                     UpdateMemUi();
                     MaxAlts.Tick();
+                    RamCap.Tick();
+                    UpdateBetaLive();
                     DiscordRpc.Update(UsageMonitor.Count, Store.Accounts.Count);
                 }
                 if (currentPage == "Layout" && tickN % 2 == 0) RefreshWindowList();
@@ -553,6 +559,7 @@ namespace RobloxMultiHub
                     ? "Right now: no Roblox window is running."
                     : "Right now: " + count + " Roblox window(s) use " + CpuText(UsageMonitor.TotalCpu) + " CPU and " + Util.FormatBytes(UsageMonitor.TotalRam)
                       + " memory in total  (avg " + CpuText(UsageMonitor.TotalCpu / count) + " and " + Util.FormatBytes(UsageMonitor.TotalRam / count) + " per account).";
+            UpdateFooterButtons();
         }
 
         async void RunWatcher()
@@ -642,6 +649,7 @@ namespace RobloxMultiHub
                 UnregisterHotkeys();
                 DiscordRpc.Stop();
                 if (Store.Settings.MaxAlts) MaxAlts.Reset();
+                RamCap.Reset();
                 if (browserCts != null) browserCts.Cancel();
             }
             catch (Exception) { }
@@ -814,6 +822,26 @@ namespace RobloxMultiHub
             foot.Controls.Add(bUp);
             foot.Controls.Add(bDown);
             t.Controls.Add(foot, 0, 3);
+            footLaunch = bLaunch;
+            footAll = bAll;
+            footStop = bStop;
+            UpdateFooterButtons();
+        }
+
+        // Footer of the accounts panel: the red Stop button only exists while something is running
+        // ("Stop" for one window, "Stop all" for several), and 'Launch all' hides when every listed
+        // account is already running.
+        void UpdateFooterButtons()
+        {
+            if (footStop == null || footAll == null) return;
+            int running = runningIds.Count;
+            footStop.Visible = running > 0;
+            string want = running == 1 ? Lang.T("Stop") : Lang.T("Stop all");
+            if (footStop.Text != want) footStop.Text = want;
+            bool anyToLaunch = false;
+            foreach (Account a in FilteredAccounts())
+                if (!runningIds.Contains(a.Id)) { anyToLaunch = true; break; }
+            footAll.Visible = anyToLaunch;
         }
 
         void FitListColumn()

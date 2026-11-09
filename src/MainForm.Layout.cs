@@ -22,6 +22,8 @@ namespace RobloxMultiHub
         RadioButton rbAuto, rbGrid, rbFixed;
         NumericUpDown numRows, numCols, numGap, numMargin, numScale, numFixW, numFixH, numAutoDelay;
         CheckBox chkStretch, chkBorderless, chkTop, chkTitles, chkAuto, chkHotkeys;
+        ComboBox cbSortMode;
+        static readonly string[] SortModeKeys = new string[] { "Manual", "Name", "Pid" };
         Panel previewPanel;
         ListView lvWins;
         Label lblWinInfo;
@@ -152,11 +154,25 @@ namespace RobloxMultiHub
             ListStyle.Attach(lvWins);
             lvWins.DoubleClick += delegate { ToggleInclude(); };
             p.Add(lvWins);
+            cbSortMode = new DarkCombo();
+            cbSortMode.Width = 150;
+            cbSortMode.DropDownStyle = ComboBoxStyle.DropDownList;
+            cbSortMode.Items.AddRange(new object[] { "Sort: Manual", "Sort: Account name", "Sort: PID" });
+            cbSortMode.SelectedIndex = Math.Max(0, Array.IndexOf(SortModeKeys, Store.Settings.Layout.SortMode));
+            cbSortMode.SelectedIndexChanged += delegate
+            {
+                if (loadingLayout) return;
+                Store.Settings.Layout.SortMode = SortModeKeys[Math.Max(0, cbSortMode.SelectedIndex)];
+                Store.SaveSettings();
+                RefreshWindowList();
+            };
             p.Opt("Moves every window into the layout above.",
-                "'Arrange now' applies the layout. 'Refresh list' reads the running windows again. 'Restore borders' brings back title bars removed by the borderless option.",
+                "'Arrange now' applies the layout. 'Refresh list' reads the running windows again. 'Restore borders' brings back title bars removed by the borderless option.\n\n"
+                + "Sort Mode fixes the order the grid is filled in: 'Manual' keeps the order of the list (move rows up/down yourself), 'Account name' sorts by account (account1, account3, account10 - digits count as numbers), 'PID' sorts by process id, lowest first. Windows without an account name go last.",
                 Ui.Btn("Arrange now", 130, delegate { ArrangeNow(); }, "primary"),
                 Ui.Btn("Refresh list", 110, delegate { RefreshWindowList(); }, ""),
-                Ui.Btn("Restore borders", 130, delegate { WindowLayout.RestoreBorders(); AddLog("Window borders restored."); }, ""));
+                Ui.Btn("Restore borders", 130, delegate { WindowLayout.RestoreBorders(); AddLog("Window borders restored."); }, ""),
+                cbSortMode);
             p.RowTip("The order of this list decides which window gets which grid cell (left to right, top to bottom). 'Include / exclude' (or a double-click) takes a window out of the grid. 'Pin' places one window at an exact position and size and remembers it for that account. A line without a title is a Roblox process that has not opened its window yet, or a background process.",
                 Ui.Btn("Move up", 78, delegate { MoveRow(-1); }, ""),
                 Ui.Btn("Move down", 90, delegate { MoveRow(1); }, ""),
@@ -389,6 +405,7 @@ namespace RobloxMultiHub
                 keep.Add(nr);
             }
             winRows = keep;
+            ApplySortMode();
 
             StringBuilder sig = new StringBuilder();
             foreach (WinRow sr in winRows)
@@ -429,6 +446,50 @@ namespace RobloxMultiHub
             int withWin = winRows.Count(x => x.Info.HasWindow);
             lblWinInfo.Text = winRows.Count == 0 ? "No Roblox is running right now." : withWin + " window(s) found, " + (winRows.Count - withWin) + " process(es) without a window.";
             previewPanel.Invalidate();
+        }
+
+        // Sort Mode ('Sort' next to 'Arrange now'): re-orders the window list so the grid always gets
+        // the same cells, also after the app or a client restarted. Manual = leave the list alone.
+        void ApplySortMode()
+        {
+            string sm = Store.Settings.Layout.SortMode;
+            if (sm == "Name")
+                winRows = winRows.OrderBy(r => string.IsNullOrEmpty(r.Info.Account) ? 1 : 0)
+                                  .ThenBy(r => r.Info.Account ?? "", new NaturalCmp())
+                                  .ToList();
+            else if (sm == "Pid")
+                winRows = winRows.OrderBy(r => r.Info.HasWindow ? 0 : 1)
+                                  .ThenBy(r => r.Info.Pid)
+                                  .ToList();
+        }
+
+        // "account3" before "account10": digit runs are compared as numbers, letters case-insensitively.
+        class NaturalCmp : IComparer<string>
+        {
+            public int Compare(string a, string b)
+            {
+                a = a ?? ""; b = b ?? "";
+                int i = 0, j = 0;
+                while (i < a.Length && j < b.Length)
+                {
+                    if (char.IsDigit(a[i]) && char.IsDigit(b[j]))
+                    {
+                        int si = i, sj = j;
+                        while (i < a.Length && char.IsDigit(a[i])) i++;
+                        while (j < b.Length && char.IsDigit(b[j])) j++;
+                        string na = a.Substring(si, i - si).TrimStart('0'), nb = b.Substring(sj, j - sj).TrimStart('0');
+                        int cmp = na.Length != nb.Length ? na.Length.CompareTo(nb.Length) : string.CompareOrdinal(na, nb);
+                        if (cmp != 0) return cmp;
+                    }
+                    else
+                    {
+                        int cmp = char.ToLowerInvariant(a[i]).CompareTo(char.ToLowerInvariant(b[j]));
+                        if (cmp != 0) return cmp;
+                        i++; j++;
+                    }
+                }
+                return (a.Length - i).CompareTo(b.Length - j);
+            }
         }
 
         List<WinRow> SelectedRows()

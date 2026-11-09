@@ -80,6 +80,7 @@ namespace RobloxMultiHub
             { "⚙  Settings", "⚙  Opties" },
             { "❓  Help", "❓  Help" },
             { "\U0001F3AC  Macro", "\U0001F3AC  Macro" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  Beta" },
             // top bar
             { "Multi-account launcher", "Multi-account launcher" },
             { "Running", "Actief" },

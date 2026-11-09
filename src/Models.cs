@@ -76,6 +76,7 @@ namespace RobloxMultiHub
         public bool AutoCapture = false;    // OFF by default, as requested
         public int AutoCaptureDelayMs = 1500;
         public bool Hotkeys = true;
+        public string SortMode = "Manual";     // Manual | Name | Pid - the order the grid is filled in
         public int MinW = 0;                // smallest window size Roblox accepts (measured automatically, 0 = unknown)
         public int MinH = 0;
     }
@@ -184,6 +185,9 @@ namespace RobloxMultiHub
         public bool MaxAltsIdle = true;             // background clients get Idle CPU priority + efficiency mode
         public bool MaxAltsTrim = true;             // background clients get their memory trimmed every so often
         public bool MaxAltsMinimize = false;        // also minimize background clients
+
+        // Beta: hard working-set cap per Roblox window in MB (0 = off).
+        public int MaxRamMb = 0;
     }
 
     // RAM cleaner (Performance page). The cleaning itself is done by an admin helper process.
