@@ -72,6 +72,11 @@ namespace RobloxMultiHub
         {
             startMinimized = minimized;
             Theme.Set(Store.Settings.Theme != "Light");
+            // RTL languages (Arabic, Hebrew): text direction flips, layout does not - the manual
+            // positioning does not mirror safely, and Windows shapes the scripts either way
+            RightToLeft = (Store.Settings.Language == "ar" || Store.Settings.Language == "he")
+                ? RightToLeft.Yes : RightToLeft.No;
+            RightToLeftLayout = false;
             Text = "Roblox MultiHub";
             Font = Theme.Base;
             AutoScaleDimensions = new SizeF(96F, 96F);
@@ -307,6 +312,13 @@ namespace RobloxMultiHub
             logHeader.Click += delegate { ToggleLog(); };
             Ui.Tips.SetToolTip(logHeader, "Everything the app does is written here. Click to open or close it.");
             logHost.Controls.Add(logHeader);
+            // self-correcting: while collapsed the header always EXACTLY matches the real strip
+            // height (DPI scale, collapse animation, row changes - whatever resized it), so the
+            // centered text cannot end up off-center through any code path
+            logHost.Resize += delegate
+            {
+                if (!logOpen) logHeader.Height = logHost.ClientSize.Height;
+            };
             rightTable.Controls.Add(logHost, 0, 1);
         }
 
