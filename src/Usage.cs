@@ -77,8 +77,9 @@ namespace RobloxMultiHub
                 finally { p.Dispose(); }
             }
             CpuAvailable = !(count > 0 && cpuFailures == count);
-            // GPU: one snapshot for all pids (the engine counters are per process instance)
-            Dictionary<int, double> gpu = GpuMeter.Sample();
+            // GPU: a background thread keeps the snapshot warm - reading it here is free
+            GpuMeter.Start();
+            Dictionary<int, double> gpu = GpuMeter.Latest;
             double gpuTotal = 0;
             foreach (KeyValuePair<int, UsageSample> kv in fresh)
             {

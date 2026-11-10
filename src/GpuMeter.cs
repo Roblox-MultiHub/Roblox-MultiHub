@@ -6,53 +6,84 @@ namespace RobloxMultiHub
 {
     // Per-process GPU utilization from the Windows "GPU Engine" performance counters (the same
     // numbers Task Manager shows). Instance names look like pid_1234_luid_..._engtype_3D; every
-    // engine of a process is summed. Counters are cached because a fresh counter returns 0 on its
-    // first sample - values become meaningful from the second tick on (we tick every ~2 s).
+    // engine of a process is summed.
+    // IMPORTANT: NextValue() on these counters takes tens to hundreds of milliseconds EACH - with a
+    // farm of 9 clients that is seconds of work. It MUST stay off the UI thread, so this sampler
+    // runs on its own background thread and publishes an immutable snapshot; readers just grab it.
     public static class GpuMeter
     {
+        static readonly object gate = new object();
         static Dictionary<string, PerformanceCounter> counters;
-        static Dictionary<int, double> last = new Dictionary<int, double>();
-        static int refreshAt;
+        static volatile Dictionary<int, double> latest = new Dictionary<int, double>();
         static bool unavailable;
+        static bool started;
 
         public static bool Available { get { return !unavailable; } }
 
-        public static Dictionary<int, double> Sample()
+        // The latest snapshot; never blocks, never does counter work on the caller's thread.
+        public static Dictionary<int, double> Latest { get { return latest; } }
+
+        public static void Start()
         {
-            if (unavailable) return last;
-            try
+            if (started) return;
+            started = true;
+            System.Threading.Thread t = new System.Threading.Thread(Run);
+            t.IsBackground = true;
+            t.Name = "GpuMeter";
+            t.Start();
+        }
+
+        static void Run()
+        {
+            int refreshAt = 0;
+            while (true)
             {
-                if (counters == null || Environment.TickCount >= refreshAt)
+                try
                 {
-                    PerformanceCounterCategory cat = new PerformanceCounterCategory("GPU Engine");
-                    counters = new Dictionary<string, PerformanceCounter>();
-                    foreach (string inst in cat.GetInstanceNames())
+                    if (counters == null || Environment.TickCount >= refreshAt)
                     {
-                        if (PidOf(inst) <= 0) continue;
-                        if (!counters.ContainsKey(inst))
-                            counters[inst] = new PerformanceCounter("GPU Engine", "Utilization Percentage", inst, true);
+                        // keep existing counters (a fresh counter reads 0 on its first sample);
+                        // only ADD new instances and DROP vanished ones
+                        PerformanceCounterCategory cat = new PerformanceCounterCategory("GPU Engine");
+                        HashSet<string> live = new HashSet<string>();
+                        Dictionary<string, PerformanceCounter> next = new Dictionary<string, PerformanceCounter>();
+                        foreach (string inst in cat.GetInstanceNames())
+                        {
+                            if (PidOf(inst) <= 0) continue;
+                            live.Add(inst);
+                            PerformanceCounter old;
+                            if (counters != null && counters.TryGetValue(inst, out old)) next[inst] = old;
+                            else next[inst] = new PerformanceCounter("GPU Engine", "Utilization Percentage", inst, true);
+                        }
+                        if (counters != null)
+                            foreach (KeyValuePair<string, PerformanceCounter> kv in counters)
+                                if (!live.Contains(kv.Key)) kv.Value.Dispose();
+                        lock (gate) counters = next;
+                        refreshAt = Environment.TickCount + 30000;
                     }
-                    refreshAt = Environment.TickCount + 30000;      // engines come and go; refresh the list
+                    Dictionary<int, double> sum = new Dictionary<int, double>();
+                    Dictionary<string, PerformanceCounter> snapshot;
+                    lock (gate) snapshot = counters;
+                    if (snapshot != null)
+                        foreach (KeyValuePair<string, PerformanceCounter> kv in snapshot)
+                        {
+                            int pid = PidOf(kv.Key);
+                            if (pid <= 0) continue;
+                            float v = kv.Value.NextValue();
+                            if (v <= 0f) continue;
+                            double cur;
+                            sum.TryGetValue(pid, out cur);
+                            sum[pid] = cur + v;
+                        }
+                    latest = sum;                    // atomic swap: readers never see a half-built dict
                 }
-                Dictionary<int, double> sum = new Dictionary<int, double>();
-                foreach (KeyValuePair<string, PerformanceCounter> kv in counters)
+                catch (Exception)
                 {
-                    int pid = PidOf(kv.Key);
-                    if (pid <= 0) continue;
-                    float v = kv.Value.NextValue();
-                    if (v <= 0f) continue;
-                    double cur;
-                    sum.TryGetValue(pid, out cur);
-                    sum[pid] = cur + v;
+                    unavailable = true;              // no GPU counters on this Windows / localization
+                    return;
                 }
-                last = sum;
+                System.Threading.Thread.Sleep(5000);
             }
-            catch (Exception)
-            {
-                unavailable = true;         // no GPU counters on this Windows / localization
-                counters = null;
-            }
-            return last;
         }
 
         static int PidOf(string instance)

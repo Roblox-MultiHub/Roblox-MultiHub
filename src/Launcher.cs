@@ -629,6 +629,7 @@ namespace RobloxMultiHub
         public static void ApplyTaskbarHiding()
         {
             bool hide = Store.Settings.HideTaskbar;
+            if (!hide && hiddenDone.Count == 0) return;      // nothing to do: skip the window scan
             foreach (WinInfo w in WindowLayout.FindRobloxWindows())
             {
                 if (!w.HasWindow) continue;

@@ -47,7 +47,7 @@ namespace RobloxMultiHub
             Wmi(s, "SELECT Manufacturer, Product, Version FROM Win32_BaseBoard", new string[] { "Manufacturer", "Product", "Version" });
             Wmi(s, "SELECT Manufacturer, SMBIOSBIOSVersion, ReleaseDate FROM Win32_BIOS", new string[] { "Manufacturer", "SMBIOSBIOSVersion", "ReleaseDate" });
 
-            Section(s, "DISKS (all of them) + PAGEFILE");
+            Section(s, "DISKS + PAGEFILE");
             try
             {
                 using (ManagementObjectSearcher d = new ManagementObjectSearcher(
@@ -65,7 +65,12 @@ namespace RobloxMultiHub
                     }
                 foreach (DriveInfo di in DriveInfo.GetDrives())
                     if (di.IsReady)
-                        Line(s, "  " + di.Name, di.DriveType + "  " + Util.FormatBytes(di.TotalSize - di.AvailableFreeSpace) + " used of " + Util.FormatBytes(di.TotalSize) + "  label " + di.VolumeLabel);
+                    {
+                        double pct = di.TotalSize > 0 ? 100.0 * (di.TotalSize - di.AvailableFreeSpace) / di.TotalSize : 0;
+                        Line(s, "  " + di.Name.Replace("\\", ""),
+                            di.VolumeLabel + "  " + Gb(di.TotalSize - di.AvailableFreeSpace) + " / " + Gb(di.TotalSize)
+                            + " GB  (" + pct.ToString("0") + "% used)");
+                    }
                 Wmi(s, "SELECT Name, AllocatedBaseSize, CurrentUsage FROM Win32_PageFileUsage", new string[] { "Name", "AllocatedBaseSize", "CurrentUsage" });
             }
             catch (Exception ex) { Line(s, "disk query failed", ex.Message); }
@@ -82,17 +87,18 @@ namespace RobloxMultiHub
                 if (fs != null && File.Exists(fs))
                 {
                     string xml = File.ReadAllText(fs, Encoding.UTF8);
-                    int i = xml.IndexOf("FramerateCap");
-                    Line(s, "FramerateCap", i < 0 ? "(not set)" : xml.Substring(i, Math.Min(40, xml.Length - i)));
+                    System.Text.RegularExpressions.Match m =
+                        System.Text.RegularExpressions.Regex.Match(xml, "FramerateCap\">\\s*(-?\\d+)");
+                    Line(s, "FramerateCap", m.Success ? m.Groups[1].Value + " fps (-1 = Roblox default)" : "(not in file yet)");
                 }
             }
             Line(s, "Protocol registered", Launcher.ProtocolRegistered().ToString());
             Line(s, "Legacy bootstrapper", Launcher.UsesLegacyBootstrapper().ToString());
 
             Section(s, "ACCOUNTS");
-            Line(s, "Count", Store.Accounts.Count.ToString());
-            foreach (Account a in Store.Accounts)
-                Line(s, "  " + AppState.Name(a), "@" + a.Username + "  id " + a.UserId + "  group " + (a.Group ?? "-") + "  own FPS cap " + a.FpsCap);
+            // privacy: only a count here - usernames appear solely under RUNNING CLIENTS below,
+            // because those are the ones a supporter actually needs to see
+            Line(s, "Saved", Store.Accounts.Count.ToString() + " (names hidden; running ones listed below)");
 
             Section(s, "RUNNING CLIENTS (detailed overhead)");
             Line(s, "Tracked instances", Launcher.Instances.Count.ToString());
@@ -176,6 +182,8 @@ namespace RobloxMultiHub
             }
             catch (Exception ex) { Line(s, "  query failed", ex.Message); }
         }
+
+        static string Gb(long bytes) { return (bytes / 1073741824.0).ToString("0.00"); }
 
         // mask the secret tail of the webhook URL (and any other long token-looking value) in a dump
         static string MaskSecrets(string text)
