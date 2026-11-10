@@ -1055,6 +1055,7 @@ namespace RobloxMultiHub
 
             // ---- the two views share one cell ----
             Panel viewHost = new Panel();
+            viewHost.Padding = new Padding(0, 0, 10, 0);   // breathing room for the scrollbar, matching the left inset
             viewHost.Dock = DockStyle.Fill;
             viewHost.Margin = new Padding(0, 6, 0, 0);   // breathing room below the filter band
             viewHost.Tag = "card";
