@@ -301,7 +301,8 @@ namespace RobloxMultiHub
             MonitorDesc mon = WindowLayout.PickMonitor(monitors, Store.Settings.Layout.Monitor);
             LayoutSettings L = Store.Settings.Layout;
             Rectangle full = mon.Bounds;
-            Rectangle area = L.UseWorkArea ? mon.Work : mon.Bounds;
+            Rectangle area = mon.Bounds;      // the preview is a schematic: cells fill the whole screen,
+                                               // never the taskbar-inset work area (that left a dead band)
             Rectangle host = Rectangle.Inflate(previewPanel.ClientRectangle, -14, -14);
             host.Height -= 12;
             double sc = Math.Min(host.Width / (double)full.Width, host.Height / (double)full.Height);

@@ -72,16 +72,16 @@ namespace RobloxMultiHub
             chkHideBar.CheckedChanged += delegate { if (!loadingBeta) { Store.Settings.HideTaskbar = chkHideBar.Checked; Store.SaveSettings(); Launcher.ApplyTaskbarHiding(); } };
 
             p.Opt("Everything a supporter needs, in one file.",
-                "Writes a detailed text file next to the app data: your settings (webhook URL masked), Windows, CPU, GPU, motherboard, BIOS, every disk and where the pagefile is, the Roblox install and its flags, every account by name, every running client with its live overhead, hub overhead, and the recent log.",
-                Ui.Btn("Create support bundle", 180, delegate
+                "Writes a detailed text file next to the app data: your settings (webhook URL masked), Windows, CPU, GPU, motherboard, BIOS, every disk and where the pagefile is, the Roblox install and its flags, a count of accounts, every running client with its live overhead, hub overhead, and the recent log.",
+                Ui.Btn("Create debug log", 170, delegate
                 {
                     try
                     {
                         string f = SupportBundle.Create();
-                        AddLog("Support bundle written: " + f);
+                        AddLog("Debug log written: " + f);
                         System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + f + "\"");
                     }
-                    catch (Exception ex) { AddLog("Support bundle failed: " + ex.Message); }
+                    catch (Exception ex) { AddLog("Debug log failed: " + ex.Message); }
                 }, ""));
 
             loadingBeta = false;

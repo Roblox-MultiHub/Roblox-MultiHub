@@ -285,7 +285,7 @@ namespace RobloxMultiHub
             logHost.Dock = DockStyle.Fill;
             logHost.Tag = "card";
             logHost.Radius = 8;                    // smaller radius: 14 on the collapsed strip looks like a pill
-            logHost.Padding = new Padding(8, 2, 8, 8);
+            logHost.Padding = new Padding(8, 0, 8, 0);
             logHost.Margin = new Padding(0, 10, 0, 0);
 
             logBox = new TextBox();
@@ -301,8 +301,8 @@ namespace RobloxMultiHub
             logHeader = Ui.Lbl("▸  Activity log", "muted");
             logHeader.AutoSize = false;
             logHeader.Dock = DockStyle.Top;
-            logHeader.Height = 30;                       // 2px top padding + 30 of the 34px band:
-            logHeader.TextAlign = ContentAlignment.MiddleLeft;   // text center lands on the band center
+            logHeader.Height = logClosedPx;               // fills the collapsed band completely, so the
+            logHeader.TextAlign = ContentAlignment.MiddleLeft;   // centered text sits dead-center at ANY DPI
             logHeader.Cursor = Cursors.Hand;
             logHeader.Click += delegate { ToggleLog(); };
             Ui.Tips.SetToolTip(logHeader, "Everything the app does is written here. Click to open or close it.");
@@ -323,6 +323,7 @@ namespace RobloxMultiHub
             if (bodyTable != null) bodyTable.ColumnStyles[0] = new ColumnStyle(SizeType.Absolute, 208F * sx);
             logClosedPx = Math.Max(34, (int)(LogClosedH * sy));
             logOpenPx = Math.Max(60, (int)(LogOpenH * sy));
+            if (logHeader != null && !logOpen) logHeader.Height = logClosedPx;   // stay dead-center at this DPI
             if (rightTable != null && !logOpen)
                 rightTable.RowStyles[1] = new RowStyle(SizeType.Absolute, logClosedPx);
         }
@@ -1353,14 +1354,37 @@ namespace RobloxMultiHub
         // =====================================================================
         void SetView(bool cardsOn)
         {
+            Control from = cardsView ? (cardHost.Visible ? (Control)cardHost : null) : (lv.Visible ? (Control)lv : null);
             cardsView = cardsOn;
             Store.Settings.View = cardsOn ? "Cards" : "List";
             Store.SaveSettings();
-            lv.Visible = !cardsOn;
-            cardHost.Visible = cardsOn;
+            Control to = cardsOn ? (Control)cardHost : lv;
             if (cardsOn) RebuildCards();
             ApplySelectionToViews();
             StyleViewButtons();
+
+            // the views cross-fade by sliding the incoming one over the outgoing, same as pages -
+            // an instant swap here was one of the remaining snaps
+            if (from == null || to == from || !Store.Settings.Animations)
+            {
+                lv.Visible = !cardsOn;
+                cardHost.Visible = cardsOn;
+                return;
+            }
+            Size sz = from.Size;
+            Point home = from.Location;
+            to.Size = sz;
+            to.Location = home;
+            to.Visible = true;
+            to.BringToFront();
+            Anim.Go("setview", Anim.Ms, delegate(float e)
+            {
+                to.Location = new Point(home.X, home.Y + (int)((1f - e) * 26));       // slides up into place
+            }, delegate
+            {
+                from.Visible = false;
+                to.Dock = DockStyle.Fill;
+            });
         }
 
         void RebuildCards()

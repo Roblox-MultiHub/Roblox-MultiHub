@@ -640,6 +640,10 @@ namespace RobloxMultiHub
                     Native.SetWindowLong(w.Hwnd, Native.GWL_EXSTYLE, ex | 0x00000080);      // WS_EX_TOOLWINDOW
                     Native.SetWindowPos(w.Hwnd, IntPtr.Zero, 0, 0, 0, 0,
                         Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOZORDER | Native.SWP_FRAMECHANGED);
+                    // the taskbar only rebuilds a window's button when the window is re-created or
+                    // re-shown: hide + show (no activate) makes the style change reach the taskbar too
+                    Native.ShowWindow(w.Hwnd, 0);              // SW_HIDE
+                    Native.ShowWindow(w.Hwnd, 4);              // SW_SHOWNOACTIVATE
                     hiddenDone.Add(w.Pid);
                 }
                 else if (hiddenDone.Contains(w.Pid))
