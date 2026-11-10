@@ -193,6 +193,8 @@ namespace RobloxMultiHub
         // Beta: hard working-set cap per Roblox window in MB (0 = off).
         public int MaxRamMb = 0;
         public int RamCapFloorMb = 0;             // measured by the cap probe; 0 = not measured yet
+        public bool VeryLowMem = true;            // VeryLow memory priority on every client
+        public bool HideTaskbar = false;          // Roblox windows off the taskbar / Alt-Tab
     }
 
     // RAM cleaner (Performance page). The cleaning itself is done by an admin helper process.

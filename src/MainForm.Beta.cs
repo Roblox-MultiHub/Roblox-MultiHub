@@ -11,6 +11,7 @@ namespace RobloxMultiHub
         NumericUpDown numMaxRam;
         RoundButton btnProbe;
         Label lblProbe;
+        CheckBox chkVeryLow, chkHideBar;
         bool loadingBeta;
 
         void BuildBetaPage()
@@ -54,14 +55,71 @@ namespace RobloxMultiHub
             p.Row(lblProbe);
 
             p.Opt("Quick numbers without a probe.",
-                "Reads cores, RAM, GPU counters and the clients currently running, and estimates how many windows this PC can run. The real per-window cap comes from the probe above.",
+                "Reads cores, RAM, GPU counters, disks, pagefile and the clients currently running, and estimates how many windows this PC can run. The real per-window cap comes from the probe above.",
                 Ui.Btn("Run diagnostics", 150, delegate { BetaDiagnostics(); }, ""));
+
+            p.Section("Client tweaks");
+            chkVeryLow = Ui.Chk("VeryLow memory priority for all clients", Store.Settings.VeryLowMem, null);
+            p.Opt("Windows reclaims Roblox pages first.",
+                "One call per client. When anything else on the PC needs RAM, Windows takes it from the Roblox clients first instead of your other programs. Recommended ON for farms.",
+                chkVeryLow);
+            chkVeryLow.CheckedChanged += delegate { if (!loadingBeta) { Store.Settings.VeryLowMem = chkVeryLow.Checked; Store.SaveSettings(); } };
+
+            chkHideBar = Ui.Chk("Hide Roblox windows from the taskbar and Alt-Tab", Store.Settings.HideTaskbar, null);
+            p.Opt("Cleans up a crowded taskbar.",
+                "Applies the Windows tool-window style to every Roblox window (also within seconds of a new one opening). The windows stay visible on screen; they only disappear from the taskbar and Alt-Tab. Untick to bring them back.",
+                chkHideBar);
+            chkHideBar.CheckedChanged += delegate { if (!loadingBeta) { Store.Settings.HideTaskbar = chkHideBar.Checked; Store.SaveSettings(); Launcher.ApplyTaskbarHiding(); } };
+
+            p.Opt("Everything a supporter needs, in one file.",
+                "Writes a detailed text file next to the app data: your settings (webhook URL masked), Windows, CPU, GPU, motherboard, BIOS, every disk and where the pagefile is, the Roblox install and its flags, every account by name, every running client with its live overhead, hub overhead, and the recent log.",
+                Ui.Btn("Create support bundle", 180, delegate
+                {
+                    try
+                    {
+                        string f = SupportBundle.Create();
+                        AddLog("Support bundle written: " + f);
+                        System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + f + "\"");
+                    }
+                    catch (Exception ex) { AddLog("Support bundle failed: " + ex.Message); }
+                }, ""));
 
             loadingBeta = false;
             UpdateBetaLive();
         }
 
         int betaSuggestMb;
+
+        // one line per physical disk + where the pagefile lives (fault cost = pagefile disk speed)
+        static System.Collections.Generic.List<string> DiskLines()
+        {
+            System.Collections.Generic.List<string> lines = new System.Collections.Generic.List<string>();
+            try
+            {
+                using (System.Management.ManagementObjectSearcher d = new System.Management.ManagementObjectSearcher(
+                    "SELECT Model, Size, InterfaceType, MediaType FROM Win32_DiskDrive"))
+                using (System.Management.ManagementObjectCollection r = d.Get())
+                    foreach (System.Management.ManagementObject mo in r)
+                    {
+                        try
+                        {
+                            lines.Add("Disk: " + (mo["Model"] ?? "?") + "  " + Util.FormatBytes(Convert.ToInt64(mo["Size"]))
+                                + "  " + (mo["InterfaceType"] ?? "?") + "  " + (mo["MediaType"] ?? "?"));
+                        }
+                        finally { mo.Dispose(); }
+                    }
+                using (System.Management.ManagementObjectSearcher p = new System.Management.ManagementObjectSearcher(
+                    "SELECT Name, AllocatedBaseSize FROM Win32_PageFileUsage"))
+                using (System.Management.ManagementObjectCollection r = p.Get())
+                    foreach (System.Management.ManagementObject mo in r)
+                    {
+                        try { lines.Add("Pagefile: " + mo["Name"] + "  " + mo["AllocatedBaseSize"] + " MB (put it on your fastest SSD - a low RAM cap trades disk reads for RAM)"); }
+                        finally { mo.Dispose(); }
+                    }
+            }
+            catch (Exception) { }
+            return lines;
+        }
 
         void BetaDiagnostics()
         {
@@ -88,6 +146,7 @@ namespace RobloxMultiHub
 
             AddLog("Diagnostics: " + cores + " CPU cores, " + (GpuMeter.Available ? "GPU counters available" : "no GPU counters")
                 + ", RAM " + totalGb.ToString("0.0") + " GB total / " + freeGb.ToString("0.0") + " GB free.");
+            foreach (string d in DiskLines()) AddLog(d);
             if (running > 0)
                 AddLog("Running now: " + running + " client(s), avg " + (UsageMonitor.TotalCpu / running).ToString("0.0") + "% CPU"
                     + (GpuMeter.Available ? ", " + (UsageMonitor.TotalGpu / running).ToString("0.0") + "% GPU" : "")

@@ -601,6 +601,60 @@ namespace RobloxMultiHub
 
         static int sweepAt;
 
+        // ---- VeryLow memory priority + taskbar hiding, applied to every client ----
+        static readonly HashSet<int> lowMemDone = new HashSet<int>();
+
+        // One call per client: memory priority VeryLow, so Windows reclaims Roblox pages first
+        // whenever anything else needs RAM.
+        public static void ApplyLowMemoryPriority()
+        {
+            if (!Store.Settings.VeryLowMem) return;
+            foreach (int pid in RobloxPids())
+            {
+                if (lowMemDone.Contains(pid)) continue;
+                IntPtr h = Native.OpenProcess(0x0200, false, pid);          // PROCESS_SET_INFORMATION
+                if (h == IntPtr.Zero) continue;
+                try
+                {
+                    int prio = 1;                                            // MEMORY_PRIORITY_VERYLOW
+                    SetProcessInformation(h, 3, ref prio, 4);               // ProcessMemoryPriority
+                    lowMemDone.Add(pid);
+                }
+                finally { Native.CloseHandle(h); }
+            }
+        }
+
+        // Tool-window style takes Roblox off the taskbar and Alt-Tab; the windows stay on screen.
+        static readonly HashSet<int> hiddenDone = new HashSet<int>();
+        public static void ApplyTaskbarHiding()
+        {
+            bool hide = Store.Settings.HideTaskbar;
+            foreach (WinInfo w in WindowLayout.FindRobloxWindows())
+            {
+                if (!w.HasWindow) continue;
+                if (hide)
+                {
+                    if (hiddenDone.Contains(w.Pid)) continue;
+                    int ex = Native.GetWindowLong(w.Hwnd, Native.GWL_EXSTYLE);
+                    Native.SetWindowLong(w.Hwnd, Native.GWL_EXSTYLE, ex | 0x00000080);      // WS_EX_TOOLWINDOW
+                    Native.SetWindowPos(w.Hwnd, IntPtr.Zero, 0, 0, 0, 0,
+                        Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOZORDER | Native.SWP_FRAMECHANGED);
+                    hiddenDone.Add(w.Pid);
+                }
+                else if (hiddenDone.Contains(w.Pid))
+                {
+                    int ex = Native.GetWindowLong(w.Hwnd, Native.GWL_EXSTYLE);
+                    Native.SetWindowLong(w.Hwnd, Native.GWL_EXSTYLE, ex & ~0x00000080);
+                    Native.SetWindowPos(w.Hwnd, IntPtr.Zero, 0, 0, 0, 0,
+                        Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOZORDER | Native.SWP_FRAMECHANGED);
+                    hiddenDone.Remove(w.Pid);
+                }
+            }
+        }
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool SetProcessInformation(IntPtr hProcess, int infoClass, ref int info, int size);
+
         // Roblox leaves windowless background processes behind. They show up as "no window yet"
         // rows, and the next launch can mistake one for its client (that is how an account ends
         // up with a nameless window plus a second real client). Anything untracked and windowless

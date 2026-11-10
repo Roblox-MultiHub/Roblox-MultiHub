@@ -737,6 +737,8 @@ namespace RobloxMultiHub
                     UsageMonitor.Update();
                     WebhookStatus.Tick();
                     Launcher.SweepZombies();
+                    Launcher.ApplyLowMemoryPriority();
+                    Launcher.ApplyTaskbarHiding();
                     CapProber.Tick(UsageMonitor.Count, AddLog);
                     UpdateStatusCells();
                     UpdateMemUi();
@@ -900,6 +902,24 @@ namespace RobloxMultiHub
                 DiscordRpc.Stop();
                 if (Store.Settings.MaxAlts) MaxAlts.Reset();
                 RamCap.Reset();
+
+                // full reset: close EVERY Roblox process and confirm they are gone before we release
+                // anything, so the machine is exactly as before the app ran - and a restart is clean
+                int n = Launcher.KillAllRoblox();
+                if (n > 0)
+                {
+                    Log.Write("Close: closing " + n + " Roblox process(es)...");
+                    for (int i = 0; i < 40 && Launcher.RobloxPids().Count > 0; i++) System.Threading.Thread.Sleep(250);
+                    foreach (int pid in Launcher.RobloxPids()) Launcher.KillPid(pid);   // stubborn ones
+                    for (int i = 0; i < 8 && Launcher.RobloxPids().Count > 0; i++) System.Threading.Thread.Sleep(250);
+                    Log.Write(Launcher.RobloxPids().Count == 0
+                        ? "Close: all Roblox processes confirmed gone."
+                        : "Close: " + Launcher.RobloxPids().Count + " Roblox process(es) would not close - close them yourself.");
+                }
+
+                // release the multi-instance locks ONLY after the clients are dead, so the next
+                // start finds a clean slate (this also releases the memory helper's parent link)
+                MultiInstance.Stop();
                 if (browserCts != null) browserCts.Cancel();
             }
             catch (Exception) { }
