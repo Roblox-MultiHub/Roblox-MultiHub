@@ -1055,7 +1055,6 @@ namespace RobloxMultiHub
 
             // ---- the two views share one cell ----
             Panel viewHost = new Panel();
-            viewHost.Padding = new Padding(0, 0, 10, 0);   // breathing room for the scrollbar, matching the left inset
             viewHost.Dock = DockStyle.Fill;
             viewHost.Margin = new Padding(0, 6, 0, 0);   // breathing room below the filter band
             viewHost.Tag = "card";
@@ -1103,7 +1102,15 @@ namespace RobloxMultiHub
             cardHost.DragDrop += LvDragDrop;
             cardHost.Resize += delegate { LayoutCards(); };
 
-            viewHost.Controls.Add(lv);
+            // the list sits in its own inset panel so its scrollbar keeps the same gap to the card
+            // edge as the row content has on the left (~12px each side); the CARD view must not get
+            // that inset, so it lives as a sibling that covers the list while visible
+            Panel lvHost = new Panel();
+            lvHost.Dock = DockStyle.Fill;
+            lvHost.Margin = Padding.Empty;
+            lvHost.Padding = new Padding(0, 0, 12, 0);
+            lvHost.Controls.Add(lv);
+            viewHost.Controls.Add(lvHost);
             viewHost.Controls.Add(cardHost);
             t.Controls.Add(viewHost, 0, 2);
 
