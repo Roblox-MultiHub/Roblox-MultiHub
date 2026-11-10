@@ -516,6 +516,8 @@ namespace RobloxMultiHub
             winRows[to] = winRows[idx];
             winRows[idx] = tmp;
             RefreshWindowList();
+            // the reorder settles into place instead of snapping
+            Anim.Go("winsnudge", 170, delegate(float e) { lvWins.Padding = new Padding(0, (int)((1f - e) * 10), 0, 0); }, null);
         }
 
         void ToggleInclude()

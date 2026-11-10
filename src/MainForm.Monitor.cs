@@ -67,6 +67,13 @@ namespace RobloxMultiHub
                     card.Pid = w.Pid;
                     monCards[w.Pid] = card;
                     monitorHost.Controls.Add(card);
+                    // new cards grow into place; the flow panel pushes the others down smoothly
+                    int full = card.Height;
+                    card.Height = 24;
+                    Anim.Go("moncard" + w.Pid, 200, delegate(float e)
+                    {
+                        card.Height = 24 + (int)((full - 24) * e);
+                    }, delegate { card.Height = full; });
                 }
                 UsageSample s;
                 UsageMonitor.Samples.TryGetValue(w.Pid, out s);
