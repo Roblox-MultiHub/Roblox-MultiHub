@@ -119,6 +119,14 @@ namespace RobloxMultiHub
                 if (Equals(jobs[i].Tag, tag)) jobs.RemoveAt(i);
         }
 
+        // drop every job without running their Done callbacks - used when the controls they
+        // animate are being torn down (language rebuild)
+        public static void Clear()
+        {
+            for (int i = jobs.Count - 1; i >= 0; i--) jobs[i].Done = null;
+            jobs.Clear();
+        }
+
         // fast start, gentle landing - reads as "snappy but soft" at 150-300 ms durations
         public static float EaseOutCubic(float t) { float u = 1f - t; return 1f - u * u * u; }
     }

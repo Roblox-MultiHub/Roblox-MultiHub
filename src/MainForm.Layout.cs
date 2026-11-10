@@ -70,7 +70,7 @@ namespace RobloxMultiHub
             cbMonitor.Width = 360;
             foreach (MonitorDesc m in monitors) cbMonitor.Items.Add(m.Label);
             cbMonitor.SelectedIndex = Math.Max(0, monitors.IndexOf(WindowLayout.PickMonitor(monitors, L.Monitor)));
-            p.Opt("Which screen the windows are arranged on.",
+            p.Opt("Which screen the windows go on.",
                 "All windows are placed on this monitor. Pick another one if you have several.",
                 Ui.Fld("Monitor", 80), cbMonitor);
             chkWork = Ui.Chk("Keep windows clear of the taskbar", L.UseWorkArea, null);
@@ -81,7 +81,7 @@ namespace RobloxMultiHub
             // ---- mode ----
             p.Section("Layout mode");
             rbAuto = Ui.Rad("Automatic grid  (default)", L.Mode != "Grid" && L.Mode != "FixedSize", null);
-            p.Opt("Rows and columns are chosen for you.",
+            p.Opt("Automatic rows and columns.",
                 "Picks rows and columns from the number of windows and your screen shape: 2 windows = side by side, 4 = 2x2, 6 = 3x2, 9 = 3x3. Every window gets the same share of the screen.\n\nIf Roblox's minimum window size does not allow that, the windows overlap neatly instead (the preview shows it).",
                 rbAuto);
             rbGrid = Ui.Rad("Custom grid", L.Mode == "Grid", null);
@@ -92,7 +92,7 @@ namespace RobloxMultiHub
             numCols = Ui.Num(0, 20, L.Cols, 60);
             p.Row(Ui.Fld("Rows", 50), numRows, Ui.Fld("Columns", 70), numCols, Ui.Lbl("0 = automatic", "muted"));
             rbFixed = Ui.Rad("Fixed window size", L.Mode == "FixedSize", null);
-            p.Opt("Every window gets exactly the size you choose.",
+            p.Opt("Fixed size for every window.",
                 "Windows are placed left to right and wrap to the next row; when the screen is full they cascade. Roblox's minimum window size still applies.",
                 rbFixed);
             numFixW = Ui.Num(200, 8000, L.FixedW, 80);
@@ -102,7 +102,7 @@ namespace RobloxMultiHub
             // ---- fine tuning ----
             p.Section("Fine tuning");
             numScale = Ui.Num(20, 100, L.Scale, 70);
-            p.Opt("Shrinks all windows together (100 = fill the cell).",
+            p.Opt("Shrinks all windows together.",
                 "A quick way to make all windows smaller or bigger together: lower numbers shrink every window and keep it centred in its cell. It never goes below Roblox's minimum window size.",
                 Ui.Fld("Window scale (%)", 190), numScale);
             numGap = Ui.Num(0, 200, L.Gap, 70);
@@ -114,28 +114,28 @@ namespace RobloxMultiHub
                 "Example: with 3 windows, 2 are on top and the third is as wide as the screen instead of leaving a hole.",
                 chkStretch);
             chkBorderless = Ui.Chk("Remove window borders / title bar", L.Borderless, null);
-            p.Opt("Optional: no border or title bar around the windows.",
+            p.Opt("Optional: no border or title bar.",
                 "Windows are made small with the same trick as a standalone resize tool: they are resized without letting Roblox answer with its minimum size, so a border is NOT needed.\n\nIf a window still refuses to shrink, the app removes its border automatically (a borderless window is never asked for a minimum size). 'Restore borders' at the bottom of this page brings the title bars back.",
                 chkBorderless);
             chkTop = Ui.Chk("Keep windows always on top", L.AlwaysOnTop, null);
             p.Opt("Roblox windows stay above other programs.", "Handy when you work next to the windows. Turn it off to let other programs cover them.", chkTop);
             chkTitles = Ui.Chk("Rename windows to the account name", L.LabelTitles, null);
-            p.Opt("Windows show the account name in the taskbar.",
+            p.Opt("Rename windows to the account name.",
                 "Changes the title of windows started by this app to 'Roblox - AccountName', so you can tell them apart in the taskbar. OFF by default.",
                 chkTitles);
 
             // ---- automation ----
             p.Section("Automation");
             chkAuto = Ui.Chk("Auto-capture new Roblox windows", L.AutoCapture, null);
-            p.Opt("Re-arranges when a window opens or closes (OFF by default).",
+            p.Opt("Re-arranges when windows open or close.",
                 "When ON, the layout is applied automatically a moment after a Roblox window opens or closes. It never moves windows continuously, so you can still drag one by hand in between.",
                 chkAuto);
             numAutoDelay = Ui.Num(300, 20000, L.AutoCaptureDelayMs, 80);
-            p.Opt("Short wait so the new window can finish opening.",
+            p.Opt("Wait before arranging new windows.",
                 "How long to wait after a new window appears before the layout is applied.",
                 Ui.Fld("Wait (milliseconds)", 190), numAutoDelay);
             chkHotkeys = Ui.Chk("Enable global hotkeys", L.Hotkeys, null);
-            p.Opt("Ctrl+Alt+F9 arrange, F10 / F11 focus previous / next.",
+            p.Opt("Ctrl+Alt+F9 arrange, F10 / F11 focus.",
                 "Work from anywhere, even while a game has focus. Ctrl+Alt+F9 = arrange windows now, Ctrl+Alt+F10 = focus the previous Roblox window, Ctrl+Alt+F11 = focus the next one.",
                 chkHotkeys);
 
@@ -167,7 +167,7 @@ namespace RobloxMultiHub
                 RefreshWindowList();
                 Anim.Go("winsnudge", 170, delegate(float e) { lvWins.Padding = new Padding(0, (int)((1f - e) * 10), 0, 0); }, null);
             };
-            p.Opt("Moves every window into the layout above.",
+            p.Opt("Moves every window into the layout.",
                 "'Arrange now' applies the layout. 'Refresh list' reads the running windows again. 'Restore borders' brings back title bars removed by the borderless option.\n\n"
                 + "Sort Mode fixes the order the grid is filled in: 'Manual' keeps the order of the list (move rows up/down yourself), 'Account name' sorts by account (account1, account3, account10 - digits count as numbers), 'PID' sorts by process id, lowest first. Windows without an account name go last.",
                 Ui.Btn("Arrange now", 130, delegate { ArrangeNow(); }, "primary"),

@@ -354,8 +354,123 @@ namespace RobloxMultiHub
 
         protected override void WndProc(ref Message m)
         {
+            const int WM_LBUTTONDOWN = 0x201;
+            const int WM_KEYDOWN = 0x100;
+            // our own animated popup replaces the native dropdown for list-style combos: swallow the
+            // mouse-down (and F4 / Alt+Down) so Windows' list never opens
+            if (DropDownStyle == ComboBoxStyle.DropDownList)
+            {
+                if (m.Msg == WM_LBUTTONDOWN) { ShowPopup(); return; }
+                if (m.Msg == WM_KEYDOWN)
+                {
+                    int vk = m.WParam.ToInt32();
+                    if (vk == 0x73 || vk == 0x28) { ShowPopup(); return; }   // F4, Down
+                }
+            }
             base.WndProc(ref m);
             if (m.Msg == 0x000F) PaintBox();     // WM_PAINT: draw our own look over the system one
+        }
+
+        ComboPopup popup;
+
+        void ShowPopup()
+        {
+            if (popup != null) { popup.Close(); return; }        // second click toggles shut
+            popup = new ComboPopup(this);
+            popup.Closed += delegate { popup = null; Focus(); };
+            popup.Show(this);
+        }
+
+        // The themed, animated list that opens under a combo. A borderless top-level window that
+        // doesn't steal focus, slides open on the shared animation clock, and closes on any
+        // click outside or on a selection.
+        class ComboPopup : Form
+        {
+            readonly DarkCombo owner;
+            readonly Panel list = new Panel();
+            int hot = -1;
+
+            public ComboPopup(DarkCombo owner)
+            {
+                this.owner = owner;
+                FormBorderStyle = FormBorderStyle.None;
+                ShowInTaskbar = false;
+                StartPosition = FormStartPosition.Manual;
+                BackColor = Theme.Panel;
+                DoubleBuffered = true;
+                list.Dock = DockStyle.Fill;
+                list.Paint += Draw;
+                list.MouseMove += delegate(object s, MouseEventArgs e) { SetHot(e.Y / 30); };
+                list.MouseLeave += delegate { SetHot(-1); };
+                list.MouseDown += delegate(object s, MouseEventArgs e)
+                {
+                    int i = e.Y / 30;
+                    if (i >= 0 && i < owner.Items.Count)
+                    {
+                        owner.SelectedIndex = i;            // raises the normal events, like the native list
+                        Close();
+                    }
+                };
+                Controls.Add(list);
+                int h = Math.Min(owner.Items.Count, 12) * 30 + 4;
+                Point p = owner.Parent.PointToScreen(owner.Location);
+                Bounds = new Rectangle(p.X, p.Y + owner.Height + 2, Math.Max(owner.Width, 120), h);
+                // never off the bottom of the screen: open upwards instead
+                Screen sc = Screen.FromControl(owner);
+                if (Bottom > sc.WorkingArea.Bottom) Top = p.Y - Height - 4;
+            }
+
+            protected override bool ShowWithoutActivation { get { return true; } }
+            protected override CreateParams CreateParams
+            {
+                get
+                {
+                    CreateParams cp = base.CreateParams;
+                    cp.ExStyle |= 0x08000000 | 0x00000080;      // WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW
+                    return cp;
+                }
+            }
+
+            protected override void OnShown(EventArgs e)
+            {
+                base.OnShown(e);
+                Height = 4;                                    // slide open from a sliver
+                int full = Bounds.Height;
+                Anim.Go(owner, 130, delegate(float f) { Height = Math.Max(4, (int)(full * f)); },
+                    null);
+            }
+
+            void SetHot(int i)
+            {
+                if (i == hot) return;
+                hot = i < owner.Items.Count ? i : -1;
+                list.Invalidate();
+            }
+
+            void Draw(object s, PaintEventArgs e)
+            {
+                Graphics g = e.Graphics;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (System.Drawing.Drawing2D.GraphicsPath p = Shapes.Round(new Rectangle(0, 0, Width - 1, Height - 1), 8))
+                {
+                    using (SolidBrush b = new SolidBrush(Theme.Panel)) g.FillPath(b, p);
+                    using (Pen pen = new Pen(Theme.Border)) g.DrawPath(pen, p);
+                }
+                for (int i = 0; i < owner.Items.Count; i++)
+                {
+                    Rectangle r = new Rectangle(2, i * 30 + 2, Width - 4, 30);
+                    bool sel = i == owner.SelectedIndex;
+                    if (i == hot || sel)
+                        using (SolidBrush b = new SolidBrush(sel && i != hot ? Tint.Mix(Theme.Panel, Theme.Accent, 0.18f) : Theme.Panel2))
+                            g.FillRectangle(b, r);
+                    TextRenderer.DrawText(g, owner.GetItemText(owner.Items[i]), Theme.Base,
+                        new Rectangle(r.X + 10, r.Y, r.Width - 14, r.Height), i == hot ? Theme.Text : (sel ? Theme.Text : Theme.Muted),
+                        TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+                }
+            }
+
+            // close when the mouse clicks anywhere else
+            protected override void OnDeactivate(EventArgs e) { Close(); base.OnDeactivate(e); }
         }
 
         void PaintBox()

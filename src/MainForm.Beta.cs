@@ -26,7 +26,7 @@ namespace RobloxMultiHub
 
             p.Section("Max RAM per window");
             numMaxRam = Ui.Num(0, 32768, Math.Max(0, Store.Settings.MaxRamMb), 80);
-            p.Opt("Each Roblox window may keep at most this much RAM (0 = off).",
+            p.Opt("Maximum RAM per window (0 = off).",
                 "Windows stops every window from keeping more than this many MB of RAM: pages the game is not using right now are pushed out to the pagefile and stay there until the game really needs them. The RAM counter of each window stays near this number instead of growing all day.\n\n"
                 + "Start high (800 MB is a good first try) and lower it step by step; when a window starts to stutter you went too low, go a little back up. 0 turns it off.\n\n"
                 + "The cap is applied to every Roblox window within about 2 seconds (also right after it starts) and is removed when MultiHub closes.",
@@ -46,7 +46,7 @@ namespace RobloxMultiHub
                 if (UsageMonitor.Count == 0) { AddLog("Cap probe: launch your accounts first - it measures them while they idle."); return; }
                 CapProber.Start(AddLog);
             }, "primary");
-            p.Opt("Steps the cap down and measures YOUR clients to find the real floor.",
+            p.Opt("Measures your clients to find the real floor.",
                 "While your accounts idle like normal, this lowers 'Max RAM per window' by 50 MB every ~3 minutes and watches hard page faults (pages being read back from disk). Above the floor they stay near zero; below it they climb - the last cap that stayed clean IS your number, measured on your PC with your games. It ends there automatically; click again to stop early.",
                 btnProbe);
             lblProbe = Ui.Lbl(Store.Settings.RamCapFloorMb > 0

@@ -284,7 +284,7 @@ namespace RobloxMultiHub
             RoundButton b = new RoundButton();
             b.Kind = kind ?? "";
             b.Tag = kind ?? "";
-            b.Text = text;
+            b.Text = Lang.T(text);        // every button is translatable without touching call sites
             b.FitText(width);
             if (click != null) b.Click += click;
             return b;
@@ -374,11 +374,12 @@ namespace RobloxMultiHub
             Host = host;
             Width = width;
             host.AutoScroll = true;
+            if (host.Parent != null) new DarkVBar(host);      // the app's own scrollbar on every page
         }
 
         public void Title(string title, string subtitle)
         {
-            Label t = Ui.Lbl(title, "title");
+            Label t = Ui.Lbl(Lang.T(title), "title");
             t.Location = new Point(PadX, Y);
             Host.Controls.Add(t);
             Y += 38;
@@ -393,7 +394,7 @@ namespace RobloxMultiHub
             bar.Size = new Size(4, 16);
             bar.Location = new Point(PadX, Y + 2);
             Host.Controls.Add(bar);
-            Label l = Ui.Lbl(text, "section");
+            Label l = Ui.Lbl(Lang.T(text), "section");
             l.Location = new Point(PadX + 12, Y);
             Host.Controls.Add(l);
             Y += 24;
@@ -456,7 +457,7 @@ namespace RobloxMultiHub
         {
             int h = PlaceRow(cs, tip);
             Y += h + 2;
-            Label s = Ui.Lbl(shortText, "muted");
+            Label s = Ui.Lbl(Lang.T(shortText), "muted");
             s.AutoSize = false;
             s.AutoEllipsis = true;
             s.Width = Width - PadX * 2;

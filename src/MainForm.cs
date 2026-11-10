@@ -87,6 +87,42 @@ namespace RobloxMultiHub
             FormBorderStyle = FormBorderStyle.None;          // custom chrome: the top bar is the title bar
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch (Exception) { }
 
+            BuildUi();
+
+            Log.Line += OnLogLine;
+            Avatars.Updated += OnAvatarsUpdated;
+            Application.AddMessageFilter(new WheelRedirect());   // mouse wheel scrolls the page, not a hovered text box
+            tick = new System.Windows.Forms.Timer();
+            tick.Interval = 1000;
+            tick.Tick += OnTick;
+            tick.Start();
+        }
+
+        // Builds EVERYTHING visible. Runs once at start and again when the language changes -
+        // rebuilding in place applies the new language to all text with no restart (a restart also
+        // collided with the single-instance mutex, which is why it said 'already running').
+        void BuildUi()
+        {
+            // stop everything that still points at the old controls
+            try
+            {
+                if (tick != null) tick.Stop();
+                if (logAnim != null) { logAnim.Stop(); logAnim = null; }
+                Anim.Clear();
+                if (root != null)
+                {
+                    foreach (Control c in root.Controls) c.Dispose();
+                    Controls.Remove(root);
+                    root.Dispose();
+                }
+                pages.Clear();
+                navButtons.Clear();
+                cards.Clear();
+                monCards.Clear();
+                winRows.Clear();
+            }
+            catch (Exception) { }
+
             BuildShell();
             BuildHomePage();
             BuildAccounts();
@@ -100,17 +136,10 @@ namespace RobloxMultiHub
             BuildHelpPage();
             BuildBetaPage();
             ApplyTheme();
-            ShowPage("Home");
+            ShowPage(currentPage != "" ? currentPage : "Home");
             RefreshAccountList();
             SetView(Store.Settings.View == "Cards");
-
-            Log.Line += OnLogLine;
-            Avatars.Updated += OnAvatarsUpdated;
-            Application.AddMessageFilter(new WheelRedirect());   // mouse wheel scrolls the page, not a hovered text box
-            tick = new System.Windows.Forms.Timer();
-            tick.Interval = 1000;
-            tick.Tick += OnTick;
-            tick.Start();
+            if (tick != null) tick.Start();
         }
 
         // =====================================================================

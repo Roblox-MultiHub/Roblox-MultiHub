@@ -41,7 +41,7 @@ namespace RobloxMultiHub
             lvGames.MultiSelect = false;
             ListStyle.Attach(lvGames);
             p.Add(lvGames);
-            p.Opt("Use a result as the game to launch.",
+            p.Opt("Use a result as the game.",
                 "'Use this game' puts its Place ID on the Launch page. 'Show its servers' also loads the running servers of that game in the server browser below.",
                 Ui.Btn("Use this game", 130, delegate { UseSelectedGame(false); }, "primary"),
                 Ui.Btn("Show its servers", 140, delegate { UseSelectedGame(true); }, ""));
@@ -49,7 +49,7 @@ namespace RobloxMultiHub
             p.Section("Server browser");
             tbSrvPlace = Ui.Txt(120, "");
             cbSrvSort = Ui.Cmb(190, ServerSort.Names);
-            p.Opt("List the running servers of a game.",
+            p.Opt("Lists the running servers.",
                 "Shows public servers with players, ping and FPS. Sort them by fewest players, most players, lowest ping or highest FPS (ping and FPS sorting looks at the first 300 servers; press Load more for further ones).\n\nRoblox rate-limits this list. If you see an error, wait a minute and try again.",
                 Ui.Fld("Place ID", 66), tbSrvPlace, cbSrvSort, Ui.Btn("Load servers", 100, delegate { LoadServers(false); }, ""));
 
@@ -65,10 +65,10 @@ namespace RobloxMultiHub
 
             btnMore = Ui.Btn("Load more", 100, delegate { LoadServers(true); }, "");
             btnMore.Enabled = false;
-            p.Opt("Send your selected accounts into the chosen server.",
+            p.Opt("Sends the selection into that server.",
                 "'Join with selected accounts' launches every account you selected on the left into exactly this server, so they all end up together.",
                 Ui.Btn("Join with selected accounts", 200, delegate { JoinSelectedServer(); }, "primary"), btnMore);
-            p.Opt("Reuse or copy the chosen server's Job ID.",
+            p.Opt("Reuse or copy the Job ID.",
                 "'Use Job ID on Launch page' fills in the Launch page (specific server mode). 'Copy Job ID' puts the ID on your clipboard.",
                 Ui.Btn("Use Job ID on Launch page", 200, delegate { UseSelectedServer(); }, ""),
                 Ui.Btn("Copy Job ID", 110, delegate { CopySelectedServer(); }, ""));
