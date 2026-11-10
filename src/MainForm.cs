@@ -1102,15 +1102,7 @@ namespace RobloxMultiHub
             cardHost.DragDrop += LvDragDrop;
             cardHost.Resize += delegate { LayoutCards(); };
 
-            // the list sits in its own inset panel so its scrollbar keeps the same gap to the card
-            // edge as the row content has on the left (~12px each side); the CARD view must not get
-            // that inset, so it lives as a sibling that covers the list while visible
-            Panel lvHost = new Panel();
-            lvHost.Dock = DockStyle.Fill;
-            lvHost.Margin = Padding.Empty;
-            lvHost.Padding = new Padding(0, 0, 12, 0);
-            lvHost.Controls.Add(lv);
-            viewHost.Controls.Add(lvHost);
+            viewHost.Controls.Add(lv);
             viewHost.Controls.Add(cardHost);
             t.Controls.Add(viewHost, 0, 2);
 
@@ -1323,7 +1315,8 @@ namespace RobloxMultiHub
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             bool sel = e.Item.Selected;
             Color rowColor = sel ? Theme.Sel : Theme.Panel2;
-            Rectangle row = new Rectangle(e.Bounds.Left + 2, e.Bounds.Top + 3, e.Bounds.Width - 5, e.Bounds.Height - 6);
+            // rows end 14px before the scrollbar, matching the scrollbar's own gap to the card edge
+            Rectangle row = new Rectangle(e.Bounds.Left + 2, e.Bounds.Top + 3, e.Bounds.Width - 5 - 14, e.Bounds.Height - 6);
             using (System.Drawing.Drawing2D.GraphicsPath path = Shapes.Round(row, 11))
             {
                 using (SolidBrush b = new SolidBrush(rowColor)) g.FillPath(b, path);
