@@ -9,7 +9,8 @@ namespace RobloxMultiHub
     public partial class MainForm
     {
         ComboBox cbPreset, cbQuality, cbTexture, cbMsaa, cbApi, cbPriority;
-        CheckBox chkNoGrass, chkVoxel, chkSky, chkCsg, chkUnlisted;
+        CheckBox chkUnlisted;
+        MultiCombo mcTweaks;
         CheckBox chkMaxAlts, chkMaxIdle, chkMaxTrim, chkMaxMin;
         TextBox tbPreview, tbCustomFlags;
         Label lblPerfLive;
@@ -59,22 +60,14 @@ namespace RobloxMultiHub
             p.Opt("Smooths jagged edges; turning it off is cheaper.",
                 "Anti-aliasing (MSAA) smooths jagged edges but costs GPU time. 'Off' is the cheapest. If it has no visible effect on your PC, leave it on 'Roblox default'.",
                 Ui.Fld("Anti-aliasing", 120), cbMsaa);
-            chkNoGrass = Ui.Chk("Remove grass", G.NoGrass, null);
-            p.Opt("No grass.",
-                "Sets the grass draw distance to 0, so grass is not rendered at all. Saves rendering work in games with lots of grass.",
-                chkNoGrass);
-            chkCsg = Ui.Chk("Lowest detail for distant union parts", G.LowCsg, null);
-            p.Opt("Cheapest distant union parts.",
-                "Union parts (made from several shapes) switch to their lowest-detail model immediately instead of when you are far away. Saves rendering work; unions can look blocky.",
-                chkCsg);
-            chkVoxel = Ui.Chk("Pause lighting updates", G.PauseVoxelizer, null);
-            p.Opt("Saves CPU; lighting stops reacting to moving objects.",
-                "Pauses Roblox's voxelizer (the part that updates lighting when things move). That saves CPU, but in some games shadows and lighting stop changing correctly.",
-                chkVoxel);
-            chkSky = Ui.Chk("Plain grey sky", G.GraySky, null);
-            p.Opt("Plain grey sky.",
-                "Replaces the default sky with a plain grey one in games that use the default sky. The saving is small.",
-                chkSky);
+            mcTweaks = new MultiCombo();
+            mcTweaks.Width = 240;
+            mcTweaks.Items = new string[] { "No grass", "Cheapest distant unions", "Pause lighting updates", "Plain grey sky" };
+            mcTweaks.Checked = new bool[] { G.NoGrass, G.LowCsg, G.PauseVoxelizer, G.GraySky };
+            mcTweaks.Changed += delegate { OnGfxChanged(); };
+            p.Opt("Rendering saves - tick any combination.",
+                "No grass: grass is not rendered at all.\nCheapest distant unions: union parts always use their lowest-detail model.\nPause lighting updates: saves CPU; shadows and lighting stop reacting to movement.\nPlain grey sky: replaces the default sky (small saving).",
+                Ui.Fld("Tweaks", 120), mcTweaks);
             cbApi = Ui.Cmb(200, "Roblox default", "Direct3D 11", "Vulkan", "OpenGL");
             p.Opt("May crash on some PCs.",
                 "Chooses which graphics API Roblox prefers. Another API can change CPU use, but it can also cause crashes or glitches on some PCs. Leave it on 'Roblox default' if you are unsure.",
@@ -125,10 +118,6 @@ namespace RobloxMultiHub
             cbTexture.SelectedIndexChanged += gfxChanged;
             cbMsaa.SelectedIndexChanged += gfxChanged;
             cbApi.SelectedIndexChanged += gfxChanged;
-            chkNoGrass.CheckedChanged += gfxChanged;
-            chkCsg.CheckedChanged += gfxChanged;
-            chkVoxel.CheckedChanged += gfxChanged;
-            chkSky.CheckedChanged += gfxChanged;
             chkUnlisted.CheckedChanged += delegate { OnCustomFlagsChanged(); };
             tbCustomFlags.Leave += delegate { OnCustomFlagsChanged(); };
             cbPriority.SelectedIndexChanged += delegate { OnPriorityChanged(); };
@@ -149,10 +138,8 @@ namespace RobloxMultiHub
             cbTexture.SelectedIndex = G.Texture < 0 ? 0 : Math.Min(4, G.Texture + 1);
             cbMsaa.SelectedIndex = Math.Max(0, Array.IndexOf(MsaaValues, G.Msaa));
             cbApi.SelectedIndex = Math.Max(0, Array.IndexOf(ApiKeys, G.Api));
-            chkNoGrass.Checked = G.NoGrass;
-            chkCsg.Checked = G.LowCsg;
-            chkVoxel.Checked = G.PauseVoxelizer;
-            chkSky.Checked = G.GraySky;
+            mcTweaks.Checked = new bool[] { G.NoGrass, G.LowCsg, G.PauseVoxelizer, G.GraySky };
+            mcTweaks.Invalidate();
             chkUnlisted.Checked = G.WriteUnlisted;
             cbPriority.SelectedIndex = Math.Max(0, Array.IndexOf(PriorityKeys, Store.Settings.Priority));
             loadingPerf = was;
@@ -182,10 +169,10 @@ namespace RobloxMultiHub
             G.Texture = cbTexture.SelectedIndex <= 0 ? -1 : cbTexture.SelectedIndex - 1;
             G.Msaa = MsaaValues[Math.Max(0, cbMsaa.SelectedIndex)];
             G.Api = ApiKeys[Math.Max(0, cbApi.SelectedIndex)];
-            G.NoGrass = chkNoGrass.Checked;
-            G.LowCsg = chkCsg.Checked;
-            G.PauseVoxelizer = chkVoxel.Checked;
-            G.GraySky = chkSky.Checked;
+            G.NoGrass = mcTweaks.IsChecked(0);
+            G.LowCsg = mcTweaks.IsChecked(1);
+            G.PauseVoxelizer = mcTweaks.IsChecked(2);
+            G.GraySky = mcTweaks.IsChecked(3);
             G.Preset = "Custom";
             loadingPerf = true;
             cbPreset.SelectedIndex = PresetKeys.Length - 1;

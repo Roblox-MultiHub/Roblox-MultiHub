@@ -302,6 +302,203 @@ namespace RobloxMultiHub
         }
     }
 
+    // A dropdown with CHECKBOXES: several options picked from one control (e.g. the graphics
+    // tweaks). The closed box looks like a DarkCombo and summarises the selection ("3 of 4");
+    // clicking opens a themed popup that slides in, toggles entries without closing, and closes
+    // on any click outside. Native combos cannot multi-select, which is why this one exists.
+    public class MultiCombo : Control
+    {
+        public string[] Items = new string[0];
+        public bool[] Checked = new bool[0];
+        public event EventHandler Changed;
+        bool hover;
+        MultiPopup popup;
+
+        public MultiCombo()
+        {
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
+            Width = 260;
+            Cursor = Cursors.Hand;
+            Font = Theme.Base;
+            Height = 28;
+        }
+
+        public bool IsChecked(int i) { return i >= 0 && i < Checked.Length && Checked[i]; }
+        public void SetChecked(int i, bool v)
+        {
+            if (i < 0 || i >= Checked.Length) return;
+            Checked[i] = v;
+            Invalidate();
+        }
+
+        protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { hover = false; Invalidate(); base.OnMouseLeave(e); }
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (popup != null) popup.Close();
+            else
+            {
+                popup = new MultiPopup(this);
+                popup.FormClosed += delegate { popup = null; Invalidate(); };
+                popup.Show(this);
+            }
+            base.OnMouseDown(e);
+        }
+
+        int CheckedCount
+        {
+            get
+            {
+                int n = 0;
+                foreach (bool b in Checked) if (b) n++;
+                return n;
+            }
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.Clear(Parent != null ? Parent.BackColor : Theme.Panel);
+            Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
+            using (GraphicsPath p = Shapes.Round(r, 8))
+            {
+                using (SolidBrush b = new SolidBrush(Theme.Panel2)) g.FillPath(b, p);
+                using (Pen pen = new Pen((hover || Focused) ? Theme.Accent : Theme.Border)) g.DrawPath(pen, p);
+            }
+            string text = CheckedCount == 0 ? "None"
+                : CheckedCount == Checked.Length && Checked.Length > 1 ? "All"
+                : CheckedCount + " of " + Checked.Length;
+            using (SolidBrush cb = new SolidBrush(Theme.Accent))
+                g.FillRectangle(cb, 8, Height / 2 - 3, 6, 6);
+            TextRenderer.DrawText(g, text, Font, new Rectangle(22, 0, Width - 40, Height), Theme.Text,
+                TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+            int cx = Width - 16, cy = Height / 2;
+            using (Pen arrow = new Pen(Theme.Muted, 1.8f))
+                g.DrawLines(arrow, new Point[] { new Point(cx - 4, cy - 2), new Point(cx, cy + 2), new Point(cx + 4, cy - 2) });
+        }
+
+        class MultiPopup : Form
+        {
+            readonly MultiCombo owner;
+            readonly Panel list = new Panel();
+            int hot = -1;
+            ClickAway filter;
+
+            public MultiPopup(MultiCombo owner)
+            {
+                this.owner = owner;
+                FormBorderStyle = FormBorderStyle.None;
+                ShowInTaskbar = false;
+                StartPosition = FormStartPosition.Manual;
+                BackColor = Theme.Panel;
+                DoubleBuffered = true;
+                list.Dock = DockStyle.Fill;
+                list.Paint += Draw;
+                list.MouseMove += delegate(object s, MouseEventArgs e) { SetHot(e.Y / 28); };
+                list.MouseLeave += delegate { SetHot(-1); };
+                list.MouseDown += delegate(object s, MouseEventArgs e)
+                {
+                    int i = e.Y / 28;
+                    if (i < 0 || i >= owner.Items.Length) return;
+                    owner.Checked[i] = !owner.Checked[i];       // toggle, stay open
+                    list.Invalidate();
+                    owner.Invalidate();
+                    if (owner.Changed != null) owner.Changed(owner, EventArgs.Empty);
+                };
+                Controls.Add(list);
+                int h = owner.Items.Length * 28 + 4;
+                Point p = owner.Parent.PointToScreen(owner.Location);
+                Bounds = new Rectangle(p.X, p.Y + owner.Height + 2, Math.Max(owner.Width, 180), h);
+                Screen sc = Screen.FromControl(owner);
+                if (Bottom > sc.WorkingArea.Bottom) Top = p.Y - h - 4;   // flip up near the screen bottom
+            }
+
+            protected override bool ShowWithoutActivation { get { return true; } }
+            protected override CreateParams CreateParams
+            {
+                get
+                {
+                    CreateParams cp = base.CreateParams;
+                    cp.ExStyle |= 0x08000000 | 0x00000080;      // WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW
+                    return cp;
+                }
+            }
+
+            protected override void OnShown(EventArgs e)
+            {
+                base.OnShown(e);
+                int full = Bounds.Height;                        // slide open from a sliver
+                Height = 4;
+                Anim.Go(owner, 130, delegate(float f) { Height = Math.Max(4, (int)(full * f)); }, null);
+            }
+
+            void SetHot(int i)
+            {
+                if (i == hot) return;
+                hot = i < owner.Items.Length ? i : -1;
+                list.Invalidate();
+            }
+
+            void Draw(object s, PaintEventArgs e)
+            {
+                Graphics g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                using (System.Drawing.Drawing2D.GraphicsPath p = Shapes.Round(new Rectangle(0, 0, Width - 1, Height - 1), 8))
+                {
+                    using (SolidBrush b = new SolidBrush(Theme.Panel)) g.FillPath(b, p);
+                    using (Pen pen = new Pen(Theme.Border)) g.DrawPath(pen, p);
+                }
+                for (int i = 0; i < owner.Items.Length; i++)
+                {
+                    Rectangle r = new Rectangle(2, i * 28 + 2, Width - 4, 28);
+                    if (i == hot)
+                        using (SolidBrush b = new SolidBrush(Theme.Panel2)) g.FillRectangle(b, r);
+                    Rectangle box = new Rectangle(10, r.Y + (r.Height - 16) / 2, 16, 16);
+                    using (GraphicsPath bp = Shapes.Round(box, 4))
+                    {
+                        using (SolidBrush b = new SolidBrush(owner.Checked[i] ? Theme.Accent : Theme.Bg)) g.FillPath(b, bp);
+                        using (Pen pen = new Pen(owner.Checked[i] ? Theme.Accent : Theme.Muted)) g.DrawPath(pen, bp);
+                    }
+                    if (owner.Checked[i])
+                        using (Pen tick = new Pen(Color.White, 2f))
+                            g.DrawLines(tick, new Point[] { new Point(box.X + 4, box.Y + 8), new Point(box.X + 7, box.Y + 11), new Point(box.X + 12, box.Y + 5) });
+                    TextRenderer.DrawText(g, owner.Items[i], Theme.Base,
+                        new Rectangle(box.Right + 8, r.Y, r.Width - box.Width - 20, r.Height), i == hot ? Theme.Text : Theme.Muted,
+                        TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+                }
+            }
+
+            class ClickAway : IMessageFilter
+            {
+                readonly MultiPopup p;
+                public ClickAway(MultiPopup p) { this.p = p; }
+                public bool PreFilterMessage(ref Message m)
+                {
+                    if (m.Msg == 0x201 || m.Msg == 0x204 || m.Msg == 0x020A)
+                    {
+                        Point pt = Cursor.Position;
+                        if (!p.Bounds.Contains(pt)) p.Close();
+                    }
+                    return false;
+                }
+            }
+
+            protected override void OnHandleCreated(EventArgs e)
+            {
+                base.OnHandleCreated(e);
+                filter = new ClickAway(this);
+                Application.AddMessageFilter(filter);
+            }
+
+            protected override void OnFormClosed(FormClosedEventArgs e)
+            {
+                if (filter != null) Application.RemoveMessageFilter(filter);
+                base.OnFormClosed(e);
+            }
+        }
+    }
+
     // Combo box that follows the theme (the standard one stays white) with a rounded closed box.
     public class DarkCombo : ComboBox
     {
@@ -354,151 +551,8 @@ namespace RobloxMultiHub
 
         protected override void WndProc(ref Message m)
         {
-            const int WM_LBUTTONDOWN = 0x201;
-            const int WM_KEYDOWN = 0x100;
-            // our own animated popup replaces the native dropdown for list-style combos: swallow the
-            // mouse-down (and F4 / Alt+Down) so Windows' list never opens
-            if (DropDownStyle == ComboBoxStyle.DropDownList)
-            {
-                if (m.Msg == WM_LBUTTONDOWN) { ShowPopup(); return; }
-                if (m.Msg == WM_KEYDOWN)
-                {
-                    int vk = m.WParam.ToInt32();
-                    if (vk == 0x73 || vk == 0x28) { ShowPopup(); return; }   // F4, Down
-                }
-            }
             base.WndProc(ref m);
             if (m.Msg == 0x000F) PaintBox();     // WM_PAINT: draw our own look over the system one
-        }
-
-        ComboPopup popup;
-
-        void ShowPopup()
-        {
-            if (popup != null) { popup.Close(); return; }        // second click toggles shut
-            popup = new ComboPopup(this);
-            popup.Closed += delegate { popup = null; Focus(); };
-            popup.Show(this);
-        }
-
-        // The themed, animated list that opens under a combo. A borderless top-level window that
-        // doesn't steal focus, slides open on the shared animation clock, and closes on any
-        // click outside or on a selection.
-        class ComboPopup : Form
-        {
-            readonly DarkCombo owner;
-            readonly Panel list = new Panel();
-            int hot = -1;
-
-            public ComboPopup(DarkCombo owner)
-            {
-                this.owner = owner;
-                FormBorderStyle = FormBorderStyle.None;
-                ShowInTaskbar = false;
-                StartPosition = FormStartPosition.Manual;
-                BackColor = Theme.Panel;
-                DoubleBuffered = true;
-                list.Dock = DockStyle.Fill;
-                list.Paint += Draw;
-                list.MouseMove += delegate(object s, MouseEventArgs e) { SetHot(e.Y / 30); };
-                list.MouseLeave += delegate { SetHot(-1); };
-                list.MouseDown += delegate(object s, MouseEventArgs e)
-                {
-                    int i = e.Y / 30;
-                    if (i >= 0 && i < owner.Items.Count)
-                    {
-                        owner.SelectedIndex = i;            // raises the normal events, like the native list
-                        Close();
-                    }
-                };
-                Controls.Add(list);
-                int h = Math.Min(owner.Items.Count, 12) * 30 + 4;
-                Point p = owner.Parent.PointToScreen(owner.Location);
-                Bounds = new Rectangle(p.X, p.Y + owner.Height + 2, Math.Max(owner.Width, 120), h);
-                // never off the bottom of the screen: open upwards instead
-                Screen sc = Screen.FromControl(owner);
-                if (Bottom > sc.WorkingArea.Bottom) Top = p.Y - Height - 4;
-            }
-
-            protected override bool ShowWithoutActivation { get { return true; } }
-            protected override CreateParams CreateParams
-            {
-                get
-                {
-                    CreateParams cp = base.CreateParams;
-                    cp.ExStyle |= 0x08000000 | 0x00000080;      // WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW
-                    return cp;
-                }
-            }
-
-            protected override void OnShown(EventArgs e)
-            {
-                base.OnShown(e);
-                Height = 4;                                    // slide open from a sliver
-                int full = Bounds.Height;
-                Anim.Go(owner, 130, delegate(float f) { Height = Math.Max(4, (int)(full * f)); },
-                    null);
-            }
-
-            void SetHot(int i)
-            {
-                if (i == hot) return;
-                hot = i < owner.Items.Count ? i : -1;
-                list.Invalidate();
-            }
-
-            void Draw(object s, PaintEventArgs e)
-            {
-                Graphics g = e.Graphics;
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (System.Drawing.Drawing2D.GraphicsPath p = Shapes.Round(new Rectangle(0, 0, Width - 1, Height - 1), 8))
-                {
-                    using (SolidBrush b = new SolidBrush(Theme.Panel)) g.FillPath(b, p);
-                    using (Pen pen = new Pen(Theme.Border)) g.DrawPath(pen, p);
-                }
-                for (int i = 0; i < owner.Items.Count; i++)
-                {
-                    Rectangle r = new Rectangle(2, i * 30 + 2, Width - 4, 30);
-                    bool sel = i == owner.SelectedIndex;
-                    if (i == hot || sel)
-                        using (SolidBrush b = new SolidBrush(sel && i != hot ? Tint.Mix(Theme.Panel, Theme.Accent, 0.18f) : Theme.Panel2))
-                            g.FillRectangle(b, r);
-                    TextRenderer.DrawText(g, owner.GetItemText(owner.Items[i]), Theme.Base,
-                        new Rectangle(r.X + 10, r.Y, r.Width - 14, r.Height), i == hot ? Theme.Text : (sel ? Theme.Text : Theme.Muted),
-                        TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
-                }
-            }
-
-            // close when the mouse clicks anywhere outside (the popup never takes focus, so
-            // Deactivate can't be used - a message filter watches for the click instead)
-            ClickAway filter;
-            class ClickAway : IMessageFilter
-            {
-                readonly ComboPopup p;
-                public ClickAway(ComboPopup p) { this.p = p; }
-                public bool PreFilterMessage(ref Message m)
-                {
-                    if (m.Msg == 0x201 || m.Msg == 0x204 || m.Msg == 0x020A)     // L/R down, wheel
-                    {
-                        Point pt = Cursor.Position;
-                        if (!p.Bounds.Contains(pt)) p.Close();
-                    }
-                    return false;
-                }
-            }
-
-            protected override void OnHandleCreated(EventArgs e)
-            {
-                base.OnHandleCreated(e);
-                filter = new ClickAway(this);
-                Application.AddMessageFilter(filter);
-            }
-
-            protected override void OnFormClosed(FormClosedEventArgs e)
-            {
-                if (filter != null) Application.RemoveMessageFilter(filter);
-                base.OnFormClosed(e);
-            }
         }
 
         void PaintBox()

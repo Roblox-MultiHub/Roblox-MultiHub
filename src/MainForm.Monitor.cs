@@ -39,7 +39,6 @@ namespace RobloxMultiHub
             monitorHost.Padding = new Padding(0);
             monitorHost.Margin = new Padding(0);
             page.Controls.Add(monitorHost);
-            new DarkVBar(monitorHost);
             page.Resize += delegate { SizeMonitorHost(page); };
             SizeMonitorHost(page);
         }

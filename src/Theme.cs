@@ -374,7 +374,6 @@ namespace RobloxMultiHub
             Host = host;
             Width = width;
             host.AutoScroll = true;
-            if (host.Parent != null) new DarkVBar(host);      // the app's own scrollbar on every page
         }
 
         public void Title(string title, string subtitle)
