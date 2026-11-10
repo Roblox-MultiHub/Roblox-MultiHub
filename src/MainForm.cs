@@ -1315,8 +1315,8 @@ namespace RobloxMultiHub
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             bool sel = e.Item.Selected;
             Color rowColor = sel ? Theme.Sel : Theme.Panel2;
-            // rows end 14px before the scrollbar, matching the scrollbar's own gap to the card edge
-            Rectangle row = new Rectangle(e.Bounds.Left + 2, e.Bounds.Top + 3, e.Bounds.Width - 5 - 14, e.Bounds.Height - 6);
+            // rows end 10px before the scrollbar - same gap as card-edge to row on the left
+            Rectangle row = new Rectangle(e.Bounds.Left + 2, e.Bounds.Top + 3, e.Bounds.Width - 5 - 10, e.Bounds.Height - 6);
             using (System.Drawing.Drawing2D.GraphicsPath path = Shapes.Round(row, 11))
             {
                 using (SolidBrush b = new SolidBrush(rowColor)) g.FillPath(b, path);
