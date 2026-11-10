@@ -32,6 +32,7 @@ namespace RobloxMultiHub
             target.Resize += delegate { Sync(); };
             target.Layout += delegate { Sync(); };
             target.MouseWheel += delegate { Sync(); };
+            target.VisibleChanged += delegate { Sync(); };      // bars of hidden pages must hide too
             Sync();
         }
 
@@ -48,6 +49,7 @@ namespace RobloxMultiHub
             if (target.AutoScroll) HideNative();      // it re-shows itself whenever the range changes
             Panel p = target as Panel;
             if (p != null && !p.IsHandleCreated) return;
+            if (!target.Visible || target.Parent == null) { Visible = false; return; }
             int max = target.VerticalScroll.Maximum - target.VerticalScroll.LargeChange + 1;
             if (max <= 0) { Visible = false; return; }
             Bounds = new Rectangle(
@@ -55,7 +57,7 @@ namespace RobloxMultiHub
                 target.Top + 1,
                 Width,
                 Math.Max(20, target.Height - 4));
-            Visible = target.Height < target.VerticalScroll.Maximum && target.Parent != null;
+            Visible = target.Height < target.VerticalScroll.Maximum;
             Invalidate();
         }
 

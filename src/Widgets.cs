@@ -469,8 +469,36 @@ namespace RobloxMultiHub
                 }
             }
 
-            // close when the mouse clicks anywhere else
-            protected override void OnDeactivate(EventArgs e) { Close(); base.OnDeactivate(e); }
+            // close when the mouse clicks anywhere outside (the popup never takes focus, so
+            // Deactivate can't be used - a message filter watches for the click instead)
+            ClickAway filter;
+            class ClickAway : IMessageFilter
+            {
+                readonly ComboPopup p;
+                public ClickAway(ComboPopup p) { this.p = p; }
+                public bool PreFilterMessage(ref Message m)
+                {
+                    if (m.Msg == 0x201 || m.Msg == 0x204 || m.Msg == 0x020A)     // L/R down, wheel
+                    {
+                        Point pt = Cursor.Position;
+                        if (!p.Bounds.Contains(pt)) p.Close();
+                    }
+                    return false;
+                }
+            }
+
+            protected override void OnHandleCreated(EventArgs e)
+            {
+                base.OnHandleCreated(e);
+                filter = new ClickAway(this);
+                Application.AddMessageFilter(filter);
+            }
+
+            protected override void OnFormClosed(FormClosedEventArgs e)
+            {
+                if (filter != null) Application.RemoveMessageFilter(filter);
+                base.OnFormClosed(e);
+            }
         }
 
         void PaintBox()
