@@ -782,7 +782,7 @@ namespace RobloxMultiHub
                 }
                 catch (Exception ex)
                 {
-                    log(who + "could not start Roblox: " + ex.Message);
+                    log(who + "could not start Roblox: " + ex.Message + ". If Roblox is not installed, download it from roblox.com and open any game once, then try again.");
                     if (guard != null) { guard.Dispose(); ApplyFpsCap(log); }
                     return false;
                 }
