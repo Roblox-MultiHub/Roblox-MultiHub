@@ -1,0 +1,65 @@
+using System.Collections.Generic;
+
+namespace RobloxMultiHub
+{
+    public partial class Lang
+    {
+        static readonly Dictionary<string, string> Dutch = new Dictionary<string, string>
+        {
+            { "\U0001F680  Launch", "\U0001F680  Starten" }, { "\U0001F310  Servers", "\U0001F310  Servers" },
+            { "\U0001F5A5  Layout", "\U0001F5A5  Indeling" }, { "\U0001F4CA  Monitor", "\U0001F4CA  Monitor" },
+            { "\U0001F4C4  Presets", "\U0001F4C4  Voorinstellingen" }, { "\u26A1  Perf", "\u26A1  Prestaties" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  Beta" }, { "\u2699  Settings", "\u2699  Instellingen" },
+            { "\u2753  Help", "\u2753  Help" }, { "Accounts", "Accounts" },
+            { "Launch selected", "Selectie starten" }, { "Launch all", "Alles starten" },
+            { "Launch all listed", "Alles starten" }, { "Stop", "Stoppen" }, { "Stop all", "Alles stoppen" },
+            { "Add accounts", "Accounts toevoegen" }, { "Save preset", "Voorinstelling opslaan" },
+            { "Run diagnostics", "Diagnose uitvoeren" }, { "Check for updates", "Naar updates zoeken" },
+            { "Back up now", "Nu back-uppen" }, { "Clean memory now", "Geheugen nu opruimen" },
+            { "Arrange now", "Nu ordenen" }, { "Close all Roblox processes", "Alle Roblox-processen afsluiten" },
+            { "Apply to running windows", "Toepassen op actieve vensters" }, { "Allow click", "Klik toestaan" },
+            { "Reset secret counters", "Geheime tellers resetten" },
+            { "Copy a fresh login ticket", "Nieuw inlogticket kopiëren" },
+            { "Open profile in browser", "Profiel in browser openen" },
+            { "Log in with a browser (Edge / Chrome)...", "Inloggen met een browser (Edge / Chrome)..." },
+            { "Add several with username:password...", "Meerdere toevoegen met gebruikersnaam:wachtwoord..." },
+            { "Paste cookie(s)...", "Cookie(s) plakken..." }, { "Import cookies from a file...", "Cookies uit een bestand importeren..." },
+            { "Browse...", "Bladeren..." }, { "Cancel", "Annuleren" }, { "Check", "Controleren" },
+            { "All groups", "Alle groepen" }, { "New group...", "Nieuwe groep..." }, { "New group", "Nieuwe groep" },
+            { "Name of the new group:", "Naam van de nieuwe groep:" },
+            { "Max RAM per window", "Max RAM per venster" },
+            { "Measured floor on this PC:", "Gemeten minimum op deze pc:" }, { "Not measured yet on this PC.", "Nog niet gemeten op deze pc." },
+            { "Refresh every (seconds)", "Verversen elke (seconden)" }, { "Discord alerts", "Discord-meldingen" },
+            { "Use Windows encryption", "Windows-versleuteling gebruiken" }, { "Support this project", "Steun dit project" },
+            { "Update available", "Update beschikbaar" }, { "Sort accounts by", "Accounts sorteren op" },
+            { "My own order (Up / Down buttons)", "Eigen volgorde (Omhoog / Omlaag)" },
+            { "Name  (click again to reverse)", "Naam  (klik nogmaals om te keren)" },
+            { "CPU usage", "CPU-gebruik" }, { "Last used", "Laatst gebruikt" }, { "Move to group", "Naar groep verplaatsen" },
+            { "In game", "In spel" }, { "Not checked", "Niet gecontroleerd" }, { "User ID", "Gebruikers-ID" },
+            { "Show account details (age, Robux, Premium)", "Accountdetails tonen (leeftijd, Robux, Premium)" },
+            { "Roblox CPU", "Roblox-CPU" }, { "Roblox memory", "Roblox-geheugen" },
+            { "Right now: no Roblox window is running.", "Nu: er draait geen Roblox-venster." },
+            { "Running now:", "Draait nu:" }, { "CPU priority", "CPU-prioriteit" },
+            { "Anti-AFK", "Anti-AFK" }, { "Automation", "Automatisering" }, { "Advanced", "Geavanceerd" },
+            { "Appearance & startup", "Uiterlijk en opstarten" }, { "Anti-aliasing", "Anti-aliasing" },
+            { "Hold (ms)", "Vasthouden (ms)" }, { "X offset", "X-verschuiving" }, { "Y offset", "Y-verschuiving" },
+            { "Max click tries", "Max. klikpogingen" },
+            { "Select an account first.", "Kies eerst een account." },
+            { "Select one or more accounts in the list first.", "Kies eerst een of meer accounts in de lijst." },
+            { "Enter a Place ID first.", "Voer eerst een Place-ID in." },
+            { "Select a preset in the list first.", "Kies eerst een voorinstelling in de lijst." },
+            { "Select a game in the list first.", "Kies eerst een spel in de lijst." },
+            { "Select a server in the list first.", "Kies eerst een server in de lijst." },
+            { "Could not load servers:", "Servers konden niet laden:" },
+            { "Launch failed:", "Starten mislukt:" },
+            { "Account locked", "Account vergrendeld" }, { "Cookie expired", "Cookie verlopen" },
+            { "Welcome to Roblox MultiHub", "Welkom bij Roblox MultiHub" },
+            { "Add your accounts", "Voeg je accounts toe" }, { "Pick a game", "Kies een spel" },
+            { "Press Launch", "Druk op Starten" }, { "Go to Launch", "Ga naar Starten" },
+            { "Close Roblox MultiHub", "Roblox MultiHub sluiten" },
+            { "Loading servers...", "Servers laden..." }, { "Searching...", "Zoeken..." },
+            { "Backup saved in ", "Back-up opgeslagen in " },
+            { "Backups are made automatically.", "Back-ups worden automatisch gemaakt." }
+        };
+    }
+}

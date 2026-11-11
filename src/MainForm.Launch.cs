@@ -205,7 +205,7 @@ namespace RobloxMultiHub
         async void PickRandomServer()
         {
             long pid = Util.ParsePlaceId(cbPlace.Text);
-            if (pid <= 0) { AddLog("Enter a Place ID first."); return; }
+            if (pid <= 0) { AddLog("Lang.T(Lang.T(Enter a Place ID first."); return; }
             AddLog("Looking up servers of place " + pid + "...");
             ServerPage sp = await Api.Servers(pid, false, "", AnyCookie());
             if (sp.Error.Length > 0) { AddLog("Could not load servers: " + sp.Error); return; }
@@ -332,7 +332,7 @@ namespace RobloxMultiHub
             List<Account> sel = SelectedAccounts();
             if (sel.Count == 0)
             {
-                AddLog("Select one or more accounts in the list first.");
+                AddLog("Lang.T(Lang.T(Select one or more accounts in the list first.");
                 ShowPage("Launch");
                 return;
             }
@@ -384,7 +384,7 @@ namespace RobloxMultiHub
         async void JoinServerWithSelected(long placeId, string jobId)
         {
             List<Account> accs = SelectedAccounts();
-            if (accs.Count == 0) { AddLog("Select one or more accounts in the list first."); return; }
+            if (accs.Count == 0) { AddLog("Lang.T(Lang.T(Select one or more accounts in the list first."); return; }
             if (launching) { AddLog("A launch is already running. Press Stop to cancel it."); return; }
             SetLaunching(true);
             try

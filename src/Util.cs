@@ -27,6 +27,18 @@ namespace RobloxMultiHub
             catch (Exception) { }
         }
 
+        // Deletes the log file once it is older than the chosen number of hours (12 or 24).
+        public static void TrimOld(int hours)
+        {
+            try
+            {
+                if (path == null || !File.Exists(path)) return;
+                if (DateTime.UtcNow - File.GetLastWriteTimeUtc(path) > TimeSpan.FromHours(Math.Max(1, hours)))
+                    File.Delete(path);
+            }
+            catch (Exception) { }
+        }
+
         public static void Write(string msg)
         {
             string now = DateTime.Now.ToString("HH:mm:ss");

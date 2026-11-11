@@ -35,6 +35,7 @@ namespace RobloxMultiHub
             AccountsPath = Path.Combine(Dir, "accounts.dat");
             Log.Init(Dir);
             LoadSettings();
+            Log.TrimOld(Settings.LogHours);
         }
 
         public static void LoadSettings()

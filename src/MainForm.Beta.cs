@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -8,11 +9,13 @@ namespace RobloxMultiHub
     public partial class MainForm
     {
         Label lblBetaLive;
-        NumericUpDown numMaxRam;
-        RoundButton btnProbe;
-        Label lblProbe;
-        CheckBox chkVeryLow, chkHideBar;
         bool loadingBeta;
+        CheckBox chkDetectSecrets;
+        RoundTextBox tbSecretImage;
+        NumericUpDown numSecretHold, numSecretOffX, numSecretOffY, numSecretTries;
+        CheckBox chkSecretAllowClick;
+        PictureBox picSecretPreview;
+        Label lblSecretLive;
 
         void BuildBetaPage()
         {
@@ -24,68 +27,168 @@ namespace RobloxMultiHub
             lblBetaLive = Ui.Lbl("", "good");
             p.Row(lblBetaLive);
 
-            p.Section("Max RAM per window");
-            numMaxRam = Ui.Num(0, 32768, Math.Max(0, Store.Settings.MaxRamMb), 80);
-            p.Opt("Maximum RAM per window (0 = off).",
-                "Windows stops every window from keeping more than this many MB of RAM: pages the game is not using right now are pushed out to the pagefile and stay there until the game really needs them. The RAM counter of each window stays near this number instead of growing all day.\n\n"
-                + "Start high (800 MB is a good first try) and lower it step by step; when a window starts to stutter you went too low, go a little back up. 0 turns it off.\n\n"
-                + "The cap is applied to every Roblox window within about 2 seconds (also right after it starts) and is removed when MultiHub closes.",
-                Ui.Fld("Max RAM (MB)", 110), numMaxRam);
-
-            numMaxRam.ValueChanged += delegate
-            {
-                if (loadingBeta) return;
-                Store.Settings.MaxRamMb = (int)numMaxRam.Value;
-                Store.SaveSettings();
-                RamCap.Tick();
-                UpdateBetaLive();
-            };
-
-            btnProbe = Ui.Btn("Find my real cap", 160, delegate
-            {
-                if (UsageMonitor.Count == 0) { AddLog("Cap probe: launch your accounts first - it measures them while they idle."); return; }
-                CapProber.Start(AddLog);
-            }, "primary");
-            p.Opt("Measures your clients to find the real floor.",
-                "While your accounts idle like normal, this lowers 'Max RAM per window' by 50 MB every ~3 minutes and watches hard page faults (pages being read back from disk). Above the floor they stay near zero; below it they climb - the last cap that stayed clean IS your number, measured on your PC with your games. It ends there automatically; click again to stop early.",
-                btnProbe);
-            lblProbe = Ui.Lbl(Store.Settings.RamCapFloorMb > 0
-                ? "Measured floor on this PC: " + Store.Settings.RamCapFloorMb + " MB per window."
-                : "Not measured yet on this PC.", "muted");
-            p.Row(lblProbe);
-
+            p.Section("Diagnostics");
             p.Opt("Quick numbers without a probe.",
-                "Reads cores, RAM, GPU counters, disks, pagefile and the clients currently running, and estimates how many windows this PC can run. The real per-window cap comes from the probe above.",
+                "Reads cores, RAM, GPU counters, disks, pagefile and the clients currently running, and estimates how many windows this PC can run. The 'Max RAM per window' cap and its probe now live on the Performance page.",
                 Ui.Btn("Run diagnostics", 150, delegate { BetaDiagnostics(); }, ""));
 
-            p.Section("Client tweaks");
-            chkVeryLow = Ui.Chk("VeryLow memory priority for all clients", Store.Settings.VeryLowMem, null);
-            p.Opt("Windows reclaims Roblox pages first.",
-                "One call per client. When anything else on the PC needs RAM, Windows takes it from the Roblox clients first instead of your other programs. Recommended ON for farms.",
-                chkVeryLow);
-            chkVeryLow.CheckedChanged += delegate { if (!loadingBeta) { Store.Settings.VeryLowMem = chkVeryLow.Checked; Store.SaveSettings(); } };
+            p.Section("Detect Secrets");
+            chkDetectSecrets = Ui.Chk("Detect Secrets", Store.Settings.DetectSecrets, null);
+            p.Opt("Clicks once when the chosen image appears.",
+                "Watches every Roblox window (foreground or background) every 5 seconds. When the selected image is found, the cursor moves to its center (plus the offsets below) and the left button is held for the chosen time. One Discord message is sent for that account and its lifetime secret counter goes up by 1. It does not fire again for that account until the image has been off-screen for 10 seconds.\n\nRequires 'Rename windows to the account name' (Layout), the Discord webhook (Settings) and 'Log status' (Settings) to all be ON.",
+                chkDetectSecrets);
+            tbSecretImage = Ui.Txt(300, Store.Settings.SecretImagePath);
+            p.Opt("Which image to detect.",
+                "Pick a PNG of the UI element to detect (for the secret text strip, pick that). The click lands at the center of the detected image plus the X/Y offsets below.",
+                Ui.Fld("Image", 60), tbSecretImage,
+                Ui.Btn("Browse...", 90, delegate { BrowseSecretImage(); }, ""));
+            numSecretHold = Ui.Num(20, 5000, Math.Max(20, Store.Settings.SecretHoldMs), 70);
+            p.Opt("How long the button stays held.",
+                "Time in milliseconds the left mouse button is held on the detected spot.",
+                Ui.Fld("Hold (ms)", 90), numSecretHold);
+            numSecretOffX = Ui.Num(-500, 500, Store.Settings.SecretOffsetX, 70);
+            numSecretOffY = Ui.Num(-500, 500, Store.Settings.SecretOffsetY, 70);
+            p.Opt("Click point relative to the image center.",
+                "For the secret icon above the text strip, leave X at 0 and Y at -18.",
+                Ui.Fld("X offset", 70), numSecretOffX, Ui.Fld("Y offset", 70), numSecretOffY);
+            numSecretTries = Ui.Num(1, 20, Math.Max(1, Store.Settings.SecretMaxTries), 70);
+            p.Opt("How many times to retry a failed click.",
+                "If the image is still on screen after a click (the click did not work), the detector clicks again on the next scan, up to this many tries in total. It stops once the image disappears.",
+                Ui.Fld("Max click tries", 120), numSecretTries);
+            numSecretTries.ValueChanged += delegate { if (!loadingBeta) { Store.Settings.SecretMaxTries = (int)numSecretTries.Value; Store.SaveSettings(); } };
 
-            chkHideBar = Ui.Chk("Hide Roblox windows from the taskbar and Alt-Tab", Store.Settings.HideTaskbar, null);
-            p.Opt("Cleans up a crowded taskbar.",
-                "Applies the Windows tool-window style to every Roblox window (also within seconds of a new one opening). The windows stay visible on screen; they only disappear from the taskbar and Alt-Tab. Untick to bring them back.",
-                chkHideBar);
-            chkHideBar.CheckedChanged += delegate { if (!loadingBeta) { Store.Settings.HideTaskbar = chkHideBar.Checked; Store.SaveSettings(); Launcher.ApplyTaskbarHiding(); } };
+            p.Opt("Reset the lifetime secret counter.",
+                "Sets every account's secret counter back to 0. This cannot be undone.",
+                Ui.Btn("Reset secret counters", 190, delegate { ResetSecretCounters(); }, "danger"));
 
-            p.Opt("Everything a supporter needs, in one file.",
-                "Writes a detailed text file next to the app data: your settings (webhook URL masked), Windows, CPU, GPU, motherboard, BIOS, every disk and where the pagefile is, the Roblox install and its flags, a count of accounts, every running client with its live overhead, hub overhead, and the recent log.",
-                Ui.Btn("Create debug log", 170, delegate
+            chkSecretAllowClick = Ui.Chk("Allow click", Store.Settings.SecretAllowClick, null);
+            p.Opt("Whether the detector may touch the mouse.",
+                "ON: when the image is found the detector moves the cursor to it (plus the offsets) and holds the left button. OFF: it still detects, logs and counts every hit but never moves or clicks the mouse.",
+                chkSecretAllowClick);
+            chkSecretAllowClick.CheckedChanged += delegate { if (!loadingBeta) { Store.Settings.SecretAllowClick = chkSecretAllowClick.Checked; Store.SaveSettings(); } };
+
+            picSecretPreview = new PictureBox();
+            picSecretPreview.SizeMode = PictureBoxSizeMode.Zoom;
+            picSecretPreview.BackColor = Theme.Panel2;
+            picSecretPreview.Width = p.Width - PageBuilder.PadX * 2;
+            picSecretPreview.Height = 210;
+            p.Row(picSecretPreview);
+            lblSecretLive = Ui.Lbl("Detect Secrets preview: not running yet.", "muted");
+            p.Row(lblSecretLive);
+
+            chkDetectSecrets.CheckedChanged += delegate
+            {
+                if (loadingBeta) return;
+                Store.Settings.DetectSecrets = chkDetectSecrets.Checked;
+                Store.SaveSettings();
+                if (chkDetectSecrets.Checked)
                 {
-                    try
+                    if (SecretDetector.RequirementsMet()) { SecretDetector.Start(); AddLog("Detect Secrets ON."); }
+                    else
                     {
-                        string f = SupportBundle.Create();
-                        AddLog("Debug log written: " + f);
-                        System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + f + "\"");
+                        loadingBeta = true;
+                        chkDetectSecrets.Checked = false;
+                        loadingBeta = false;
+                        Store.Settings.DetectSecrets = false;
+                        Store.SaveSettings();
                     }
-                    catch (Exception ex) { AddLog("Debug log failed: " + ex.Message); }
-                }, ""));
+                }
+                else { SecretDetector.Stop(); if (lblSecretLive != null) lblSecretLive.Text = "Detect Secrets is off."; }
+            };
+            tbSecretImage.Leave += delegate
+            {
+                if (loadingBeta) return;
+                Store.Settings.SecretImagePath = tbSecretImage.Text.Trim();
+                Store.SaveSettings();
+            };
+            numSecretHold.ValueChanged += delegate { if (!loadingBeta) { Store.Settings.SecretHoldMs = (int)numSecretHold.Value; Store.SaveSettings(); } };
+            numSecretOffX.ValueChanged += delegate { if (!loadingBeta) { Store.Settings.SecretOffsetX = (int)numSecretOffX.Value; Store.SaveSettings(); } };
+            numSecretOffY.ValueChanged += delegate { if (!loadingBeta) { Store.Settings.SecretOffsetY = (int)numSecretOffY.Value; Store.SaveSettings(); } };
+
+            SecretDetector.Detected -= OnSecretDetected;
+            SecretDetector.Detected += OnSecretDetected;
+            SecretDetector.Preview -= OnSecretPreview;
+            SecretDetector.Preview += OnSecretPreview;
 
             loadingBeta = false;
             UpdateBetaLive();
+        }
+
+        void BrowseSecretImage()
+        {
+            using (OpenFileDialog d = new OpenFileDialog())
+            {
+                d.Title = "Choose the image to detect";
+                d.Filter = "PNG images|*.png|All files|*.*";
+                if (d.ShowDialog(this) != DialogResult.OK) return;
+                tbSecretImage.Text = d.FileName;
+                Store.Settings.SecretImagePath = d.FileName;
+                Store.SaveSettings();
+            }
+        }
+
+        void UpdateSecretDetectorGating()
+        {
+            if (chkDetectSecrets == null) return;
+            bool ok = SecretDetector.RequirementsMet();
+            chkDetectSecrets.Enabled = ok;
+            if (!ok && chkDetectSecrets.Checked)
+            {
+                loadingBeta = true;
+                chkDetectSecrets.Checked = false;
+                loadingBeta = false;
+                Store.Settings.DetectSecrets = false;
+                Store.SaveSettings();
+                SecretDetector.Stop();
+                if (lblSecretLive != null) lblSecretLive.Text = "Detect Secrets is off (a requirement is no longer met).";
+                AddLog("Detect Secrets turned OFF: a requirement is no longer met.");
+            }
+        }
+
+        void OnSecretDetected(int pid, string name, int sx, int sy)
+        {
+            if (IsDisposed) return;
+            if (InvokeRequired)
+            {
+                try { BeginInvoke(new Action<int, string, int, int>(OnSecretDetected), pid, name, sx, sy); } catch (Exception) { }
+                return;
+            }
+            Instance inst = Launcher.FindInstance(pid);
+            string who = name;
+            if (inst != null && inst.Account != null)
+            {
+                inst.Account.SecretsFound++;
+                Store.SaveAccounts();
+                who = AppState.Name(inst.Account);
+            }
+            Webhook.Send("Secret detected", "Secret detected for account " + who, Webhook.Yellow);
+            AddLog("Detect Secrets: secret found for account " + who + " (clicked at " + sx + "," + sy + ").");
+        }
+
+        void OnSecretPreview(Bitmap bmp, string text)
+        {
+            if (IsDisposed) { if (bmp != null) bmp.Dispose(); return; }
+            if (InvokeRequired)
+            {
+                try { BeginInvoke(new Action<Bitmap, string>(OnSecretPreview), bmp, text); }
+                catch (Exception) { if (bmp != null) bmp.Dispose(); }
+                return;
+            }
+            if (lblSecretLive != null) lblSecretLive.Text = text;
+            if (picSecretPreview == null) { if (bmp != null) bmp.Dispose(); return; }
+            Image old = picSecretPreview.Image;
+            picSecretPreview.Image = bmp;
+            if (old != null) old.Dispose();
+        }
+
+        void ResetSecretCounters()
+        {
+            if (MessageBox.Show(this, "Reset the secret counter for ALL accounts to 0?", "Detect Secrets", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
+            int n = 0;
+            foreach (Account a in Store.Accounts)
+                if (a.SecretsFound != 0) { a.SecretsFound = 0; n++; }
+            Store.SaveAccounts();
+            AddLog("Detect Secrets: reset the secret counter on " + n + " account(s).");
         }
 
         int betaSuggestMb;
@@ -161,23 +264,9 @@ namespace RobloxMultiHub
         void UpdateBetaLive()
         {
             if (lblBetaLive == null) return;
-            if (CapProber.State == CapProber.Phase.Settle || CapProber.State == CapProber.Phase.Measure)
-            {
-                lblBetaLive.Text = "Cap probe: " + CapProber.Status;
-                lblBetaLive.ForeColor = Theme.Accent;
-                if (numMaxRam != null && numMaxRam.Value != Store.Settings.MaxRamMb)
-                {
-                    loadingBeta = true;
-                    numMaxRam.Value = Math.Max(0, Math.Min(32768, Store.Settings.MaxRamMb));
-                    loadingBeta = false;
-                }
-                if (lblProbe != null) lblProbe.Text = CapProber.Status;
-                return;
-            }
-            if (lblProbe != null && Store.Settings.RamCapFloorMb > 0)
-                lblProbe.Text = "Measured floor on this PC: " + Store.Settings.RamCapFloorMb + " MB per window.";
+            UpdateSecretDetectorGating();
             int count = UsageMonitor.Count;
-            if (count == 0) { lblBetaLive.Text = "Right now: no Roblox window is running."; return; }
+            if (count == 0) { lblBetaLive.Text = Lang.T("Right now: no Roblox window is running."); return; }
             string s = "Right now: " + count + " window(s), " + Util.FormatBytes(UsageMonitor.TotalRam) + " RAM in total, "
                 + Util.FormatBytes(UsageMonitor.TotalRam / count) + " average.";
             if (Store.Settings.MaxRamMb > 0)

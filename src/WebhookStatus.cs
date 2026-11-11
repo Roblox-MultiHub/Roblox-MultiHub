@@ -76,7 +76,8 @@ namespace RobloxMultiHub
                     sb.Append("\n").Append(profile)
                       .Append(' ', Math.Max(1, nameW - name.Length + 2))     // column-ish alignment
                       .Append("<t:").Append(start).Append(":R>   ")
-                      .Append(gpu).Append(cpu.ToString("0.0")).Append("% / ").Append(ram).Append("MB");
+                      .Append(gpu).Append(cpu.ToString("0.0")).Append("% / ").Append(ram).Append("MB")
+                      .Append(a != null && a.SecretsFound > 0 ? "  ·  " + a.SecretsFound + (a.SecretsFound == 1 ? " secret" : " secrets") : "");
                 }
             }
             return sb.ToString();

@@ -179,8 +179,8 @@ namespace RobloxMultiHub
             topBar.Controls.Add(disc);
 
             statRun = new StatBlock(Lang.T("Running"), 140);
-            statCpu = new StatBlock(Lang.T("Roblox CPU"), 160);
-            statRam = new StatBlock(Lang.T("Roblox memory"), 170);
+            statCpu = new StatBlock(Lang.T("Lang.T(Lang.T(Roblox CPU"), 160);
+            statRam = new StatBlock(Lang.T(Lang.T("Roblox memory"), 170);
             statRun.SetTip("Accounts running that this app started / accounts saved.");
             statCpu.SetTip("CPU used by all Roblox windows together, as a percentage of your whole PC (same scale as Task Manager). The small line is the average per account.");
             statRam.SetTip("Memory used by all Roblox windows together. The small line is the average per account.");
@@ -251,7 +251,7 @@ namespace RobloxMultiHub
             topBar.Controls.Add(btnWinMin);
             btnWinClose = Ui.Btn("\u2715", 30, delegate { Close(); }, "danger");
             btnWinClose.Height = 30;
-            Ui.Tips.SetToolTip(btnWinClose, "Close Roblox MultiHub");
+            Ui.Tips.SetToolTip(btnWinClose, "Lang.T(Lang.T(Close Roblox MultiHub");
             topBar.Controls.Add(btnWinClose);
 
             // header controls that must keep their own clicks
@@ -414,13 +414,13 @@ namespace RobloxMultiHub
             FlowLayoutPanel top = NewNavFlow();
             top.Dock = DockStyle.Top;
             top.Controls.Add(NavBtn("Home", Lang.T("\U0001F3E0  Home"), false, null));
-            top.Controls.Add(NavBtn("Launch", Lang.T("\U0001F680  Launch"), false, null));
-            top.Controls.Add(NavBtn("Servers", Lang.T("\U0001F310  Servers"), false, null));
+            top.Controls.Add(NavBtn("Launch", Lang.T("Lang.T(Lang.T(\U0001F680  Launch"), false, null));
+            top.Controls.Add(NavBtn("Servers", Lang.T(Lang.T("\U0001F310  Servers"), false, null));
             top.Controls.Add(NavBtn("Layout", Lang.T("\u25A6  Layout"), false, null));
-            top.Controls.Add(NavBtn("Monitor", Lang.T("\U0001F4CA  Monitor"), false, null));
+            top.Controls.Add(NavBtn("Monitor", Lang.T(Lang.T("\U0001F4CA  Monitor"), false, null));
             top.Controls.Add(NavBtn("Presets", Lang.T("\U0001F4BE  Presets"), false, null));
             top.Controls.Add(NavBtn("Perf", Lang.T("⚡  Perf"), false, null));
-            top.Controls.Add(NavBtn("Beta", Lang.T("\U0001F9EA  Beta"), false, "New features that are still being tested. They move to their proper page once proven."));
+            top.Controls.Add(NavBtn("Beta", Lang.T("Lang.T(Lang.T(\U0001F9EA  Beta"), false, "New features that are still being tested. They move to their proper page once proven."));
 
             side.Controls.Add(bottom);
             side.Controls.Add(top);
@@ -787,6 +787,7 @@ namespace RobloxMultiHub
                     MaxAlts.Tick();
                     RamCap.Tick();
                     UpdateBetaLive();
+                    UpdateProbeLabel();
                     DiscordRpc.Update(UsageMonitor.Count, Store.Accounts.Count);
                 }
                 if (currentPage == "Layout" && tickN % 2 == 0) RefreshWindowList();
@@ -944,6 +945,7 @@ namespace RobloxMultiHub
                 DiscordRpc.Stop();
                 if (Store.Settings.MaxAlts) MaxAlts.Reset();
                 RamCap.Reset();
+                SecretDetector.Stop();
 
                 // full reset: close EVERY Roblox process and confirm they are gone before we release
                 // anything, so the machine is exactly as before the app ran - and a restart is clean
@@ -1116,14 +1118,14 @@ namespace RobloxMultiHub
             foot.Margin = Padding.Empty;
             foot.Tag = "card";
             GradientButton bLaunch = new GradientButton();
-            bLaunch.Text = "\U0001F680  " + Lang.T("Launch selected");
+            bLaunch.Text = "\U0001F680  " + Lang.T("Lang.T(Lang.T(Launch selected");
             bLaunch.Size = new Size(158, 34);
             bLaunch.Margin = new Padding(12, 6, 8, 6);      // centered in the 46px footer band
             bLaunch.Click += delegate { LaunchSelected(); };
             Ui.Tips.SetToolTip(bLaunch, "Launch the selected accounts. Accounts with their own game use it; the others use the Launch page.");
-            RoundButton bAll = Ui.Btn(Lang.T("Launch all"), 90, delegate { LaunchAllListed(); }, "");
+            RoundButton bAll = Ui.Btn(Lang.T(Lang.T("Launch all"), 90, delegate { LaunchAllListed(); }, "");
             Ui.Tips.SetToolTip(bAll, "Launch every account that is currently visible in the list.");
-            RoundButton bStop = Ui.Btn(Lang.T("Stop all"), 80, delegate { StopAll(); }, "danger");
+            RoundButton bStop = Ui.Btn(Lang.T(Lang.T("Stop all"), 80, delegate { StopAll(); }, "danger");
             Ui.Tips.SetToolTip(bStop, "Close every Roblox window that this app started (windows you opened yourself are left alone).");
             RoundButton bUp = Ui.Btn("\u2191", 44, delegate { MoveSelected(-1); }, "");
             RoundButton bDown = Ui.Btn("\u2193", 44, delegate { MoveSelected(1); }, "");
@@ -1150,13 +1152,13 @@ namespace RobloxMultiHub
         }
 
         // Footer of the accounts panel, every button only present when it can be used:
-        // Stop while something is running ("Stop" / "Stop all"), 'Launch all' while at least one
+        // Stop while something is running ("Stop" / Lang.T("Stop all"), 'Launch all' while at least one
         // listed account is not running, and the order arrows while an account is selected.
         void UpdateFooterButtons()
         {
             if (footStop == null || footAll == null) return;
             int running = runningIds.Count;
-            string want = running == 1 ? Lang.T("Stop") : Lang.T("Stop all");
+            string want = running == 1 ? Lang.T(Lang.T("Stop") : Lang.T(Lang.T("Stop all");
             if (footStop.Text != want) footStop.Text = want;
             SetFooterBtn(footStop, running > 0);
             bool anyToLaunch = false;
@@ -1497,14 +1499,14 @@ namespace RobloxMultiHub
         void PillFor(Account a, out string text, out Color color)
         {
             LiveInfo li = AppState.Live(a);
-            if (li.Locked) { text = "Account locked"; color = Theme.Bad; return; }
-            if (li.CookieBad) { text = "Cookie expired"; color = Theme.Bad; return; }
+            if (li.Locked) { text = Lang.T("Account locked"); color = Theme.Bad; return; }
+            if (li.CookieBad) { text = Lang.T("Cookie expired"); color = Theme.Bad; return; }
             if (runningIds.Contains(a.Id)) { text = "Running"; color = Theme.Good; return; }
-            if (li.PresenceType == 2) { text = "In game"; color = Theme.Good; }
+            if (li.PresenceType == 2) { text = Lang.T("In game"); color = Theme.Good; }
             else if (li.PresenceType == 3) { text = "Studio"; color = Theme.Purple; }
             else if (li.PresenceType == 1) { text = "Online"; color = Theme.Info; }
             else if (li.PresenceType == 0) { text = "Offline"; color = Theme.Muted; }
-            else { text = "Not checked"; color = Theme.Border; }
+            else { text = Lang.T("Not checked"); color = Theme.Border; }
         }
 
         string GameText(Account a)
@@ -1652,7 +1654,7 @@ namespace RobloxMultiHub
             if (q.Length > 0)
                 list = list.Where(a => (a.Username + " " + a.Alias + " " + a.Description + " " + a.Group + " " + a.DisplayName).ToLowerInvariant().Contains(q));
             if (grp == "(no group)") list = list.Where(a => string.IsNullOrEmpty(a.Group));
-            else if (grp != "All groups") list = list.Where(a => a.Group == grp);
+            else if (grp != "Lang.T(Lang.T(All groups") list = list.Where(a => a.Group == grp);
 
             if (sortCol == 1) list = sortAsc ? list.OrderBy(a => DisplayName(a), StringComparer.OrdinalIgnoreCase) : list.OrderByDescending(a => DisplayName(a), StringComparer.OrdinalIgnoreCase);
             else if (sortCol == 2) list = sortAsc ? list.OrderBy(a => a.Group, StringComparer.OrdinalIgnoreCase) : list.OrderByDescending(a => a.Group, StringComparer.OrdinalIgnoreCase);
@@ -1676,7 +1678,7 @@ namespace RobloxMultiHub
             string keep = cbGroupFilter.SelectedItem == null ? "All groups" : cbGroupFilter.SelectedItem.ToString();
             suspendSel = true;
             cbGroupFilter.Items.Clear();
-            cbGroupFilter.Items.Add("All groups");
+            cbGroupFilter.Items.Add("Lang.T(Lang.T(All groups");
             cbGroupFilter.Items.Add("(no group)");
             foreach (string g in Store.AllGroups()) cbGroupFilter.Items.Add(g);
             int idx = cbGroupFilter.Items.IndexOf(keep);
@@ -1927,7 +1929,7 @@ namespace RobloxMultiHub
         void EditSelected()
         {
             List<Account> sel = SelectedAccounts();
-            if (sel.Count == 0) { AddLog("Select an account first."); return; }
+            if (sel.Count == 0) { AddLog("Lang.T(Lang.T(Select an account first."); return; }
             if (Dialogs.EditAccounts(this, sel))
             {
                 foreach (Account a in sel)
@@ -1993,7 +1995,7 @@ namespace RobloxMultiHub
         void CopyField(Func<Account, string> get)
         {
             List<Account> sel = SelectedAccounts();
-            if (sel.Count == 0) { AddLog("Select an account first."); return; }
+            if (sel.Count == 0) { AddLog("Lang.T(Lang.T(Select an account first."); return; }
             string text = string.Join("\r\n", sel.Select(a => get(a)).ToArray());
             if (string.IsNullOrEmpty(text.Trim())) { AddLog("That field is empty for the selected account."); return; }
             Util.Copy(text);
@@ -2048,7 +2050,7 @@ namespace RobloxMultiHub
         async void ShowDetails()
         {
             List<Account> sel = SelectedAccounts();
-            if (sel.Count == 0) { AddLog("Select an account first."); return; }
+            if (sel.Count == 0) { AddLog("Lang.T(Lang.T(Select an account first."); return; }
             if (sel.Count > 1) AddLog("Loading the details of " + sel.Count + " accounts...");
             StringBuilder sb = new StringBuilder();
             foreach (Account a in sel)
@@ -2067,7 +2069,7 @@ namespace RobloxMultiHub
         async void CopyTicket()
         {
             Account a = FirstSelected();
-            if (a == null) { AddLog("Select an account first."); return; }
+            if (a == null) { AddLog("Lang.T(Lang.T(Select an account first."); return; }
             TicketResult t = await Api.GetTicket(a.Cookie);
             if (t.Ticket == null) { AddLog("Could not get a ticket: " + t.Error); return; }
             Util.Copy(t.Ticket);
@@ -2077,7 +2079,7 @@ namespace RobloxMultiHub
         void OpenProfile()
         {
             Account a = FirstSelected();
-            if (a == null || a.UserId <= 0) { AddLog("Select an account first."); return; }
+            if (a == null || a.UserId <= 0) { AddLog("Lang.T(Lang.T(Select an account first."); return; }
             try { Process.Start(new ProcessStartInfo("https://www.roblox.com/users/" + a.UserId + "/profile") { UseShellExecute = true }); }
             catch (Exception ex) { AddLog("Could not open the browser: " + ex.Message); }
         }
@@ -2085,7 +2087,7 @@ namespace RobloxMultiHub
         async void RotateSelected()
         {
             List<Account> sel = SelectedAccounts();
-            if (sel.Count == 0) { AddLog("Select an account first."); return; }
+            if (sel.Count == 0) { AddLog("Lang.T(Lang.T(Select an account first."); return; }
             foreach (Account a in sel)
             {
                 string nc = await Api.RotateCookie(a.Cookie, AddLog);

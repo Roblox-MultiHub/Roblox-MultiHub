@@ -1,0 +1,65 @@
+using System.Collections.Generic;
+
+namespace RobloxMultiHub
+{
+    public partial class Lang
+    {
+        static readonly Dictionary<string, string> Portuguese = new Dictionary<string, string>
+        {
+            { "\U0001F680  Launch", "\U0001F680  Iniciar" }, { "\U0001F310  Servers", "\U0001F310  Servidores" },
+            { "\U0001F5A5  Layout", "\U0001F5A5  Disposição" }, { "\U0001F4CA  Monitor", "\U0001F4CA  Monitor" },
+            { "\U0001F4C4  Presets", "\U0001F4C4  Predefinições" }, { "\u26A1  Perf", "\u26A1  Desempenho" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  Beta" }, { "\u2699  Settings", "\u2699  Configurações" },
+            { "\u2753  Help", "\u2753  Ajuda" }, { "Accounts", "Contas" },
+            { "Launch selected", "Iniciar seleção" }, { "Launch all", "Iniciar tudo" },
+            { "Launch all listed", "Iniciar tudo" }, { "Stop", "Parar" }, { "Stop all", "Parar tudo" },
+            { "Add accounts", "Adicionar contas" }, { "Save preset", "Salvar predefinição" },
+            { "Run diagnostics", "Executar diagnóstico" }, { "Check for updates", "Verificar atualizações" },
+            { "Back up now", "Fazer backup agora" }, { "Clean memory now", "Limpar memória agora" },
+            { "Arrange now", "Organizar agora" }, { "Close all Roblox processes", "Fechar todos os processos do Roblox" },
+            { "Apply to running windows", "Aplicar às janelas em execução" }, { "Allow click", "Permitir clique" },
+            { "Reset secret counters", "Redefinir contadores de segredos" },
+            { "Copy a fresh login ticket", "Copiar um ticket de login novo" },
+            { "Open profile in browser", "Abrir perfil no navegador" },
+            { "Log in with a browser (Edge / Chrome)...", "Entrar com um navegador (Edge / Chrome)..." },
+            { "Add several with username:password...", "Adicionar vários com usuário:senha..." },
+            { "Paste cookie(s)...", "Colar cookie(s)..." }, { "Import cookies from a file...", "Importar cookies de um arquivo..." },
+            { "Browse...", "Procurar..." }, { "Cancel", "Cancelar" }, { "Check", "Verificar" },
+            { "All groups", "Todos os grupos" }, { "New group...", "Novo grupo..." }, { "New group", "Novo grupo" },
+            { "Name of the new group:", "Nome do novo grupo:" },
+            { "Max RAM per window", "RAM máxima por janela" },
+            { "Measured floor on this PC:", "Mínimo medido neste PC:" }, { "Not measured yet on this PC.", "Ainda não medido neste PC." },
+            { "Refresh every (seconds)", "Atualizar a cada (segundos)" }, { "Discord alerts", "Alertas do Discord" },
+            { "Use Windows encryption", "Usar criptografia do Windows" }, { "Support this project", "Apoiar este projeto" },
+            { "Update available", "Atualização disponível" }, { "Sort accounts by", "Ordenar contas por" },
+            { "My own order (Up / Down buttons)", "Minha própria ordem (botões Subir / Descer)" },
+            { "Name  (click again to reverse)", "Nome  (clique de novo para inverter)" },
+            { "CPU usage", "Uso de CPU" }, { "Last used", "Último uso" }, { "Move to group", "Mover para grupo" },
+            { "In game", "Em jogo" }, { "Not checked", "Não verificado" }, { "User ID", "ID do usuário" },
+            { "Show account details (age, Robux, Premium)", "Mostrar detalhes da conta (idade, Robux, Premium)" },
+            { "Roblox CPU", "CPU do Roblox" }, { "Roblox memory", "Memória do Roblox" },
+            { "Right now: no Roblox window is running.", "Agora: nenhuma janela do Roblox em execução." },
+            { "Running now:", "Em execução agora:" }, { "CPU priority", "Prioridade de CPU" },
+            { "Anti-AFK", "Anti-AFK" }, { "Automation", "Automação" }, { "Advanced", "Avançado" },
+            { "Appearance & startup", "Aparência e inicialização" }, { "Anti-aliasing", "Antialiasing" },
+            { "Hold (ms)", "Segurar (ms)" }, { "X offset", "Deslocamento X" }, { "Y offset", "Deslocamento Y" },
+            { "Max click tries", "Tentativas máximas de clique" },
+            { "Select an account first.", "Selecione uma conta primeiro." },
+            { "Select one or more accounts in the list first.", "Selecione primeiro uma ou mais contas da lista." },
+            { "Enter a Place ID first.", "Insira um ID de lugar primeiro." },
+            { "Select a preset in the list first.", "Selecione uma predefinição da lista primeiro." },
+            { "Select a game in the list first.", "Selecione um jogo da lista primeiro." },
+            { "Select a server in the list first.", "Selecione um servidor da lista primeiro." },
+            { "Could not load servers:", "Não foi possível carregar servidores:" },
+            { "Launch failed:", "Falha ao iniciar:" },
+            { "Account locked", "Conta bloqueada" }, { "Cookie expired", "Cookie expirado" },
+            { "Welcome to Roblox MultiHub", "Bem-vindo ao Roblox MultiHub" },
+            { "Add your accounts", "Adicione suas contas" }, { "Pick a game", "Escolha um jogo" },
+            { "Press Launch", "Pressione Iniciar" }, { "Go to Launch", "Ir para Iniciar" },
+            { "Close Roblox MultiHub", "Fechar Roblox MultiHub" },
+            { "Loading servers...", "Carregando servidores..." }, { "Searching...", "Pesquisando..." },
+            { "Backup saved in ", "Backup salvo em " },
+            { "Backups are made automatically.", "Backups são feitos automaticamente." }
+        };
+    }
+}

@@ -22,6 +22,7 @@ namespace RobloxMultiHub
         public long TrackerId;              // stable "browser tracker id" for this account
         public long LastUsedTicks;
         public int Order;
+        public long SecretsFound;
         public bool LoginLost;              // Roblox ended this login and you were already told (startup check)
     }
 
@@ -195,6 +196,14 @@ namespace RobloxMultiHub
         public int RamCapFloorMb = 0;             // measured by the cap probe; 0 = not measured yet
         public bool VeryLowMem = true;            // VeryLow memory priority on every client
         public bool HideTaskbar = false;          // Roblox windows off the taskbar / Alt-Tab
+        public bool DetectSecrets = false;
+        public string SecretImagePath = "";
+        public int SecretHoldMs = 350;
+        public int SecretOffsetX = 0;
+        public int SecretOffsetY = -18;
+        public bool SecretAllowClick = true;
+        public int SecretMaxTries = 3;
+        public int LogHours = 12;
     }
 
     // RAM cleaner (Performance page). The cleaning itself is done by an admin helper process.

@@ -16,6 +16,9 @@ namespace RobloxMultiHub
         Label lblPerfLive;
         NumericUpDown numFps;
         bool loadingPerf;
+        NumericUpDown numMaxRam;
+        RoundButton btnProbe;
+        Label lblProbe;
 
         static readonly string[] PresetKeys = new string[] { "Default", "Light", "LowCpu", "Lowest", "Custom" };
         static readonly int[] QualityValues = new int[] { 0, 1, 2, 3, 4, 5, 6, 8, 10, 15, 21 };
@@ -36,6 +39,7 @@ namespace RobloxMultiHub
 
             BuildMemorySection(p);
             BuildMaxAltsSection(p);
+            BuildRamCapSection(p);
 
             p.Section("Frame rate");
             numFps = Ui.Num(0, 1000, Store.Settings.FpsCap, 80);
@@ -100,7 +104,7 @@ namespace RobloxMultiHub
                 "Add your own flags as a JSON object. Flags that are not on Roblox's list are skipped, unless you tick the box: then they are written anyway (useful if Roblox extends its list later). Roblox ignores them as long as they are not on its list.",
                 chkUnlisted);
 
-            p.Section("CPU priority");
+            p.Section(Lang.T("CPU priority");
             cbPriority = Ui.Cmb(300, "Normal", "Below normal  (keeps your PC responsive)", "Idle  (lowest)");
             p.Opt("Stops many windows from slowing down your PC.",
                 "Set automatically on every window this app launches. It does not make Roblox do less work, but other programs get CPU time first, so your PC stays responsive with many windows open. No Roblox files are touched.",
@@ -276,6 +280,56 @@ namespace RobloxMultiHub
             chkMaxIdle.CheckedChanged += delegate { if (loadingPerf) return; Store.Settings.MaxAltsIdle = chkMaxIdle.Checked; Store.SaveSettings(); if (!chkMaxIdle.Checked) MaxAlts.Reset(); };
             chkMaxTrim.CheckedChanged += delegate { if (loadingPerf) return; Store.Settings.MaxAltsTrim = chkMaxTrim.Checked; Store.SaveSettings(); };
             chkMaxMin.CheckedChanged += delegate { if (loadingPerf) return; Store.Settings.MaxAltsMinimize = chkMaxMin.Checked; Store.SaveSettings(); };
+        }
+
+        void BuildRamCapSection(PageBuilder p)
+        {
+            p.Section("Lang.T(Lang.T(Max RAM per window");
+            numMaxRam = Ui.Num(0, 32768, Math.Max(0, Store.Settings.MaxRamMb), 80);
+            p.Opt("Maximum RAM per window (0 = off).",
+                "Windows stops every window from keeping more than this many MB of RAM: pages the game is not using right now are pushed out to the pagefile and stay there until the game really needs them. The RAM counter of each window stays near this number instead of growing all day.\n\n"
+                + "Start high (800 MB is a good first try) and lower it step by step; when a window starts to stutter you went too low, go a little back up. 0 turns it off.\n\n"
+                + "The cap is applied to every Roblox window within about 2 seconds (also right after it starts) and is removed when MultiHub closes.",
+                Ui.Fld("Max RAM (MB)", 110), numMaxRam);
+            numMaxRam.ValueChanged += delegate
+            {
+                if (loadingPerf) return;
+                Store.Settings.MaxRamMb = (int)numMaxRam.Value;
+                Store.SaveSettings();
+                RamCap.Tick();
+            };
+
+            btnProbe = Ui.Btn("Find my real cap", 160, delegate
+            {
+                if (UsageMonitor.Count == 0) { AddLog("Cap probe: launch your accounts first - it measures them while they idle."); return; }
+                CapProber.Start(AddLog);
+            }, "primary");
+            p.Opt("Measures your clients to find the real floor.",
+                "While your accounts idle like normal, this lowers 'Max RAM per window' by 50 MB every ~3 minutes and watches hard page faults (pages being read back from disk). Above the floor they stay near zero; below it they climb - the last cap that stayed clean IS your number, measured on your PC with your games. It ends there automatically; click again to stop early.",
+                btnProbe);
+            lblProbe = Ui.Lbl(Store.Settings.RamCapFloorMb > 0
+                ? "Measured floor on this PC: " + Store.Settings.RamCapFloorMb + " MB per window."
+                : Lang.T("Not measured yet on this PC."), "muted");
+            p.Row(lblProbe);
+        }
+
+        void UpdateProbeLabel()
+        {
+            if (lblProbe == null) return;
+            if (CapProber.State == CapProber.Phase.Settle || CapProber.State == CapProber.Phase.Measure)
+            {
+                lblProbe.Text = "Cap probe: " + CapProber.Status;
+                if (numMaxRam != null && numMaxRam.Value != Store.Settings.MaxRamMb)
+                {
+                    loadingPerf = true;
+                    numMaxRam.Value = Math.Max(0, Math.Min(32768, Store.Settings.MaxRamMb));
+                    loadingPerf = false;
+                }
+            }
+            else if (Store.Settings.RamCapFloorMb > 0)
+                lblProbe.Text = "Measured floor on this PC: " + Store.Settings.RamCapFloorMb + " MB per window.";
+            else
+                lblProbe.Text = Lang.T("Not measured yet on this PC.");
         }
     }
 }

@@ -34,6 +34,7 @@ namespace RobloxMultiHub
         DateTime lastAntiAfk = DateTime.Now;
         ComboBox cbTheme;
         ComboBox cbLang;
+        ComboBox cbLogHours;
         Label lblStorage;
         bool loadingSettings;
 
@@ -57,6 +58,12 @@ namespace RobloxMultiHub
                 Store.Settings.Animations = chkAnimations.Checked;
                 Store.SaveSettings();
             };
+            cbLogHours = Ui.Cmb(140, "12 hours", "24 hours");
+            cbLogHours.SelectedIndex = S.LogHours >= 24 ? 1 : 0;
+            p.Opt("Keep the activity log for this long.",
+                "The activity log file (log.txt in the data folder) is cleared when it is older than this. 12 hours keeps it short; 24 hours keeps a full day of history.",
+                Ui.Fld("Keep logs", 100), cbLogHours);
+            cbLogHours.SelectedIndexChanged += delegate { if (loadingSettings) return; Store.Settings.LogHours = cbLogHours.SelectedIndex == 1 ? 24 : 12; Store.SaveSettings(); };
 
             p.Section("Multi-instance");
             chkMulti = Ui.Chk("Enable multi-instance", S.MultiInstance, null);
@@ -99,7 +106,7 @@ namespace RobloxMultiHub
                 "A few seconds after start-up every saved login is tested once (a short pause between accounts, so Roblox does not rate-limit you). Accounts whose login stopped working since the previous check - password changed, logged out everywhere, or locked / reset by Roblox - are listed in one popup, so you know which ones to log in with again. Accounts you were already told about only appear in the activity log.",
                 chkCheckLogins);
 
-            p.Section("Automation");
+            p.Section(Lang.T("Automation");
             chkRelaunch = Ui.Chk("Auto-relaunch (watcher)", S.AutoRelaunch, null);
             p.Opt("Relaunches accounts whose window disappeared.",
                 "OFF by default. If a Roblox window that this app started disappears (crash, kick, closed), the same account is launched again into the same game. Use the Close / Stop buttons of this app to close windows on purpose.",
@@ -129,7 +136,7 @@ namespace RobloxMultiHub
                 "Mouse nudge (recommended): moves the mouse a few pixels and back. It resets Roblox's idle timer but does NOT move your character, so auto-hatch, auto-farm and AFK setups keep running.\n\nJump (Space): the older behaviour - the character jumps once. Simple, but a jump can briefly move you off an egg / spot and interrupt auto-hatch.\n\nZoom camera (I then O): zooms in and back out. No character movement; use it if mouse nudge does not work in a game.",
                 Ui.Fld("Anti-AFK action", 110), cbAntiAfkAction);
 
-            p.Section("Discord alerts");
+            p.Section(Lang.T("Discord alerts");
             chkWebhook = Ui.Chk("Send alerts to a Discord webhook", S.Webhook, null);
             p.Opt("Posts short messages to a channel you choose.",
                 "OFF by default. Create a webhook in your Discord server (Server settings - Integrations - Webhooks - New Webhook - Copy URL) and paste it below. MultiHub then posts short alerts to that channel. The URL is only ever sent to Discord and is stored locally; treat it like a password - anyone with it can post to that channel.",
@@ -200,7 +207,7 @@ namespace RobloxMultiHub
                 Ui.Btn("Back up now", 120, delegate { Store.Backup(); AddLog("Backup saved in " + Store.BackupDir); }, ""),
                 Ui.Btn("Open data folder", 150, delegate { OpenDataFolder(); }, ""));
 
-            p.Section("Appearance & startup");
+            p.Section("Lang.T(Lang.T(Appearance & startup");
             cbTheme = Ui.Cmb(140, "Dark", "Light");
             cbTheme.SelectedIndex = S.Theme == "Light" ? 1 : 0;
             p.Opt("Dark or light look.", "Switches the whole window immediately.", Ui.Fld("Theme", 120), cbTheme);
@@ -228,17 +235,29 @@ namespace RobloxMultiHub
                 "Asks GitHub for the latest version immediately and tells you whether you are up to date.",
                 Ui.Btn("Check for updates now", 200, delegate { CheckUpdatesNow(); }, ""));
 
-            p.Section("Advanced");
+            p.Section(Lang.T("Advanced");
             tbLauncherUrl = Ui.Txt(290, S.PlaceLauncherUrl);
             p.Opt("Only change if Roblox moves it.",
                 "The address the app uses to ask Roblox for a game session. Only change it if launching stops working after a Roblox change and you know the new address. 'Reset' restores the default.",
                 Ui.Fld("Place launcher URL", 130), tbLauncherUrl,
                 Ui.Btn("Reset", 70, delegate { tbLauncherUrl.Text = "https://assetgame.roblox.com/game/PlaceLauncher.ashx"; }, ""));
 
-            p.Section("Support this project");
+            p.Section(Lang.T("Support this project");
             p.Opt("Free - donations keep it going.",
                 "This tool is built by our team in a lot of free time and stays completely free. If it saves you time and you want to say thanks, a small donation is hugely appreciated - it is never required and nothing is locked behind it. The button opens the donation page in your browser.",
                 Ui.Btn("Buy us a coffee", 170, delegate { OpenDonate(); }, "primary"));
+            p.Opt("Need help? Send us a debug log.",
+                "Writes a detailed text file next to the app data: your settings (webhook URL masked), Windows, CPU, GPU, motherboard, BIOS, every disk and where the pagefile is, the Roblox install and its flags, a count of accounts, every running client with its live overhead, hub overhead, and the recent log.",
+                Ui.Btn("Create debug log", 170, delegate
+                {
+                    try
+                    {
+                        string f = SupportBundle.Create();
+                        AddLog("Debug log written: " + f);
+                        System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + f + "\"");
+                    }
+                    catch (Exception ex) { AddLog("Debug log failed: " + ex.Message); }
+                }, ""));
             p.Opt("News, help and tickets.",
                 "Opens the Roblox MultiHub Discord server in your browser: announcements, update logs, a general chat and a support ticket system if you need help.",
                 Ui.Btn("Join our Discord", 150, delegate { OpenLink(DiscordUrl, "Discord"); }, ""));

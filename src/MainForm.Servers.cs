@@ -93,7 +93,7 @@ namespace RobloxMultiHub
 
         void UseSelectedGame(bool showServers)
         {
-            if (lvGames.SelectedItems.Count == 0) { AddLog("Select a game in the list first."); return; }
+            if (lvGames.SelectedItems.Count == 0) { AddLog("Lang.T(Lang.T(Select a game in the list first."); return; }
             GameInfo g = lvGames.SelectedItems[0].Tag as GameInfo;
             if (g == null) return;
             cbPlace.Text = g.PlaceId.ToString();
@@ -121,7 +121,7 @@ namespace RobloxMultiHub
         {
             long pid = Util.ParsePlaceId(tbSrvPlace.Text);
             if (pid <= 0) pid = Util.ParsePlaceId(cbPlace.Text);
-            if (pid <= 0) { AddLog("Enter a Place ID first."); return; }
+            if (pid <= 0) { AddLog("Lang.T(Lang.T(Enter a Place ID first."); return; }
             tbSrvPlace.Text = pid.ToString();
             if (!more || pid != srvPlace)
             {
@@ -150,7 +150,7 @@ namespace RobloxMultiHub
 
         ServerInfo SelectedServer()
         {
-            if (lvServers.SelectedItems.Count == 0) { AddLog("Select a server in the list first."); return null; }
+            if (lvServers.SelectedItems.Count == 0) { AddLog("Lang.T(Lang.T(Select a server in the list first."); return null; }
             return lvServers.SelectedItems[0].Tag as ServerInfo;
         }
 

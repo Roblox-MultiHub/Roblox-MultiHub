@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace RobloxMultiHub
@@ -26,6 +27,7 @@ namespace RobloxMultiHub
         public const uint SWP_NOSENDCHANGING = 0x0400;   // the window never gets WM_WINDOWPOSCHANGING, so it cannot clamp to its minimum size
         public const uint GW_OWNER = 4;
         public const uint WM_SETTEXT = 0x000C;
+        public const uint PW_RENDERFULLCONTENT = 0x00000002;
         public const int WM_HOTKEY = 0x0312;
         public const uint SMTO_ABORTIFHUNG = 0x0002;
         public const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
@@ -77,6 +79,9 @@ namespace RobloxMultiHub
 
         [DllImport("user32.dll")]
         public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
+
+        [DllImport("user32.dll")]
+        public static extern bool PrintWindow(IntPtr hWnd, IntPtr hdc, uint flags);
 
         [DllImport("user32.dll")]
         public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int x, int y, int cx, int cy, uint flags);
@@ -149,22 +154,28 @@ namespace RobloxMultiHub
         [DllImport("user32.dll")]
         public static extern bool BringWindowToTop(IntPtr hWnd);
 
-        // SetForegroundWindow is refused when another program has the focus; borrowing the input queue of
-        // the current foreground window makes Windows accept it.
+        // SetForegroundWindow is refused when another program has the focus. A simulated Alt press grants
+        // this process the activation right, then the caller thread borrows the target window's input queue.
         public static bool ForceForeground(IntPtr h)
         {
-            IntPtr fg = GetForegroundWindow();
-            if (fg == h) return true;
-            uint dummy;
-            uint fgThread = fg == IntPtr.Zero ? 0 : GetWindowThreadProcessId(fg, out dummy);
+            if (!IsWindow(h)) return false;
+            if (GetForegroundWindow() == h) return true;
+
+            keybd_event(0x12, 0, 0, UIntPtr.Zero);                 // VK_MENU down
+            keybd_event(0x12, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);   // VK_MENU up
+
+            uint targetThread;
+            uint pid;
+            targetThread = GetWindowThreadProcessId(h, out pid);
             uint me = GetCurrentThreadId();
-            bool attached = fgThread != 0 && fgThread != me && AttachThreadInput(me, fgThread, true);
+            bool attached = targetThread != 0 && targetThread != me && AttachThreadInput(me, targetThread, true);
             try
             {
                 BringWindowToTop(h);
+                ShowWindow(h, SW_RESTORE);
                 SetForegroundWindow(h);
             }
-            finally { if (attached) AttachThreadInput(me, fgThread, false); }
+            finally { if (attached) AttachThreadInput(me, targetThread, false); }
             return GetForegroundWindow() == h;
         }
 
@@ -241,6 +252,55 @@ namespace RobloxMultiHub
             StringBuilder sb = new StringBuilder(256);
             GetWindowText(hWnd, sb, sb.Capacity);
             return sb.ToString();
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct MOUSEINPUT { public int dx; public int dy; public uint mouseData; public uint dwFlags; public uint time; public IntPtr dwExtraInfo; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct KEYBDINPUT { public ushort wVk; public ushort wScan; public uint dwFlags; public uint time; public IntPtr dwExtraInfo; }
+
+        [StructLayout(LayoutKind.Explicit)]
+        struct InputUnion { [FieldOffset(0)] public MOUSEINPUT mi; [FieldOffset(0)] public KEYBDINPUT ki; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct INPUT { public uint type; public InputUnion u; }
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern uint SendInput(uint count, INPUT[] inputs, int size);
+
+        [DllImport("user32.dll")]
+        static extern int GetSystemMetrics(int index);
+
+        const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
+        const uint MOUSEEVENTF_VIRTUALDESK = 0x4000;
+        const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
+        const uint MOUSEEVENTF_LEFTUP = 0x0004;
+
+        public static void MouseClickHold(int x, int y, int holdMs)
+        {
+            int vx = GetSystemMetrics(76);
+            int vy = GetSystemMetrics(77);
+            int vw = Math.Max(2, GetSystemMetrics(78));
+            int vh = Math.Max(2, GetSystemMetrics(79));
+            int ax = (int)Math.Round((x - vx) * 65535.0 / (vw - 1));
+            int ay = (int)Math.Round((y - vy) * 65535.0 / (vh - 1));
+            SendMouse(ax, ay, MOUSEEVENTF_MOVE);
+            Thread.Sleep(60);
+            SendMouse(ax, ay, MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTDOWN);
+            Thread.Sleep(Math.Max(20, holdMs));
+            SendMouse(ax, ay, MOUSEEVENTF_MOVE | MOUSEEVENTF_LEFTUP);
+        }
+
+        static void SendMouse(int ax, int ay, uint flags)
+        {
+            INPUT i = new INPUT();
+            i.type = 0;
+            i.u.mi.dx = ax;
+            i.u.mi.dy = ay;
+            i.u.mi.mouseData = 0;
+            i.u.mi.dwFlags = flags | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK;
+            SendInput(1, new INPUT[] { i }, Marshal.SizeOf(typeof(INPUT)));
         }
     }
 

@@ -123,7 +123,7 @@ namespace RobloxMultiHub
             t.Size = new Size(588, 240);
             Put(f, t, 16, 56);
             Put(f, Ui.Lbl("Anyone with a cookie can use that account. Never share these, and never paste them into websites.", "warn"), 16, 304);
-            OkCancel(f, "Add accounts");
+            OkCancel(f, "Lang.T(Lang.T(Add accounts");
             Theme.Apply(f);
             f.ActiveControl = t;
             string result = null;
@@ -147,7 +147,7 @@ namespace RobloxMultiHub
             t.Size = new Size(588, 180);
             Put(f, t, 16, 130);
             Put(f, Ui.Lbl("Passwords are only typed into Roblox's own login page. They are not saved unless you fill them in under Edit.", "warn"), 16, 320);
-            OkCancel(f, "Add accounts");
+            OkCancel(f, "Lang.T(Lang.T(Add accounts");
             Theme.Apply(f);
             f.ActiveControl = t;
             string result = null;

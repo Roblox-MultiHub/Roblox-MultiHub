@@ -12,6 +12,7 @@ namespace RobloxMultiHub
     {
         Label lblRam, lblMemState;
         CheckBox chkAutoClean, chkMemWs, chkMemCache, chkMemModified, chkMemStandby, chkMemStandbyFull, chkMemCombine;
+        CheckBox chkVeryLow;
         NumericUpDown numMemLimit, numMemInterval;
         RoundButton btnCleanNow;
         long memSeen;                       // LastTicks of the last clean already written to the log
@@ -62,6 +63,11 @@ namespace RobloxMultiHub
             chkMemCombine = Ui.Chk("Combine identical memory pages", M.Combine, null);
             p.Opt("Merges duplicate memory across windows.",
                 "Windows looks for memory pages with exactly the same content and keeps only one copy. With many Roblox windows there is a lot of duplicate memory, but the search itself costs some CPU for a moment. OFF by default.", chkMemCombine);
+            chkVeryLow = Ui.Chk("VeryLow memory priority for all clients", Store.Settings.VeryLowMem, null);
+            p.Opt("Windows reclaims Roblox pages first.",
+                "One call per client. When anything else on the PC needs RAM, Windows takes it from the Roblox clients first instead of your other programs. Recommended ON for farms.",
+                chkVeryLow);
+            chkVeryLow.CheckedChanged += delegate { if (loadingMem) return; Store.Settings.VeryLowMem = chkVeryLow.Checked; Store.SaveSettings(); };
 
             EventHandler changed = delegate { OnMemChanged(); };
             numMemLimit.ValueChanged += changed;

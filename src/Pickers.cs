@@ -65,7 +65,7 @@ namespace RobloxMultiHub
                 string text = q.Text.Trim();
                 if (text.Length == 0 || busy) return;
                 busy = true;
-                status.Text = "Searching...";
+                status.Text = Lang.T("Searching...");
                 list.Items.Clear();
                 List<GameInfo> res = await Api.SearchGames(text, cookie);
                 foreach (GameInfo g in res)
@@ -84,7 +84,7 @@ namespace RobloxMultiHub
             };
             EventHandler accept = delegate
             {
-                if (list.SelectedItems.Count == 0) { status.Text = "Select a game in the list first."; return; }
+                if (list.SelectedItems.Count == 0) { status.Text = Lang.T("Select a game in the list first."); return; }
                 chosen = list.SelectedItems[0].Tag as GameInfo;
                 f.DialogResult = DialogResult.OK;
             };
@@ -143,7 +143,7 @@ namespace RobloxMultiHub
             {
                 if (busy) return;
                 busy = true;
-                status.Text = "Loading servers...";
+                status.Text = Lang.T("Loading servers...");
                 if (!append) { all.Clear(); next = ""; }
                 int mode = Math.Max(0, sort.SelectedIndex);
                 int pages = (!append && mode >= 2) ? 3 : 1;     // ping / FPS need a bigger sample to sort well
@@ -167,7 +167,7 @@ namespace RobloxMultiHub
             more.Click += delegate { load(true); };
             EventHandler accept = delegate
             {
-                if (list.SelectedItems.Count == 0) { status.Text = "Select a server in the list first."; return; }
+                if (list.SelectedItems.Count == 0) { status.Text = Lang.T("Select a server in the list first."); return; }
                 ServerInfo si = list.SelectedItems[0].Tag as ServerInfo;
                 if (si == null) return;
                 chosen = si.Id;
