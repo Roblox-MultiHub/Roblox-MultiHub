@@ -28,11 +28,27 @@ namespace RobloxMultiHub
         public string Kind = "";        // "", "primary", "danger", "nav"
         public bool Active;             // highlighted state of nav / toggle buttons
         public bool LeftAlign;          // left-align the text (sidebar items) instead of centering
+        public float Opacity = 1f;      // 0..1, applied while painting (used for show/hide animations)
+        public float TextOpacity = 1f;  // text can fade faster than the body while a button shrinks
+        public float Wipe;              // nav only: how much of the active highlight is shown (0..1)
+        Point? growAt;                  // where the highlight evolves out from (the click point)
+        float growFrom, growTo;         // evolve animation, driven by the SAME clock and repaint
+        int growT0;                     // timer as the ripple so the two never beat against each other
+        bool growing;
         bool hover;
         bool pressed;
         Color curFill, curText, curBorder;   // smoothly animated toward their target each frame
         bool colorsInit;
-        System.Windows.Forms.Timer anim;
+        // every animating button repaints on the ONE shared 8ms animation clock (Anim.Frame) -
+        // per-button WinForms timers delivered uneven ~15.6ms WM_TIMERs, which read as judder
+        static readonly System.Collections.Generic.HashSet<RoundButton> animating = new System.Collections.Generic.HashSet<RoundButton>();
+        static bool frameHooked;
+        int animUntil;                          // safety: no animation legitimately runs this long
+        Point rippleAt;                      // click ripple origin (the press point)
+        float rippleR;                       // press point -> farthest corner, the radius the circle reaches
+        int rippleT0;
+        bool rippling;
+        const int RippleMs = 400;            // the ripple law: r * sqrt(t) grows, 0.15*(1-t)^2 fades, 0.4s
 
         public RoundButton()
         {
@@ -44,6 +60,34 @@ namespace RobloxMultiHub
             Height = 30;
         }
 
+        // Starts (or reverses) the highlight evolve, on the shared animation clock.
+        public void Evolve(float to)
+        {
+            growFrom = CurrentGrow();
+            growTo = to;
+            growT0 = Environment.TickCount;
+            growing = true;
+            RunAnim();
+        }
+
+        // The CURRENT highlight amount (0..1); advances from its timestamps so the painted frame is
+        // always correct no matter when repaints arrive, and settles Wipe when finished.
+        float CurrentGrow()
+        {
+            if (!growing) return Wipe;
+            float t = Math.Min(1f, (Environment.TickCount - growT0) / (float)Anim.Ms);
+            if (t >= 1f) { growing = false; Wipe = growTo; return Wipe; }
+            float e = 1f - (1f - t) * (1f - t) * (1f - t);
+            return growFrom + (growTo - growFrom) * e;
+        }
+
+        public bool Evolving { get { return growing; } }
+
+        // called by the shared clock every frame: advances (and settles) the highlight value from
+        // its timestamps, INDEPENDENT of painting - so the state can never get stuck even if a
+        // button is not repainted by the branch that would normally advance it
+        internal void Advance() { CurrentGrow(); }
+
         public void FitText(int minWidth)
         {
             Size ts = TextRenderer.MeasureText(Text, Font);
@@ -52,10 +96,31 @@ namespace RobloxMultiHub
 
         protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
         protected override void OnMouseLeave(EventArgs e) { hover = false; pressed = false; Invalidate(); base.OnMouseLeave(e); }
-        protected override void OnMouseDown(MouseEventArgs e) { pressed = true; Invalidate(); base.OnMouseDown(e); }
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            pressed = true;
+            if (e.Button == MouseButtons.Left && Store.Settings.Animations)
+            {
+                rippleAt = e.Location;
+                growAt = e.Location;
+                // farthest corner from the press point - the radius the circle has at t = 1
+                float dx = Math.Max(e.X, Width - e.X);
+                float dy = Math.Max(e.Y, Height - e.Y);
+                rippleR = (float)Math.Sqrt(dx * dx + dy * dy);
+                rippleT0 = Environment.TickCount;
+                rippling = true;
+            }
+            Invalidate();
+            base.OnMouseDown(e);
+        }
         protected override void OnMouseUp(MouseEventArgs e) { pressed = false; Invalidate(); base.OnMouseUp(e); }
         protected override void OnEnabledChanged(EventArgs e) { Invalidate(); base.OnEnabledChanged(e); }
         protected override void OnTextChanged(EventArgs e) { Invalidate(); base.OnTextChanged(e); }
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) animating.Remove(this);
+            base.Dispose(disposing);
+        }
 
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -88,6 +153,12 @@ namespace RobloxMultiHub
                 else { fill = hover ? Theme.Panel2 : Theme.Panel; text = hover ? Theme.Text : Theme.Muted; }
                 border = fill;
             }
+            else if (Kind == "toggle")
+            {
+                // outlined like a normal button, filled when it is the active choice (List / Cards)
+                if (Active) { fill = Theme.Accent; border = Theme.Accent; text = Color.White; }
+                else { fill = Theme.Panel2; border = hover ? Theme.Accent : Theme.Border; text = Theme.Text; }
+            }
             else if (hover) fill = Tint.Shift(fill, Theme.Dark ? 14 : -10);
             if (pressed) fill = Tint.Shift(fill, -14);
             if (!Enabled) { text = Theme.Muted; fill = Theme.Panel; border = Theme.Border; }
@@ -101,21 +172,82 @@ namespace RobloxMultiHub
                 curBorder = Lerp(curBorder, border, 0.28f);
             }
 
+            Color drawFill = Fade(curFill, Opacity);
+            Color drawBorder = Fade(curBorder, Opacity);
+            Color drawText = Fade(curText, Opacity);
             using (GraphicsPath path = Shapes.Round(r, Math.Min(10, Height / 2)))
             {
-                using (SolidBrush b = new SolidBrush(curFill)) g.FillPath(b, path);
+                if (Kind == "nav")
+                {
+                    // nav body: the plain panel colour, then the active highlight. When a tab is
+                    // clicked the highlight EVOLVES out of the click point (the ripple's origin,
+                    // same clock): the accent fills a circle that grows with the ripple until it
+                    // covers the whole rounded rectangle. The tab being left just dissolves.
+                    using (SolidBrush b = new SolidBrush(hover && !Active ? Theme.Panel2 : Theme.Panel)) g.FillPath(b, path);
+                    if (Active || Wipe > 0.01f)
+                    {
+                        if (Active)
+                        {
+                            float w = Math.Max(0f, Math.Min(1f, CurrentGrow()));
+                            Point o = growAt ?? new Point(Width / 2, Height / 2);
+                            int rr = Math.Max(1, (int)(Math.Sqrt(Width * (double)Width + Height * (double)Height) * w));
+                            g.SetClip(path);
+                            using (System.Drawing.Drawing2D.GraphicsPath c = new System.Drawing.Drawing2D.GraphicsPath())
+                            {
+                                c.AddEllipse(o.X - rr, o.Y - rr, rr * 2, rr * 2);
+                                g.SetClip(c, System.Drawing.Drawing2D.CombineMode.Intersect);
+                            }
+                            using (SolidBrush ab = new SolidBrush(Theme.Accent)) g.FillPath(ab, path);
+                            g.ResetClip();
+                        }
+                        else
+                        {
+                            // dissolving: must ALSO advance here (CurrentGrow), or Wipe stays at its
+                            // stale value forever and the tab keeps its highlight - that was the bug
+                            float w = Math.Max(0f, Math.Min(1f, CurrentGrow()));
+                            int a = (int)(255 * w);
+                            if (a > 2)
+                                using (SolidBrush ab = new SolidBrush(Color.FromArgb(a, Theme.Accent))) g.FillPath(ab, path);
+                        }
+                    }
+                }
+                else
+                    using (SolidBrush b = new SolidBrush(drawFill)) g.FillPath(b, path);
+                if (rippling)
+                {
+                    float rt = (Environment.TickCount - rippleT0) / (float)RippleMs;
+                    if (rt >= 1f) rippling = false;
+                    else
+                    {
+                        // the law: radius grows as r*sqrt(t) (fast burst, gentle landing) and the
+                        // alpha fades as 0.15*(1-t)^2 from the press point to the farthest corner
+                        float rr = rippleR * (float)Math.Sqrt(rt);
+                        int alpha = (int)(255 * 0.15f * (1f - rt) * (1f - rt));
+                        if (alpha > 0)
+                            using (SolidBrush rb = new SolidBrush(Color.FromArgb(alpha, Color.White)))
+                            {
+                                g.SetClip(path);
+                                g.FillEllipse(rb, rippleAt.X - rr, rippleAt.Y - rr, rr * 2, rr * 2);
+                                g.ResetClip();
+                            }
+                    }
+                }
                 if (Diff(curBorder, curFill) > 6)
-                    using (Pen pen = new Pen(curBorder)) g.DrawPath(pen, path);
+                    using (Pen pen = new Pen(drawBorder)) g.DrawPath(pen, path);
             }
             Rectangle tr = r;
             TextFormatFlags flags = TextFormatFlags.VerticalCenter | TextFormatFlags.SingleLine | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis;
             if (LeftAlign) { tr = new Rectangle(r.Left + 12, r.Top, r.Width - 16, r.Height); flags |= TextFormatFlags.Left; }
             else flags |= TextFormatFlags.HorizontalCenter;
-            TextRenderer.DrawText(g, Text, Font, tr, curText, flags);
+            TextRenderer.DrawText(g, Text, Font, tr, Fade(curText, TextOpacity * Opacity), flags);
 
-            // keep animating until the colours have settled, then stop the timer
-            if (Diff(curFill, fill) + Diff(curText, text) + Diff(curBorder, border) > 4) RunAnim();
-            else if (anim != null) anim.Stop();
+            // repaint on the shared clock while anything is in motion; settle = leave the animating set
+            if (rippling || growing || Diff(curFill, fill) + Diff(curText, text) + Diff(curBorder, border) > 4) RunAnim();
+            else
+            {
+                animating.Remove(this);
+                if (animating.Count == 0) Anim.FrameDemand = false;   // loop winds down when idle
+            }
         }
 
         static Color Lerp(Color a, Color b, float t)
@@ -126,6 +258,12 @@ namespace RobloxMultiHub
                 (int)(a.B + (b.B - a.B) * t));
         }
 
+        static Color Fade(Color c, float o)
+        {
+            if (o >= 0.999f) return c;
+            return Color.FromArgb((int)(Math.Max(0f, Math.Min(1f, o)) * 255f), c);
+        }
+
         static int Diff(Color a, Color b)
         {
             return Math.Abs(a.R - b.R) + Math.Abs(a.G - b.G) + Math.Abs(a.B - b.B);
@@ -133,13 +271,231 @@ namespace RobloxMultiHub
 
         void RunAnim()
         {
-            if (anim == null)
+            animating.Add(this);
+            animUntil = Environment.TickCount + 1500;   // nothing animates longer than this; if a
+            Anim.FrameDemand = true;                    // settle is ever missed the loop still winds down
+            Anim.EnsureClock();                 // starts the shared frame loop on first need
+            if (frameHooked) return;
+            frameHooked = true;
+            Anim.Frame += delegate
             {
-                anim = new System.Windows.Forms.Timer();
-                anim.Interval = 16;                         // ~60 fps while a button is transitioning
-                anim.Tick += delegate { Invalidate(); };
+                // iterate a SNAPSHOT: ForceSettle removes from the set, and mutating a HashSet
+                // during enumeration throws (that exact crash took the app down)
+                RoundButton[] snap = new RoundButton[animating.Count];
+                animating.CopyTo(snap);
+                foreach (RoundButton b in snap)
+                {
+                    if (Environment.TickCount > b.animUntil) b.ForceSettle();
+                    else { b.Advance(); b.Invalidate(); }
+                }
+                if (animating.Count == 0) Anim.FrameDemand = false;
+            };
+        }
+
+        // failsafe settle: leaves the animating set even if the normal settle was never reached
+        internal void ForceSettle()
+        {
+            rippling = false;
+            if (growing) { Wipe = growTo; growing = false; }
+            animating.Remove(this);
+            Invalidate();
+        }
+    }
+
+    // A dropdown with CHECKBOXES: several options picked from one control (e.g. the graphics
+    // tweaks). The closed box looks like a DarkCombo and summarises the selection ("3 of 4");
+    // clicking opens a themed popup that slides in, toggles entries without closing, and closes
+    // on any click outside. Native combos cannot multi-select, which is why this one exists.
+    public class MultiCombo : Control
+    {
+        public string[] Items = new string[0];
+        public bool[] Checked = new bool[0];
+        public event EventHandler Changed;
+        bool hover;
+        MultiPopup popup;
+
+        public MultiCombo()
+        {
+            SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
+            Width = 260;
+            Cursor = Cursors.Hand;
+            Font = Theme.Base;
+            Height = 28;
+        }
+
+        public bool IsChecked(int i) { return i >= 0 && i < Checked.Length && Checked[i]; }
+        public void SetChecked(int i, bool v)
+        {
+            if (i < 0 || i >= Checked.Length) return;
+            Checked[i] = v;
+            Invalidate();
+        }
+
+        protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
+        protected override void OnMouseLeave(EventArgs e) { hover = false; Invalidate(); base.OnMouseLeave(e); }
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            if (popup != null) popup.Close();
+            else
+            {
+                popup = new MultiPopup(this);
+                popup.FormClosed += delegate { popup = null; Invalidate(); };
+                popup.Show(this);
             }
-            if (!anim.Enabled) anim.Start();
+            base.OnMouseDown(e);
+        }
+
+        int CheckedCount
+        {
+            get
+            {
+                int n = 0;
+                foreach (bool b in Checked) if (b) n++;
+                return n;
+            }
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            g.Clear(Parent != null ? Parent.BackColor : Theme.Panel);
+            Rectangle r = new Rectangle(0, 0, Width - 1, Height - 1);
+            using (GraphicsPath p = Shapes.Round(r, 8))
+            {
+                using (SolidBrush b = new SolidBrush(Theme.Panel2)) g.FillPath(b, p);
+                using (Pen pen = new Pen((hover || Focused) ? Theme.Accent : Theme.Border)) g.DrawPath(pen, p);
+            }
+            string text = CheckedCount == 0 ? "None"
+                : CheckedCount == Checked.Length && Checked.Length > 1 ? "All"
+                : CheckedCount + " of " + Checked.Length;
+            using (SolidBrush cb = new SolidBrush(Theme.Accent))
+                g.FillRectangle(cb, 8, Height / 2 - 3, 6, 6);
+            TextRenderer.DrawText(g, text, Font, new Rectangle(22, 0, Width - 40, Height), Theme.Text,
+                TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+            int cx = Width - 16, cy = Height / 2;
+            using (Pen arrow = new Pen(Theme.Muted, 1.8f))
+                g.DrawLines(arrow, new Point[] { new Point(cx - 4, cy - 2), new Point(cx, cy + 2), new Point(cx + 4, cy - 2) });
+        }
+
+        class MultiPopup : Form
+        {
+            readonly MultiCombo owner;
+            readonly Panel list = new Panel();
+            int hot = -1;
+            ClickAway filter;
+
+            public MultiPopup(MultiCombo owner)
+            {
+                this.owner = owner;
+                FormBorderStyle = FormBorderStyle.None;
+                ShowInTaskbar = false;
+                StartPosition = FormStartPosition.Manual;
+                BackColor = Theme.Panel;
+                DoubleBuffered = true;
+                list.Dock = DockStyle.Fill;
+                list.Paint += Draw;
+                list.MouseMove += delegate(object s, MouseEventArgs e) { SetHot(e.Y / 28); };
+                list.MouseLeave += delegate { SetHot(-1); };
+                list.MouseDown += delegate(object s, MouseEventArgs e)
+                {
+                    int i = e.Y / 28;
+                    if (i < 0 || i >= owner.Items.Length) return;
+                    owner.Checked[i] = !owner.Checked[i];       // toggle, stay open
+                    list.Invalidate();
+                    owner.Invalidate();
+                    if (owner.Changed != null) owner.Changed(owner, EventArgs.Empty);
+                };
+                Controls.Add(list);
+                int h = owner.Items.Length * 28 + 4;
+                Point p = owner.Parent.PointToScreen(owner.Location);
+                Bounds = new Rectangle(p.X, p.Y + owner.Height + 2, Math.Max(owner.Width, 180), h);
+                Screen sc = Screen.FromControl(owner);
+                if (Bottom > sc.WorkingArea.Bottom) Top = p.Y - h - 4;   // flip up near the screen bottom
+            }
+
+            protected override bool ShowWithoutActivation { get { return true; } }
+            protected override CreateParams CreateParams
+            {
+                get
+                {
+                    CreateParams cp = base.CreateParams;
+                    cp.ExStyle |= 0x08000000 | 0x00000080;      // WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW
+                    return cp;
+                }
+            }
+
+            protected override void OnShown(EventArgs e)
+            {
+                base.OnShown(e);
+                int full = Bounds.Height;                        // slide open from a sliver
+                Height = 4;
+                Anim.Go(owner, 130, delegate(float f) { Height = Math.Max(4, (int)(full * f)); }, null);
+            }
+
+            void SetHot(int i)
+            {
+                if (i == hot) return;
+                hot = i < owner.Items.Length ? i : -1;
+                list.Invalidate();
+            }
+
+            void Draw(object s, PaintEventArgs e)
+            {
+                Graphics g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                using (System.Drawing.Drawing2D.GraphicsPath p = Shapes.Round(new Rectangle(0, 0, Width - 1, Height - 1), 8))
+                {
+                    using (SolidBrush b = new SolidBrush(Theme.Panel)) g.FillPath(b, p);
+                    using (Pen pen = new Pen(Theme.Border)) g.DrawPath(pen, p);
+                }
+                for (int i = 0; i < owner.Items.Length; i++)
+                {
+                    Rectangle r = new Rectangle(2, i * 28 + 2, Width - 4, 28);
+                    if (i == hot)
+                        using (SolidBrush b = new SolidBrush(Theme.Panel2)) g.FillRectangle(b, r);
+                    Rectangle box = new Rectangle(10, r.Y + (r.Height - 16) / 2, 16, 16);
+                    using (GraphicsPath bp = Shapes.Round(box, 4))
+                    {
+                        using (SolidBrush b = new SolidBrush(owner.Checked[i] ? Theme.Accent : Theme.Bg)) g.FillPath(b, bp);
+                        using (Pen pen = new Pen(owner.Checked[i] ? Theme.Accent : Theme.Muted)) g.DrawPath(pen, bp);
+                    }
+                    if (owner.Checked[i])
+                        using (Pen tick = new Pen(Color.White, 2f))
+                            g.DrawLines(tick, new Point[] { new Point(box.X + 4, box.Y + 8), new Point(box.X + 7, box.Y + 11), new Point(box.X + 12, box.Y + 5) });
+                    TextRenderer.DrawText(g, owner.Items[i], Theme.Base,
+                        new Rectangle(box.Right + 8, r.Y, r.Width - box.Width - 20, r.Height), i == hot ? Theme.Text : Theme.Muted,
+                        TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+                }
+            }
+
+            class ClickAway : IMessageFilter
+            {
+                readonly MultiPopup p;
+                public ClickAway(MultiPopup p) { this.p = p; }
+                public bool PreFilterMessage(ref Message m)
+                {
+                    if (m.Msg == 0x201 || m.Msg == 0x204 || m.Msg == 0x020A)
+                    {
+                        Point pt = Cursor.Position;
+                        if (!p.Bounds.Contains(pt)) p.Close();
+                    }
+                    return false;
+                }
+            }
+
+            protected override void OnHandleCreated(EventArgs e)
+            {
+                base.OnHandleCreated(e);
+                filter = new ClickAway(this);
+                Application.AddMessageFilter(filter);
+            }
+
+            protected override void OnFormClosed(FormClosedEventArgs e)
+            {
+                if (filter != null) Application.RemoveMessageFilter(filter);
+                base.OnFormClosed(e);
+            }
         }
     }
 
@@ -155,7 +511,29 @@ namespace RobloxMultiHub
             FlatStyle = FlatStyle.Flat;
             ItemHeight = 22;
             Font = Theme.Base;
+            BackColor = Theme.Panel2;             // the typing area is drawn by Windows from these
+            ForeColor = Theme.Text;
+            // Windows paints the typing area of a DISABLED editable combo with its own white brush
+            // and ignores BackColor (measured). While disabled we switch to DropDownList style,
+            // which the control's own dark painting fully covers, and restore style + text after.
+            EnabledChanged += delegate
+            {
+                if (!Enabled)
+                {
+                    wasEditable = DropDownStyle == ComboBoxStyle.DropDown;
+                    savedText = Text;
+                    if (wasEditable) DropDownStyle = ComboBoxStyle.DropDownList;
+                }
+                else if (wasEditable)
+                {
+                    DropDownStyle = ComboBoxStyle.DropDown;
+                    Text = savedText;
+                }
+            };
         }
+
+        bool wasEditable;
+        string savedText;
 
         protected override void OnDrawItem(DrawItemEventArgs e)
         {

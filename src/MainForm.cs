@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace RobloxMultiHub
@@ -26,6 +27,17 @@ namespace RobloxMultiHub
         TableLayoutPanel rightTable;
         Label logHeader;
         bool logOpen;
+        RoundPanel topBarRef;
+        Label topTitleRef, topSubRef;
+        Control[] headerInteractive = new Control[0];
+        RoundButton btnWinMin, btnWinClose;
+        System.Windows.Forms.Timer logAnim;
+        float logHFrom, logHTo;
+        int logT0;
+        const int LogAnimMs = 220;
+        const float LogClosedH = 34F, LogOpenH = 190F;
+        int logClosedPx = 34, logOpenPx = 190;         // real pixel heights (DPI scaled in ScaleLayout)
+        TableLayoutPanel bodyTable;
         string currentPage = "";
         readonly Dictionary<string, Panel> pages = new Dictionary<string, Panel>();
         readonly Dictionary<string, RoundButton> navButtons = new Dictionary<string, RoundButton>();
@@ -53,11 +65,18 @@ namespace RobloxMultiHub
         HashSet<string> selected = new HashSet<string>();
         HashSet<string> runningIds = new HashSet<string>();
         System.Threading.CancellationTokenSource browserCts;
+        GradientButton footLaunch;
+        RoundButton footAll, footStop, footUp, footDown;
 
         public MainForm(bool minimized)
         {
             startMinimized = minimized;
             Theme.Set(Store.Settings.Theme != "Light");
+            // RTL languages (Arabic, Hebrew): text direction flips, layout does not - the manual
+            // positioning does not mirror safely, and Windows shapes the scripts either way
+            RightToLeft = (Store.Settings.Language == "ar" || Store.Settings.Language == "he")
+                ? RightToLeft.Yes : RightToLeft.No;
+            RightToLeftLayout = false;
             Text = "Roblox MultiHub";
             Font = Theme.Base;
             AutoScaleDimensions = new SizeF(96F, 96F);
@@ -65,7 +84,44 @@ namespace RobloxMultiHub
             StartPosition = FormStartPosition.CenterScreen;
             ClientSize = new Size(Math.Max(1180, Store.Settings.WinW), Math.Max(660, Store.Settings.WinH));
             MinimumSize = new Size(1180, 660);
+            FormBorderStyle = FormBorderStyle.None;          // custom chrome: the top bar is the title bar
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch (Exception) { }
+
+            BuildUi();
+
+            Log.Line += OnLogLine;
+            Avatars.Updated += OnAvatarsUpdated;
+            Application.AddMessageFilter(new WheelRedirect());   // mouse wheel scrolls the page, not a hovered text box
+            tick = new System.Windows.Forms.Timer();
+            tick.Interval = 1000;
+            tick.Tick += OnTick;
+            tick.Start();
+        }
+
+        // Builds EVERYTHING visible. Runs once at start and again when the language changes -
+        // rebuilding in place applies the new language to all text with no restart (a restart also
+        // collided with the single-instance mutex, which is why it said 'already running').
+        void BuildUi()
+        {
+            // stop everything that still points at the old controls
+            try
+            {
+                if (tick != null) tick.Stop();
+                if (logAnim != null) { logAnim.Stop(); logAnim = null; }
+                Anim.Clear();
+                if (root != null)
+                {
+                    foreach (Control c in root.Controls) c.Dispose();
+                    Controls.Remove(root);
+                    root.Dispose();
+                }
+                pages.Clear();
+                navButtons.Clear();
+                cards.Clear();
+                monCards.Clear();
+                winRows.Clear();
+            }
+            catch (Exception) { }
 
             BuildShell();
             BuildHomePage();
@@ -78,18 +134,12 @@ namespace RobloxMultiHub
             BuildPerfPage();
             BuildSettingsPage();
             BuildHelpPage();
+            BuildBetaPage();
             ApplyTheme();
-            ShowPage("Home");
+            ShowPage(currentPage != "" ? currentPage : "Home");
             RefreshAccountList();
             SetView(Store.Settings.View == "Cards");
-
-            Log.Line += OnLogLine;
-            Avatars.Updated += OnAvatarsUpdated;
-            Application.AddMessageFilter(new WheelRedirect());   // mouse wheel scrolls the page, not a hovered text box
-            tick = new System.Windows.Forms.Timer();
-            tick.Interval = 1000;
-            tick.Tick += OnTick;
-            tick.Start();
+            if (tick != null) tick.Start();
         }
 
         // =====================================================================
@@ -105,7 +155,7 @@ namespace RobloxMultiHub
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 68F));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
             root.Margin = Padding.Empty;
-            root.Padding = Padding.Empty;
+            root.Padding = new Padding(10);          // the top bar ends where the body ends - no overhang
             Controls.Add(root);
 
             // ---- top bar: title, live usage, multi-instance status ----
@@ -113,14 +163,17 @@ namespace RobloxMultiHub
             topBar.Dock = DockStyle.Fill;
             topBar.Tag = "card";
             topBar.Margin = Padding.Empty;
+            topBarRef = topBar;
             Label title = Ui.Lbl("Roblox MultiHub", "title");
             title.Location = new Point(18, 7);
             topBar.Controls.Add(title);
+            topTitleRef = title;
             Label sub = Ui.Lbl(Lang.T("Multi-account launcher"), "muted");
             sub.Location = new Point(21, 43);
             topBar.Controls.Add(sub);
+            topSubRef = sub;
             DiscordIcon disc = new DiscordIcon();
-            disc.Location = new Point(sub.Right + 10, 41);
+            disc.Location = new Point(sub.Right + 10, sub.Top + (sub.Height - disc.Height) / 2);
             disc.Click += delegate { OpenLink(DiscordUrl, "Discord"); };
             Ui.Tips.SetToolTip(disc, "Join our Discord - news, help and support tickets.");
             topBar.Controls.Add(disc);
@@ -143,6 +196,33 @@ namespace RobloxMultiHub
             lblMulti.Click += delegate { ShowPage("Settings"); };
             Ui.Tips.SetToolTip(lblMulti, "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.");
             topBar.Controls.Add(lblMulti);
+
+            // real clicks over child controls never reach the form's hit-test, so every header control
+            // starts the drag itself. Exceptions: the Discord icon and the window buttons keep their
+            // clicks; the multi-instance label only drags once the mouse actually MOVES, so a plain
+            // click still opens Settings.
+            MouseEventHandler dragDown = delegate(object s, MouseEventArgs me)
+            {
+                if (me.Button == MouseButtons.Left) Native.DragWindow((Control)s);
+            };
+            HookHeaderDrag(topBar, dragDown, disc, btnWinMin, btnWinClose, lblMulti);
+            Point multiDown = new Point(int.MinValue, int.MinValue);
+            bool multiDragging = false;
+            lblMulti.MouseDown += delegate(object s, MouseEventArgs me)
+            {
+                multiDown = me.Location;
+                multiDragging = false;
+            };
+            lblMulti.MouseMove += delegate(object s, MouseEventArgs me)
+            {
+                if (multiDragging || me.Button != MouseButtons.Left || multiDown.X == int.MinValue) return;
+                if (Math.Abs(me.X - multiDown.X) > 4 || Math.Abs(me.Y - multiDown.Y) > 4)
+                {
+                    multiDragging = true;
+                    Native.DragWindow(lblMulti);
+                }
+            };
+            lblMulti.MouseUp += delegate { multiDown = new Point(int.MinValue, int.MinValue); multiDragging = false; };
             root.RowStyles[0].Height = Math.Max(68, statRun.NeededHeight() + 14);
             topBar.Resize += delegate
             {
@@ -156,19 +236,38 @@ namespace RobloxMultiHub
                     sb.Location = new Point(x, top);
                     x = sb.Right + 10;
                 }
-                lblMulti.Location = new Point(topBar.Width - lblMulti.Width - 18, 12);
+                lblMulti.Location = new Point(topBar.Width - lblMulti.Width - 130, 12);
+                // spacing from the buttons' REAL (text-fitted) widths: close keeps an 18px margin to
+                // the bar edge (clear of the window's 16px corner curve), min sits left of it
+                int by = Math.Max(6, (topBar.Height - btnWinClose.Height) / 2);
+                btnWinClose.Location = new Point(topBar.Width - btnWinClose.Width - 18, by);
+                btnWinMin.Location = new Point(btnWinClose.Left - btnWinMin.Width - 8, by);
             };
+
+            // window buttons (borderless form): minimize + close, laid out by topBar.Resize above
+            btnWinMin = Ui.Btn("\u2014", 30, delegate { WindowState = FormWindowState.Minimized; }, "nav");
+            btnWinMin.Height = 30;
+            Ui.Tips.SetToolTip(btnWinMin, "Minimize");
+            topBar.Controls.Add(btnWinMin);
+            btnWinClose = Ui.Btn("\u2715", 30, delegate { Close(); }, "danger");
+            btnWinClose.Height = 30;
+            Ui.Tips.SetToolTip(btnWinClose, "Close Roblox MultiHub");
+            topBar.Controls.Add(btnWinClose);
+
+            // header controls that must keep their own clicks
+            headerInteractive = new Control[] { disc, btnWinMin, btnWinClose };
             root.Controls.Add(topBar, 0, 0);
 
             // ---- body: sidebar | (accounts | page), with a draggable splitter ----
             TableLayoutPanel body = new TableLayoutPanel();
+            bodyTable = body;
             body.Dock = DockStyle.Fill;
             body.ColumnCount = 2;
             body.RowCount = 1;
-            body.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 202F));   // sidebar
+            body.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 208F));   // sidebar (178 button + padding + slack)
             body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             body.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            body.Padding = new Padding(10);
+            body.Padding = new Padding(0, 10, 10, 10);   // gap to the top bar; outer spacing comes from root.Padding
             body.Margin = Padding.Empty;
             root.Controls.Add(body, 0, 1);
 
@@ -219,7 +318,8 @@ namespace RobloxMultiHub
             logHost = new RoundPanel();
             logHost.Dock = DockStyle.Fill;
             logHost.Tag = "card";
-            logHost.Padding = new Padding(8, 2, 8, 8);
+            logHost.Radius = 8;                    // smaller radius: 14 on the collapsed strip looks like a pill
+            logHost.Padding = new Padding(8, 0, 8, 0);
             logHost.Margin = new Padding(0, 10, 0, 0);
 
             logBox = new TextBox();
@@ -235,23 +335,67 @@ namespace RobloxMultiHub
             logHeader = Ui.Lbl("▸  Activity log", "muted");
             logHeader.AutoSize = false;
             logHeader.Dock = DockStyle.Top;
-            logHeader.Height = 22;
+            logHeader.Height = logClosedPx;               // fills the collapsed band completely, so the
+            logHeader.TextAlign = ContentAlignment.MiddleLeft;   // centered text sits dead-center at ANY DPI
             logHeader.Cursor = Cursors.Hand;
             logHeader.Click += delegate { ToggleLog(); };
             Ui.Tips.SetToolTip(logHeader, "Everything the app does is written here. Click to open or close it.");
             logHost.Controls.Add(logHeader);
+            // self-correcting: while collapsed the header always EXACTLY matches the real strip
+            // height (DPI scale, collapse animation, row changes - whatever resized it), so the
+            // centered text cannot end up off-center through any code path
+            logHost.Resize += delegate
+            {
+                if (!logOpen) logHeader.Height = logHost.ClientSize.Height;
+            };
             rightTable.Controls.Add(logHost, 0, 1);
         }
 
         // Left navigation sidebar. Main pages on top, Settings / Help / Macro pinned at the bottom
         // so they are always in the same place and easy to find.
+        // TableLayoutPanel Absolute row/column sizes are NOT scaled by Windows DPI scaling - only the
+        // controls inside them are. At 125%/150% the rows then clip their contents (window buttons on
+        // top of the top bar, the nav highlight cut off on the right). Re-applied with the real factor
+        // once the form has been scaled. Also fixes the log heights for the same reason.
+        void ScaleLayout()
+        {
+            float sx = AutoScaleFactor.Width, sy = AutoScaleFactor.Height;
+            if (root != null) root.RowStyles[0] = new RowStyle(SizeType.Absolute, 68F * sy);
+            if (bodyTable != null) bodyTable.ColumnStyles[0] = new ColumnStyle(SizeType.Absolute, 208F * sx);
+            logClosedPx = Math.Max(34, (int)(LogClosedH * sy));
+            logOpenPx = Math.Max(60, (int)(LogOpenH * sy));
+            if (logHeader != null && !logOpen) logHeader.Height = logClosedPx;   // stay dead-center at this DPI
+            if (rightTable != null && !logOpen)
+                rightTable.RowStyles[1] = new RowStyle(SizeType.Absolute, logClosedPx);
+        }
+
+        // attaches the drag handler to a header control and all its children, except the listed ones
+        // The sliding nav pill: fully transparent to the mouse (HTTRANSPARENT), so the buttons
+        // underneath stay clickable while the pill and its label ride on top of them.
+        class NavPill : RoundPanel
+        {
+            protected override void WndProc(ref Message m)
+            {
+                const int WM_NCHITTEST = 0x84;
+                if (m.Msg == WM_NCHITTEST) { m.Result = (IntPtr)(-1); return; }   // HTTRANSPARENT
+                base.WndProc(ref m);
+            }
+        }
+
+        void HookHeaderDrag(Control c, MouseEventHandler handler, params Control[] skip)
+        {
+            foreach (Control x in skip) if (x == c) return;
+            c.MouseDown += handler;
+            foreach (Control ch in c.Controls) HookHeaderDrag(ch, handler, skip);
+        }
+
         void BuildSidebar(TableLayoutPanel body)
         {
             RoundPanel side = new RoundPanel();
             side.Dock = DockStyle.Fill;
             side.Tag = "card";
             side.Padding = new Padding(11, 12, 11, 12);
-            side.Margin = new Padding(0, 0, 10, 0);
+            side.Margin = Padding.Empty;            // spacing to the accounts panel comes from body.Padding
             body.Controls.Add(side, 0, 0);
 
             // bottom group first, so Dock=Bottom keeps it pinned under the top group
@@ -272,10 +416,11 @@ namespace RobloxMultiHub
             top.Controls.Add(NavBtn("Home", Lang.T("\U0001F3E0  Home"), false, null));
             top.Controls.Add(NavBtn("Launch", Lang.T("\U0001F680  Launch"), false, null));
             top.Controls.Add(NavBtn("Servers", Lang.T("\U0001F310  Servers"), false, null));
-            top.Controls.Add(NavBtn("Layout", Lang.T("\U0001FA9F  Layout"), false, null));
+            top.Controls.Add(NavBtn("Layout", Lang.T("\u25A6  Layout"), false, null));
             top.Controls.Add(NavBtn("Monitor", Lang.T("\U0001F4CA  Monitor"), false, null));
             top.Controls.Add(NavBtn("Presets", Lang.T("\U0001F4BE  Presets"), false, null));
             top.Controls.Add(NavBtn("Perf", Lang.T("⚡  Perf"), false, null));
+            top.Controls.Add(NavBtn("Beta", Lang.T("\U0001F9EA  Beta"), false, "New features that are still being tested. They move to their proper page once proven."));
 
             side.Controls.Add(bottom);
             side.Controls.Add(top);
@@ -309,9 +454,111 @@ namespace RobloxMultiHub
         void ToggleLog()
         {
             logOpen = !logOpen;
-            logBox.Visible = logOpen;
+            logBox.Visible = true;                     // stays visible while animating; clipped by the shrinking row
             logHeader.Text = (logOpen ? "▾" : "▸") + "  Activity log";
-            if (rightTable != null) rightTable.RowStyles[1].Height = logOpen ? 190F : 34F;
+            if (rightTable == null) return;
+            logHFrom = rightTable.RowStyles[1].Height;
+            logHTo = logOpen ? logOpenPx : logClosedPx;
+            if (logHFrom == logHTo) { logBox.Visible = logOpen; return; }
+            if (logAnim == null)
+            {
+                logAnim = new System.Windows.Forms.Timer();
+                logAnim.Interval = 15;
+                logAnim.Tick += delegate { LogAnimTick(); };
+            }
+            logT0 = Environment.TickCount;
+            logAnim.Start();
+        }
+
+        // One frame of the log collapse/expand: ease-out cubic over ~220 ms. New RowStyle objects each
+        // frame (assigning .Height alone never re-runs the table layout - see FitAccountBars).
+        void LogAnimTick()
+        {
+            float t = Math.Min(1f, (Environment.TickCount - logT0) / (float)LogAnimMs);
+            float e = 1f - (1f - t) * (1f - t) * (1f - t);
+            rightTable.RowStyles[1] = new RowStyle(SizeType.Absolute, logHFrom + (logHTo - logHFrom) * e);
+            if (t >= 1f)
+            {
+                logAnim.Stop();
+                if (!logOpen) logBox.Visible = false;
+            }
+        }
+
+        // ---- custom chrome for the borderless window ----
+
+        // subtle drop shadow behind the borderless window
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                CreateParams cp = base.CreateParams;
+                cp.ClassStyle |= 0x20000;               // CS_DROPSHADOW
+                return cp;
+            }
+        }
+
+        // Rounded window shape on every Windows version (DWM corner preference is 11+ only).
+        // DROPPED while the window is being dragged: a shaped window makes DWM re-composite the
+        // region on every move, which is what made the window trail the cursor on fast drags.
+        // (MainForm.Layout.cs removes the region on WM_ENTERSIZEMOVE and reapplies it after.)
+        void ApplyRoundRegion()
+        {
+            if (Width > 8 && Height > 8)
+            {
+                IntPtr rgn = CreateRoundRectRgn(0, 0, Width + 1, Height + 1, 16, 16);
+                SetWindowRgn(Handle, rgn, true);
+            }
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+            ApplyRoundRegion();
+        }
+
+        [DllImport("gdi32.dll")]
+        static extern IntPtr CreateRoundRectRgn(int x1, int y1, int x2, int y2, int w, int h);
+
+        [DllImport("user32.dll")]
+        static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool bRedraw);
+
+        // Dragging = top bar (except its interactive controls); resizing = a thin band at every edge.
+        // Called from the shared WndProc in MainForm.Layout.cs after the hotkey handling.
+        void ChromeHitTest(ref Message m)
+        {
+            base.WndProc(ref m);
+            if ((int)m.Result != 1) return;             // HTCLIENT
+            long lp = m.LParam.ToInt64();
+            Point screen = new Point((short)(lp & 0xFFFF), (short)((lp >> 16) & 0xFFFF));
+            Point c = PointToClient(screen);
+            const int edge = 6, corner = 14;
+            bool l = c.X < edge, r = c.X >= ClientSize.Width - edge, t = c.Y < edge, b = c.Y >= ClientSize.Height - edge;
+            if (t && l) { m.Result = (IntPtr)13; return; }        // HTTOPLEFT
+            if (t && r) { m.Result = (IntPtr)14; return; }        // HTTOPRIGHT
+            if (b && l) { m.Result = (IntPtr)16; return; }        // HTBOTTOMLEFT
+            if (b && r) { m.Result = (IntPtr)17; return; }        // HTBOTTOMRIGHT
+            if (l) { m.Result = (IntPtr)10; return; }             // HTLEFT
+            if (r) { m.Result = (IntPtr)11; return; }             // HTRIGHT
+            if (t) { m.Result = (IntPtr)12; return; }             // HTTOP
+            if (b) { m.Result = (IntPtr)15; return; }             // HTBOTTOM
+            if (topBarRef != null && c.Y < topBarRef.Bottom)
+            {
+                // the whole header band is the title bar except over interactive controls. Pure
+                // rectangle math on a cached list - GetChildAtPoint is far too slow for a message
+                // (WM_NCHITTEST) that fires on every mouse move, which made dragging feel laggy.
+                Point inBar = topBarRef.PointToClient(screen);
+                bool interactive = false;
+                foreach (Control ic in headerInteractive)
+                {
+                    if (inBar.X >= ic.Left && inBar.X < ic.Right && inBar.Y >= ic.Top && inBar.Y < ic.Bottom)
+                    {
+                        interactive = true;
+                        break;
+                    }
+                }
+                if (!interactive)
+                    m.Result = (IntPtr)2;                          // HTCAPTION - drag / snap / double-click
+            }
         }
 
         Panel NewPage(string key)
@@ -320,6 +567,7 @@ namespace RobloxMultiHub
             p.Dock = DockStyle.Fill;
             p.Tag = "card";
             p.Visible = false;
+            Util.SetBuf(p);                     // pages slide; without buffering they tear
             pages[key] = p;
             pageHost.Controls.Add(p);
             return p;
@@ -370,14 +618,51 @@ namespace RobloxMultiHub
             page.Controls.Add(goLaunch);
         }
 
+        static readonly string[] PageOrder = new string[] { "Home", "Launch", "Servers", "Layout", "Monitor", "Presets", "Perf", "Beta", "Settings", "Help" };
+
         void ShowPage(string key)
         {
+            // the page that is really visible right now (a page still sliding in is not docked)
+            Panel fromP = null;
+            foreach (KeyValuePair<string, Panel> kv in pages)
+            {
+                if (kv.Value.Visible && kv.Value.Dock == DockStyle.Fill && kv.Key != key) fromP = kv.Value;
+                else if (kv.Key != key) { kv.Value.Visible = false; kv.Value.Dock = DockStyle.None; }
+            }
             currentPage = key;
-            foreach (KeyValuePair<string, Panel> kv in pages) kv.Value.Visible = kv.Key == key;
+            Panel toP;
+            if (!pages.TryGetValue(key, out toP)) { StyleNav(); return; }
             StyleNav();
             if (key == "Layout") RefreshWindowList();
             if (key == "Monitor") RefreshMonitor();
             if (key == "Presets") RefreshPresetList();
+
+            if (fromP == null || toP == fromP) { toP.Visible = true; toP.Dock = DockStyle.Fill; toP.BringToFront(); return; }
+
+            // slide the new page in over the old one, from the side the button was on
+            int fromIdx = Array.IndexOf(PageOrder, pages.FirstOrDefault(x => x.Value == fromP).Key);
+            int toIdx = Array.IndexOf(PageOrder, key);
+            int dir = toIdx > fromIdx ? 1 : -1;
+            Padding pad = pageHost.Padding;
+            Size sz = new Size(pageHost.ClientSize.Width - pad.Horizontal, pageHost.ClientSize.Height - pad.Vertical);
+            Point home = new Point(pad.Left, pad.Top);
+            fromP.Dock = DockStyle.None;
+            fromP.Location = home;
+            fromP.Size = sz;
+            toP.Size = sz;
+            toP.Visible = true;
+            toP.BringToFront();
+            int travel = 46;
+            Util.SetBuf(toP);
+            Anim.Cancel("page");
+            Anim.Go("page", Anim.Ms, delegate(float e)
+            {
+                toP.Location = new Point(home.X + (int)((1f - e) * travel * dir), home.Y);
+            }, delegate
+            {
+                fromP.Visible = false;
+                toP.Dock = DockStyle.Fill;
+            });
         }
 
         // Separate top-level window (no owner), so its 'Stay on top' never lifts the hub with it.
@@ -391,12 +676,19 @@ namespace RobloxMultiHub
             macroForm.Activate();
         }
 
+        // The active highlight is painted by the buttons themselves, exactly like it always was.
+        // On a switch the new tab's highlight evolves out of the click point on the same clock as
+        // the ripple, and the old tab's dissolves.
         void StyleNav()
         {
             foreach (KeyValuePair<string, RoundButton> kv in navButtons)
             {
-                kv.Value.Active = kv.Key == currentPage;
-                kv.Value.Invalidate();
+                bool act = kv.Key == currentPage;
+                RoundButton b = kv.Value;
+                if (b.Active != act) b.Evolve(act ? 1f : 0f);
+                else if (act && b.Wipe != 1f && !b.Evolving) { b.Wipe = 1f; }
+                b.Active = act;
+                b.Invalidate();
             }
         }
 
@@ -485,9 +777,16 @@ namespace RobloxMultiHub
                 if (tickN % 2 == 0)
                 {
                     UsageMonitor.Update();
+                    WebhookStatus.Tick();
+                    Launcher.SweepZombies();
+                    Launcher.ApplyLowMemoryPriority();
+                    Launcher.ApplyTaskbarHiding();
+                    CapProber.Tick(UsageMonitor.Count, AddLog);
                     UpdateStatusCells();
                     UpdateMemUi();
                     MaxAlts.Tick();
+                    RamCap.Tick();
+                    UpdateBetaLive();
                     DiscordRpc.Update(UsageMonitor.Count, Store.Accounts.Count);
                 }
                 if (currentPage == "Layout" && tickN % 2 == 0) RefreshWindowList();
@@ -553,6 +852,7 @@ namespace RobloxMultiHub
                     ? "Right now: no Roblox window is running."
                     : "Right now: " + count + " Roblox window(s) use " + CpuText(UsageMonitor.TotalCpu) + " CPU and " + Util.FormatBytes(UsageMonitor.TotalRam)
                       + " memory in total  (avg " + CpuText(UsageMonitor.TotalCpu / count) + " and " + Util.FormatBytes(UsageMonitor.TotalRam / count) + " per account).";
+            UpdateFooterButtons();
         }
 
         async void RunWatcher()
@@ -571,6 +871,7 @@ namespace RobloxMultiHub
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
+            ScaleLayout();
             // never let the window be bigger than the screen (small laptops / high DPI scaling)
             Rectangle wa = Screen.FromControl(this).WorkingArea;
             MinimumSize = new Size(Math.Min(MinimumSize.Width, wa.Width), Math.Min(MinimumSize.Height, wa.Height));
@@ -621,7 +922,7 @@ namespace RobloxMultiHub
             {
                 if (Store.Settings.MultiInstance && Launcher.RobloxPids().Count > 0 && Launcher.Instances.Count == 0)
                     AddLog("NOTE: Roblox is already running (started by Windows or by you earlier). Multi-instance only works for clients started AFTER this app is holding the lock. Use Settings > 'Close all Roblox processes'.");
-                if (Launcher.FindRobloxExe() == null)
+                if (Launcher.FindRobloxExe() == null && !Launcher.ProtocolRegistered())
                     AddLog("NOTE: Roblox does not seem to be installed for this Windows user. Install it from roblox.com first.");
             }
             catch (Exception ex) { Log.Error("StartupChecks", ex); }
@@ -642,6 +943,25 @@ namespace RobloxMultiHub
                 UnregisterHotkeys();
                 DiscordRpc.Stop();
                 if (Store.Settings.MaxAlts) MaxAlts.Reset();
+                RamCap.Reset();
+
+                // full reset: close EVERY Roblox process and confirm they are gone before we release
+                // anything, so the machine is exactly as before the app ran - and a restart is clean
+                int n = Launcher.KillAllRoblox();
+                if (n > 0)
+                {
+                    Log.Write("Close: closing " + n + " Roblox process(es)...");
+                    for (int i = 0; i < 40 && Launcher.RobloxPids().Count > 0; i++) System.Threading.Thread.Sleep(250);
+                    foreach (int pid in Launcher.RobloxPids()) Launcher.KillPid(pid);   // stubborn ones
+                    for (int i = 0; i < 8 && Launcher.RobloxPids().Count > 0; i++) System.Threading.Thread.Sleep(250);
+                    Log.Write(Launcher.RobloxPids().Count == 0
+                        ? "Close: all Roblox processes confirmed gone."
+                        : "Close: " + Launcher.RobloxPids().Count + " Roblox process(es) would not close - close them yourself.");
+                }
+
+                // release the multi-instance locks ONLY after the clients are dead, so the next
+                // start finds a clean slate (this also releases the memory helper's parent link)
+                MultiInstance.Stop();
                 if (browserCts != null) browserCts.Cancel();
             }
             catch (Exception) { }
@@ -677,23 +997,25 @@ namespace RobloxMultiHub
             bar.MinimumSize = new Size(0, 44);
             bar.Margin = Padding.Empty;
             bar.Tag = "card";
-            RoundButton bAdd = Ui.Btn("+ Add", 72, null, "primary");
+            RoundButton bAdd = Ui.Btn("+ Add", 62, null, "primary");
             bAdd.Click += delegate { addMenu.Show(bAdd, new Point(0, bAdd.Height)); };
             Ui.Tips.SetToolTip(bAdd, "Add accounts: log in with a browser, paste cookies, or import a file.");
-            RoundButton bEdit = Ui.Btn("Edit", 54, delegate { EditSelected(); }, "");
-            Ui.Tips.SetToolTip(bEdit, "Edit alias, group, notes, password and the game of the selected account.");
-            RoundButton bRemove = Ui.Btn("Remove", 74, delegate { RemoveSelected(); }, "danger");
+            RoundButton bEdit = Ui.Btn("Edit", 48, delegate { EditSelected(); }, "");
+            Ui.Tips.SetToolTip(bEdit, "Edit alias, group, notes, password and the game of each account.");
+            RoundButton bRemove = Ui.Btn("Remove", 66, delegate { RemoveSelected(); }, "danger");
             Ui.Tips.SetToolTip(bRemove, "Delete the selected account(s) from this app (does not touch the Roblox account itself).");
-            RoundButton bCheck = Ui.Btn("Check", 60, delegate { CheckAccounts(); }, "");
+            RoundButton bCheck = Ui.Btn("Check", 54, delegate { CheckAccounts(); }, "");
             Ui.Tips.SetToolTip(bCheck, "Check cookies: tests whether the saved login of the selected accounts (or all, if none selected) still works.");
-            RoundButton bActions = Ui.Btn("More", 58, null, "");
+            RoundButton bActions = Ui.Btn("More", 52, null, "");
             bActions.Click += delegate { accMenu.Show(bActions, new Point(0, bActions.Height)); };
             Ui.Tips.SetToolTip(bActions, "Copy username/password/cookie, account details, refresh cookie, groups, sorting ... (also on right-click).");
+            bar.WrapContents = false;                    // the five buttons stay on one row
             foreach (RoundButton b in new RoundButton[] { bAdd, bEdit, bRemove, bCheck, bActions })
             {
-                b.Margin = new Padding(0, 5, 6, 5);
+                b.Margin = new Padding(0, 7, 4, 7);     // centered in the 44px band, like the row below
                 bar.Controls.Add(b);
             }
+            bar.Padding = new Padding(12, 0, 12, 0);     // line up with the account rows below
             t.Controls.Add(bar, 0, 0);
 
             // ---- search / group / view switch ----
@@ -702,30 +1024,30 @@ namespace RobloxMultiHub
             filt.AutoSize = true;
             filt.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             filt.WrapContents = true;
-            filt.MinimumSize = new Size(0, 40);
-            filt.Margin = Padding.Empty;
+            filt.MinimumSize = new Size(0, 44);            // same band height as the toolbar above
+            filt.Margin = new Padding(0, 6, 0, 0);       // breathing room below the toolbar band
             filt.Tag = "card";
+            // every control centered in the 44px band: 28px inputs -> top 8, 30px buttons -> top 7,
+            // 13px labels -> top 15 so their text baseline sits on the input's middle
             Label l1 = Ui.Lbl("Search", "muted");
-            l1.Margin = new Padding(0, 10, 4, 0);
+            l1.Margin = new Padding(0, 15, 4, 0);
             tbSearch = Ui.Txt(150, "");
-            tbSearch.Margin = new Padding(0, 5, 12, 0);
-            tbSearch.TextChanged += delegate { RefreshAccountList(); };
+            tbSearch.Margin = new Padding(0, 8, 12, 0);
+            tbSearch.TextChanged += delegate { RefreshAccountList(); NudgeList(); };
             tbSearch.Tip("Type to filter by username, alias, notes or group.");
-            Label l2 = Ui.Lbl("Group", "muted");
-            l2.Margin = new Padding(0, 10, 4, 0);
             cbGroupFilter = new DarkCombo();
-            cbGroupFilter.Width = 130;
-            cbGroupFilter.Margin = new Padding(0, 6, 14, 0);
-            cbGroupFilter.SelectedIndexChanged += delegate { if (!suspendSel) RefreshAccountList(); };
-            btnViewList = Ui.Btn(Lang.T("List"), 52, delegate { SetView(false); }, "nav");
-            btnViewList.Margin = new Padding(0, 5, 2, 0);
+            cbGroupFilter.Width = 140;
+            cbGroupFilter.Margin = new Padding(0, 8, 14, 0);   // no label: the dropdown says it all
+            cbGroupFilter.SelectedIndexChanged += delegate { if (!suspendSel) { RefreshAccountList(); NudgeList(); } };
+            btnViewList = Ui.Btn(Lang.T("List"), 52, delegate { SetView(false); }, "toggle");
+            btnViewList.Margin = new Padding(0, 7, 2, 0);
             Ui.Tips.SetToolTip(btnViewList, "Compact list with profile pictures.");
-            btnViewCards = Ui.Btn(Lang.T("Cards"), 60, delegate { SetView(true); }, "nav");
-            btnViewCards.Margin = new Padding(0, 5, 0, 0);
+            btnViewCards = Ui.Btn(Lang.T("Cards"), 60, delegate { SetView(true); }, "toggle");
+            btnViewCards.Margin = new Padding(0, 7, 0, 0);
+            filt.Padding = new Padding(12, 0, 12, 0);        // same left edge as the toolbar and rows
             Ui.Tips.SetToolTip(btnViewCards, "Expanded cards: big profile picture, status, a game for each account and a Launch button.");
             filt.Controls.Add(l1);
             filt.Controls.Add(tbSearch);
-            filt.Controls.Add(l2);
             filt.Controls.Add(cbGroupFilter);
             filt.Controls.Add(btnViewList);
             filt.Controls.Add(btnViewCards);
@@ -734,7 +1056,7 @@ namespace RobloxMultiHub
             // ---- the two views share one cell ----
             Panel viewHost = new Panel();
             viewHost.Dock = DockStyle.Fill;
-            viewHost.Margin = Padding.Empty;
+            viewHost.Margin = new Padding(0, 6, 0, 0);   // breathing room below the filter band
             viewHost.Tag = "card";
 
             lv = new BufferedListView();
@@ -767,6 +1089,7 @@ namespace RobloxMultiHub
             };
 
             cardHost = new FlowLayoutPanel();
+            Util.SetBuf(cardHost);                 // cards glide to new slots; buffer so they do not tear
             cardHost.Dock = DockStyle.Fill;
             cardHost.AutoScroll = true;
             cardHost.WrapContents = true;
@@ -795,25 +1118,85 @@ namespace RobloxMultiHub
             GradientButton bLaunch = new GradientButton();
             bLaunch.Text = "\U0001F680  " + Lang.T("Launch selected");
             bLaunch.Size = new Size(158, 34);
-            bLaunch.Margin = new Padding(0, 7, 8, 5);
+            bLaunch.Margin = new Padding(12, 6, 8, 6);      // centered in the 46px footer band
             bLaunch.Click += delegate { LaunchSelected(); };
             Ui.Tips.SetToolTip(bLaunch, "Launch the selected accounts. Accounts with their own game use it; the others use the Launch page.");
             RoundButton bAll = Ui.Btn(Lang.T("Launch all"), 90, delegate { LaunchAllListed(); }, "");
             Ui.Tips.SetToolTip(bAll, "Launch every account that is currently visible in the list.");
             RoundButton bStop = Ui.Btn(Lang.T("Stop all"), 80, delegate { StopAll(); }, "danger");
             Ui.Tips.SetToolTip(bStop, "Close every Roblox window that this app started (windows you opened yourself are left alone).");
-            RoundButton bUp = Ui.Btn("Up", 44, delegate { MoveSelected(-1); }, "");
-            RoundButton bDown = Ui.Btn("Down", 54, delegate { MoveSelected(1); }, "");
-            Ui.Tips.SetToolTip(bUp, "Move the selected account up in your own order.");
-            Ui.Tips.SetToolTip(bDown, "Move the selected account down in your own order.");
+            RoundButton bUp = Ui.Btn("\u2191", 44, delegate { MoveSelected(-1); }, "");
+            RoundButton bDown = Ui.Btn("\u2193", 44, delegate { MoveSelected(1); }, "");
+            Ui.Tips.SetToolTip(bUp, "Move the selected account(s) up in your own order.");
+            Ui.Tips.SetToolTip(bDown, "Move the selected account(s) down in your own order.");
             lblCount = Ui.Lbl("", "muted");              // kept for the counters; not shown (the Launch page lists the selection)
-            foreach (RoundButton b in new RoundButton[] { bAll, bStop, bUp, bDown }) b.Margin = new Padding(0, 8, 6, 6);
+            foreach (RoundButton b in new RoundButton[] { bAll, bStop, bUp, bDown }) b.Margin = new Padding(0, 8, 6, 8);
             foot.Controls.Add(bLaunch);
             foot.Controls.Add(bAll);
             foot.Controls.Add(bStop);
             foot.Controls.Add(bUp);
             foot.Controls.Add(bDown);
             t.Controls.Add(foot, 0, 3);
+            footLaunch = bLaunch;
+            footAll = bAll;
+            footStop = bStop;
+            footUp = bUp;
+            footDown = bDown;
+            bAll.Tag = bAll.Width;                 // real width for the show/hide animation
+            bStop.Tag = bStop.Width;
+            bUp.Tag = bUp.Width;
+            bDown.Tag = bDown.Width;
+            UpdateFooterButtons();
+        }
+
+        // Footer of the accounts panel, every button only present when it can be used:
+        // Stop while something is running ("Stop" / "Stop all"), 'Launch all' while at least one
+        // listed account is not running, and the order arrows while an account is selected.
+        void UpdateFooterButtons()
+        {
+            if (footStop == null || footAll == null) return;
+            int running = runningIds.Count;
+            string want = running == 1 ? Lang.T("Stop") : Lang.T("Stop all");
+            if (footStop.Text != want) footStop.Text = want;
+            SetFooterBtn(footStop, running > 0);
+            bool anyToLaunch = false;
+            foreach (Account a in FilteredAccounts())
+                if (!runningIds.Contains(a.Id)) { anyToLaunch = true; break; }
+            SetFooterBtn(footAll, anyToLaunch);
+            bool hasSel = selected.Count > 0;
+            SetFooterBtn(footUp, hasSel);
+            SetFooterBtn(footDown, hasSel);
+        }
+
+        // Tag holds the button's real width, set when the footer is built. Always animates FROM the
+        // current size/opacity, so a button that is re-shown mid-collapse grows back from where it is.
+        void SetFooterBtn(RoundButton b, bool show)
+        {
+            int target = b.Tag is int ? (int)b.Tag : 80;
+            if (show)
+            {
+                if (b.Visible && b.Width == target && b.Opacity > 0.99f) return;
+                int w0 = b.Visible ? b.Width : 1;
+                float o0 = b.Visible ? b.Opacity : 0f;
+                if (!b.Visible) { b.Visible = true; b.Width = 1; }
+                Anim.Go(b, 170, delegate(float e)
+                {
+                    b.Width = Math.Max(1, w0 + (int)((target - w0) * e));
+                    b.Opacity = Math.Min(1f, o0 + (1f - o0) * Math.Min(1f, e * 2f));
+                    b.TextOpacity = b.Opacity;
+                }, delegate { b.Width = target; b.Opacity = 1f; b.TextOpacity = 1f; });
+            }
+            else
+            {
+                if (!b.Visible) return;
+                int w0 = b.Width;
+                Anim.Go(b, 150, delegate(float e)
+                {
+                    b.Width = Math.Max(1, w0 - (int)(w0 * e));
+                    b.Opacity = Math.Max(0f, 1f - e * 2f);
+                    b.TextOpacity = b.Opacity;
+                }, delegate { b.Visible = false; b.Width = target; b.Opacity = 1f; b.TextOpacity = 1f; });
+            }
         }
 
         void FitListColumn()
@@ -932,7 +1315,8 @@ namespace RobloxMultiHub
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
             bool sel = e.Item.Selected;
             Color rowColor = sel ? Theme.Sel : Theme.Panel2;
-            Rectangle row = new Rectangle(e.Bounds.Left + 2, e.Bounds.Top + 3, e.Bounds.Width - 5, e.Bounds.Height - 6);
+            // rows end 10px before the scrollbar - same gap as card-edge to row on the left
+            Rectangle row = new Rectangle(e.Bounds.Left + 2, e.Bounds.Top + 3, e.Bounds.Width - 5 - 10, e.Bounds.Height - 6);
             using (System.Drawing.Drawing2D.GraphicsPath path = Shapes.Round(row, 11))
             {
                 using (SolidBrush b = new SolidBrush(rowColor)) g.FillPath(b, path);
@@ -987,6 +1371,7 @@ namespace RobloxMultiHub
             else if (sortCol == col) sortAsc = !sortAsc;
             else { sortCol = col; sortAsc = true; }
             RefreshAccountList();
+            NudgeList();
         }
 
         void LvSelectionChanged(object sender, EventArgs e)
@@ -1000,6 +1385,9 @@ namespace RobloxMultiHub
             }
             selected = ids;
             UpdateCount();
+            // one click raises this twice (row deselected, row selected); evaluate the footer once
+            // the burst is over, so the arrows never collapse for the empty in-between state
+            BeginInvoke((Action)delegate { UpdateFooterButtons(); });
             OnAccountSelectionChanged();
         }
 
@@ -1008,20 +1396,46 @@ namespace RobloxMultiHub
         // =====================================================================
         void SetView(bool cardsOn)
         {
+            Control from = cardsView ? (cardHost.Visible ? (Control)cardHost : null) : (lv.Visible ? (Control)lv : null);
             cardsView = cardsOn;
             Store.Settings.View = cardsOn ? "Cards" : "List";
             Store.SaveSettings();
-            lv.Visible = !cardsOn;
-            cardHost.Visible = cardsOn;
+            Control to = cardsOn ? (Control)cardHost : lv;
             if (cardsOn) RebuildCards();
             ApplySelectionToViews();
             StyleViewButtons();
+
+            // the views cross-fade by sliding the incoming one over the outgoing, same as pages -
+            // an instant swap here was one of the remaining snaps
+            if (from == null || to == from || !Store.Settings.Animations)
+            {
+                lv.Visible = !cardsOn;
+                cardHost.Visible = cardsOn;
+                return;
+            }
+            Size sz = from.Size;
+            Point home = from.Location;
+            to.Size = sz;
+            to.Location = home;
+            to.Visible = true;
+            to.BringToFront();
+            Anim.Go("setview", Anim.Ms, delegate(float e)
+            {
+                to.Location = new Point(home.X, home.Y + (int)((1f - e) * 26));       // slides up into place
+            }, delegate
+            {
+                from.Visible = false;
+                to.Dock = DockStyle.Fill;
+            });
         }
 
         void RebuildCards()
         {
             if (cardHost == null) return;
             cardHost.SuspendLayout();
+            Dictionary<string, Point> oldPos = new Dictionary<string, Point>();
+            foreach (AccountCard c in cardHost.Controls.Cast<Control>().OfType<AccountCard>().ToList())
+                oldPos[c.Account.Id] = c.Location;
             foreach (Control old in cardHost.Controls.Cast<Control>().ToList())
             {
                 cardHost.Controls.Remove(old);
@@ -1043,6 +1457,27 @@ namespace RobloxMultiHub
             }
             LayoutCards();
             cardHost.ResumeLayout(true);
+            // cards that already existed glide to their new slot instead of teleporting (sorting, filtering)
+            foreach (KeyValuePair<string, AccountCard> kv in cards)
+            {
+                Point from;
+                if (!oldPos.TryGetValue(kv.Key, out from) || from == kv.Value.Location) continue;
+                AccountCard c = kv.Value;
+                Point to = c.Location;
+                Point d = new Point(to.X - from.X, to.Y - from.Y);
+                c.Location = from;
+                Anim.Go("card" + kv.Key, 260, delegate(float e)
+                {
+                    c.Location = new Point(from.X + (int)(d.X * e), from.Y + (int)(d.Y * e));
+                }, delegate { c.Location = to; });
+            }
+        }
+
+        // the list briefly settles down into place after its order changed (sort, filter, view switch)
+        void NudgeList()
+        {
+            if (lv == null || !lv.Visible) return;
+            Anim.Go("lvnudge", 170, delegate(float e) { lv.Padding = new Padding(0, (int)((1f - e) * 12), 0, 0); }, null);
         }
 
         // 1 column in a narrow panel, 2+ columns when you drag the splitter wider.
@@ -1527,20 +1962,32 @@ namespace RobloxMultiHub
 
         void MoveSelected(int dir)
         {
-            Account a = FirstSelected();
-            if (a == null) return;
+            if (selected.Count == 0) return;
             sortCol = -1;
             List<Account> vis = FilteredAccounts();
-            int idx = vis.IndexOf(a);
-            int to = idx + dir;
-            if (idx < 0 || to < 0 || to >= vis.Count) return;
-            Account other = vis[to];
-            int tmp = a.Order;
-            a.Order = other.Order;
-            other.Order = tmp;
-            if (a.Order == other.Order) a.Order += dir;
+            if (vis.Count < 2) return;
+            // every selected account shifts one slot; selected accounts that touch each other move
+            // as one block (they only swap with an unselected neighbour), keeping their relative order
+            if (dir < 0)
+            {
+                for (int i = 1; i < vis.Count; i++)
+                    if (selected.Contains(vis[i].Id) && !selected.Contains(vis[i - 1].Id))
+                    {
+                        Account t = vis[i]; vis[i] = vis[i - 1]; vis[i - 1] = t;
+                    }
+            }
+            else
+            {
+                for (int i = vis.Count - 2; i >= 0; i--)
+                    if (selected.Contains(vis[i].Id) && !selected.Contains(vis[i + 1].Id))
+                    {
+                        Account t = vis[i]; vis[i] = vis[i + 1]; vis[i + 1] = t;
+                    }
+            }
+            for (int i = 0; i < vis.Count; i++) vis[i].Order = (i + 1) * 10;
             Store.SaveAccounts();
             RefreshAccountList();
+            NudgeList();
         }
 
         void CopyField(Func<Account, string> get)

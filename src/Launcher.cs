@@ -281,34 +281,51 @@ namespace RobloxMultiHub
 
         public static string FindRobloxExe()
         {
-            try
+            // the protocol handler can be registered per-user or per-machine; HKCR shows both
+            RegistryKey[][] roots = new RegistryKey[][]
             {
-                using (RegistryKey k = Registry.CurrentUser.OpenSubKey(@"Software\Classes\roblox-player\shell\open\command"))
+                new RegistryKey[] { Registry.CurrentUser, Registry.CurrentUser.OpenSubKey(@"Software\Classes") },
+                new RegistryKey[] { Registry.ClassesRoot, Registry.ClassesRoot }
+            };
+            foreach (RegistryKey[] pair in roots)
+            {
+                try
                 {
-                    if (k != null)
+                    using (RegistryKey classes = pair[1])
                     {
-                        string handler = ExtractExe(k.GetValue("") as string);
-                        if (handler != null)
+                        if (classes == null) continue;
+                        using (RegistryKey k = classes.OpenSubKey(@"roblox-player\shell\open\command"))
                         {
-                            string dir = Path.GetDirectoryName(handler);
-                            if (dir != null)
+                            if (k == null) continue;
+                            string handler = ExtractExe(k.GetValue("") as string);
+                            if (handler != null)
                             {
-                                string beta = Path.Combine(dir, ProcName + ".exe");
-                                if (File.Exists(beta)) return beta;
+                                string dir = Path.GetDirectoryName(handler);
+                                if (dir != null)
+                                {
+                                    string beta = Path.Combine(dir, ProcName + ".exe");
+                                    if (File.Exists(beta)) return beta;
+                                }
                             }
                         }
                     }
                 }
+                catch (Exception) { }
             }
-            catch (Exception) { }
             try
             {
-                string root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Roblox", "Versions");
-                if (Directory.Exists(root))
+                // Roblox installs per-user into LocalAppData and per-machine into Program Files
+                foreach (string rootDir in new string[]
                 {
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Roblox", "Versions"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Roblox", "Versions"),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Roblox", "Versions")
+                })
+                {
+                    if (!Directory.Exists(rootDir)) continue;
                     string best = null;
                     DateTime bestTime = DateTime.MinValue;
-                    foreach (string d in Directory.GetDirectories(root))
+                    foreach (string d in Directory.GetDirectories(rootDir))
                     {
                         string exe = Path.Combine(d, ProcName + ".exe");
                         if (!File.Exists(exe)) continue;
@@ -320,6 +337,17 @@ namespace RobloxMultiHub
             }
             catch (Exception) { }
             return null;
+        }
+
+        // True when the roblox-player: protocol is registered at all (per-user or per-machine).
+        public static bool ProtocolRegistered()
+        {
+            try
+            {
+                using (RegistryKey k = Registry.ClassesRoot.OpenSubKey("roblox-player"))
+                    return k != null;
+            }
+            catch (Exception) { return false; }
         }
 
         // True if the roblox-player URL handler points at the old bootstrapper, which closes other clients.
@@ -550,6 +578,107 @@ namespace RobloxMultiHub
         }
 
         // Same encoding as .NET's HttpUtility.UrlEncode (lower-case hex, space = '+'), which Roblox Account Manager uses.
+        // Start time of a process (local time), or DateTime.MinValue when Windows will not tell us.
+        static DateTime ProcessStartTime(int pid)
+        {
+            IntPtr h = Native.OpenProcess(0x1000, false, pid);   // PROCESS_QUERY_LIMITED_INFORMATION
+            if (h == IntPtr.Zero) return DateTime.MinValue;
+            try
+            {
+                Native.FILETIME c, e, k, u;
+                if (!Native.GetProcessTimes(h, out c, out e, out k, out u)) return DateTime.MinValue;
+                return DateTime.FromFileTime(((long)c.High << 32) | (long)c.Low);
+            }
+            finally { Native.CloseHandle(h); }
+        }
+
+        static bool HasWindow(int pid)
+        {
+            foreach (WinInfo w in WindowLayout.FindRobloxWindows())
+                if (w.Pid == pid && w.HasWindow) return true;
+            return false;
+        }
+
+        static int sweepAt;
+
+        // ---- VeryLow memory priority + taskbar hiding, applied to every client ----
+        static readonly HashSet<int> lowMemDone = new HashSet<int>();
+
+        // One call per client: memory priority VeryLow, so Windows reclaims Roblox pages first
+        // whenever anything else needs RAM.
+        public static void ApplyLowMemoryPriority()
+        {
+            if (!Store.Settings.VeryLowMem) return;
+            foreach (int pid in RobloxPids())
+            {
+                if (lowMemDone.Contains(pid)) continue;
+                IntPtr h = Native.OpenProcess(0x0200, false, pid);          // PROCESS_SET_INFORMATION
+                if (h == IntPtr.Zero) continue;
+                try
+                {
+                    int prio = 1;                                            // MEMORY_PRIORITY_VERYLOW
+                    SetProcessInformation(h, 3, ref prio, 4);               // ProcessMemoryPriority
+                    lowMemDone.Add(pid);
+                }
+                finally { Native.CloseHandle(h); }
+            }
+        }
+
+        // Tool-window style takes Roblox off the taskbar and Alt-Tab; the windows stay on screen.
+        static readonly HashSet<int> hiddenDone = new HashSet<int>();
+        public static void ApplyTaskbarHiding()
+        {
+            bool hide = Store.Settings.HideTaskbar;
+            if (!hide && hiddenDone.Count == 0) return;      // nothing to do: skip the window scan
+            foreach (WinInfo w in WindowLayout.FindRobloxWindows())
+            {
+                if (!w.HasWindow) continue;
+                if (hide)
+                {
+                    if (hiddenDone.Contains(w.Pid)) continue;
+                    int ex = Native.GetWindowLong(w.Hwnd, Native.GWL_EXSTYLE);
+                    Native.SetWindowLong(w.Hwnd, Native.GWL_EXSTYLE, ex | 0x00000080);      // WS_EX_TOOLWINDOW
+                    Native.SetWindowPos(w.Hwnd, IntPtr.Zero, 0, 0, 0, 0,
+                        Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOZORDER | Native.SWP_FRAMECHANGED);
+                    // the taskbar only rebuilds a window's button when the window is re-created or
+                    // re-shown: hide + show (no activate) makes the style change reach the taskbar too
+                    Native.ShowWindow(w.Hwnd, 0);              // SW_HIDE
+                    Native.ShowWindow(w.Hwnd, 4);              // SW_SHOWNOACTIVATE
+                    hiddenDone.Add(w.Pid);
+                }
+                else if (hiddenDone.Contains(w.Pid))
+                {
+                    int ex = Native.GetWindowLong(w.Hwnd, Native.GWL_EXSTYLE);
+                    Native.SetWindowLong(w.Hwnd, Native.GWL_EXSTYLE, ex & ~0x00000080);
+                    Native.SetWindowPos(w.Hwnd, IntPtr.Zero, 0, 0, 0, 0,
+                        Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOZORDER | Native.SWP_FRAMECHANGED);
+                    hiddenDone.Remove(w.Pid);
+                }
+            }
+        }
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool SetProcessInformation(IntPtr hProcess, int infoClass, ref int info, int size);
+
+        // Roblox leaves windowless background processes behind. They show up as "no window yet"
+        // rows, and the next launch can mistake one for its client (that is how an account ends
+        // up with a nameless window plus a second real client). Anything untracked and windowless
+        // for over two minutes is closed.
+        public static void SweepZombies()
+        {
+            if (Environment.TickCount < sweepAt) return;
+            sweepAt = Environment.TickCount + 15000;
+            foreach (int pid in RobloxPids())
+            {
+                if (FindInstance(pid) != null) continue;              // ours: the watcher owns it
+                if (HasWindow(pid)) continue;
+                DateTime st = ProcessStartTime(pid);
+                if (st == DateTime.MinValue || (DateTime.Now - st).TotalSeconds < 120) continue;
+                KillPid(pid);
+                Log.Write("Closed a leftover background Roblox process (PID " + pid + ", no window for over 2 minutes).");
+            }
+        }
+
         static string UrlEncode(string s)
         {
             StringBuilder sb = new StringBuilder();
@@ -666,6 +795,10 @@ namespace RobloxMultiHub
 
                 // Poll for the client (UI thread - Roblox is STARTED on a background thread above, so the pump
                 // isn't blocked; and the shared Instances list is only touched on the UI thread).
+                // A candidate must have a WINDOW before it is believed: Roblox keeps windowless
+                // background processes around, and adopting one as "the client" leaves a window
+                // that never gets its name, plus a second real client on the next launch.
+                DateTime minStart = DateTime.Now.AddSeconds(-2);   // our client cannot be older than the spawn
                 int pid = 0;
                 bool already = false;
                 for (int i = 0; i < 120 && pid == 0; i++)
@@ -675,15 +808,19 @@ namespace RobloxMultiHub
                     // Best signal: the process whose command line carries this account's tracker id. This finds
                     // the right client whether Roblox spawned a new process or REUSED a background one.
                     int tp = FindByTracker(a.TrackerId);
-                    if (tp != 0)
+                    if (tp != 0 && HasWindow(tp))
                     {
                         Instance ex = FindInstance(tp);
                         if (ex == null) { pid = tp; break; }
                         if (ex.Account == a) { pid = tp; already = true; break; }
                     }
-                    // Fallback 1: a brand-new process.
+                    // Fallback 1: a brand-new process (younger than this launch, with a window).
                     foreach (int p in RobloxPids())
-                        if (!before.Contains(p) && FindInstance(p) == null) { pid = p; break; }
+                        if (!before.Contains(p) && FindInstance(p) == null && HasWindow(p) && ProcessStartTime(p) >= minStart)
+                        {
+                            pid = p;
+                            break;
+                        }
                     // Fallback 2: an untracked process that just gained a window (reuse, when the tracker can't be read).
                     if (pid == 0)
                         foreach (WinInfo w in WindowLayout.FindRobloxWindows())

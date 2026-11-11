@@ -29,7 +29,7 @@ namespace RobloxMultiHub
             p.Section("Save what is running now");
             tbPresetName = Ui.Txt(220, "");
             tbPresetName.Tip("A name for this setup, for example 'Farm 6 accounts'.");
-            p.Opt("Saves the running accounts, their games, window positions and settings.",
+            p.Opt("Saves everything running.",
                 "Saves:\n- every account this app launched that is still running, in the order you launched them\n- the game / server / private server / followed player each one joined\n- where every Roblox window is right now (position, size, border, minimized, in grid or not)\n- the settings of the Launch, Layout and Performance pages and the launch options on the Settings page (FPS cap, graphics, CPU priority, delay, grid, auto-relaunch ...)\n\nArrange the windows the way you like first (Layout page or by hand), then save.\n\nIf nothing launched by this app is running, the SELECTED accounts are saved with their own game (or the Launch page) and the windows are arranged with the grid when the preset runs.\n\nUsing an existing name replaces that preset.",
                 Ui.Fld("Preset name", 100), tbPresetName, Ui.Btn("Save as preset", 130, delegate { SavePresetFromUi(); }, "primary"));
 
@@ -49,7 +49,7 @@ namespace RobloxMultiHub
                 if (sp != null) tbPresetName.Text = sp.Name;
             };
             p.Add(lvPresets);
-            p.Opt("Run starts everything exactly like it was saved (or double-click a preset).",
+            p.Opt("Restores everything exactly.",
                 "'Run' puts the saved settings back, launches the accounts one after another in the saved order into their saved games, waits for the windows and moves every window to its saved position and size. Accounts that are already running are not launched again, only moved.\n\n'Stop' on the Launch page cancels a running preset. 'Update' replaces the selected preset with what is running now. 'Details' shows exactly what is inside.",
                 Ui.Btn("Run", 80, delegate { RunSelectedPreset(); }, "primary"),
                 Ui.Btn("Update", 80, delegate { UpdateSelectedPreset(); }, ""),
@@ -65,7 +65,7 @@ namespace RobloxMultiHub
                 Store.Settings.PresetExactServers = chkExactServers.Checked;
                 Store.SaveSettings();
             };
-            p.Opt("Off = join the same game, on any server (servers close after a while).",
+            p.Opt("Off = any server of the game.",
                 "A preset remembers the exact server every account was in. Roblox servers shut down when they are empty or old, so after a restart that server usually no longer exists and the join fails.\n\nOFF (default): accounts join the same game on any server; private servers and followed players are always kept.\nON: accounts try the exact saved server - handy to bring accounts back into the same server shortly after saving.",
                 chkExactServers);
             cbStartupPreset = Ui.Cmb(260, "(none)");
@@ -76,7 +76,7 @@ namespace RobloxMultiHub
                 Store.SaveSettings();
                 if (Store.Settings.StartupPreset.Length > 0) AddLog("Preset '" + Store.Settings.StartupPreset + "' will run every time MultiHub starts.");
             };
-            p.Opt("Runs a preset by itself every time MultiHub starts.",
+            p.Opt("Runs a preset at startup.",
                 "Together with 'Start MultiHub with Windows' (Settings page) your whole setup comes back after a restart of the PC without clicking anything. The preset starts a few seconds after the app opened.",
                 Ui.Fld("Run at startup", 100), cbStartupPreset);
 

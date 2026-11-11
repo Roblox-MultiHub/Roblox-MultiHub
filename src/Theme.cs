@@ -284,7 +284,7 @@ namespace RobloxMultiHub
             RoundButton b = new RoundButton();
             b.Kind = kind ?? "";
             b.Tag = kind ?? "";
-            b.Text = text;
+            b.Text = Lang.T(text);        // every button is translatable without touching call sites
             b.FitText(width);
             if (click != null) b.Click += click;
             return b;
@@ -378,7 +378,7 @@ namespace RobloxMultiHub
 
         public void Title(string title, string subtitle)
         {
-            Label t = Ui.Lbl(title, "title");
+            Label t = Ui.Lbl(Lang.T(title), "title");
             t.Location = new Point(PadX, Y);
             Host.Controls.Add(t);
             Y += 38;
@@ -393,7 +393,7 @@ namespace RobloxMultiHub
             bar.Size = new Size(4, 16);
             bar.Location = new Point(PadX, Y + 2);
             Host.Controls.Add(bar);
-            Label l = Ui.Lbl(text, "section");
+            Label l = Ui.Lbl(Lang.T(text), "section");
             l.Location = new Point(PadX + 12, Y);
             Host.Controls.Add(l);
             Y += 24;
@@ -451,17 +451,18 @@ namespace RobloxMultiHub
             Y += PlaceRow(cs, null) + 8;
         }
 
-        // One function: controls + (i) hover explanation + a very short description underneath.
+        // Controls on one line with an (i) hover explanation. The label underneath is GONE: the
+        // tooltip already explains the option, a second line under every control was pure clutter.
+        // shortText is only shown when there is no tooltip to carry the meaning.
         public void Opt(string shortText, string tip, params Control[] cs)
         {
             int h = PlaceRow(cs, tip);
-            Y += h + 2;
-            Label s = Ui.Lbl(shortText, "muted");
+            Y += h + 12;
+            if (!string.IsNullOrEmpty(tip) || string.IsNullOrEmpty(shortText)) return;
+            Label s = Ui.Lbl(Lang.T(shortText), "muted");
             s.AutoSize = false;
             s.AutoEllipsis = true;
             s.Width = Width - PadX * 2;
-            // Measure the real line height of the font (with descenders), so letters like g / y / p
-            // are never clipped at the bottom - also correct under Windows display scaling.
             s.Height = TextRenderer.MeasureText(" Agypj", Theme.Small, new Size(1000, 100),
                 TextFormatFlags.SingleLine | TextFormatFlags.NoPadding).Height + 2;
             s.Location = new Point(PadX + 2, Y);

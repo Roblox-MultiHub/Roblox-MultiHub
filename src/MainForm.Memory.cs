@@ -28,39 +28,39 @@ namespace RobloxMultiHub
             p.Row(lblRam);
 
             btnCleanNow = Ui.Btn("Clean memory now", 150, delegate { CleanMemoryNow(); }, "primary");
-            p.Opt("Frees RAM right away (asks for administrator permission once).",
+            p.Opt("Frees RAM right away.",
                 "Empties the memory areas ticked below, like Mem Reduct does. Windows needs administrator rights for that, so the first time you are asked for permission.\n\nWhat it does: programs (and Roblox windows) give back memory they are not using right now, and Windows' caches are emptied. The RAM counter drops at once. Programs take back what they really need, so a window can hitch for a moment right after a clean - that is normal.\n\nIf you say No to the permission, only the Roblox windows started from this app are trimmed (that needs no admin).",
                 btnCleanNow);
 
             chkAutoClean = Ui.Chk("Clean automatically when RAM use goes over", M.AutoClean, null);
             numMemLimit = Ui.Num(30, 98, M.Threshold, 60);
-            p.Opt("Checks every second; cleans at most once a minute.",
+            p.Opt("Cleans at most once a minute.",
                 "When ON, a small helper runs as administrator in the background (you are asked for permission when you turn this on and every time MultiHub starts). As soon as the RAM in use goes over this percentage, it cleans. It waits at least a minute before the next clean, so it never keeps cleaning in a loop.\n\n80% is a good limit. The helper stops when you close MultiHub.",
                 chkAutoClean, numMemLimit, Ui.Lbl("%", "muted"));
             numMemInterval = Ui.Num(0, 1440, M.IntervalMin, 60);
-            p.Opt("Optional extra clean on a timer (0 = off).",
+            p.Opt("Extra clean on a timer (0 = off).",
                 "Besides the limit above, also clean every this many minutes while auto-clean is ON, even when the RAM use is below the limit. 0 = only clean when the limit is reached.",
                 Ui.Fld("Also every (minutes)", 160), numMemInterval);
             lblMemState = Ui.Lbl("", "muted");
             p.Row(lblMemState);
 
             chkMemWs = Ui.Chk("Trim running programs (working sets)", M.WorkingSets, null);
-            p.Opt("The biggest effect: programs give back memory they are not using.",
+            p.Opt("The biggest effect: programs give memory back.",
                 "Every program, including each Roblox window, hands back the memory it is not actively using. Recommended.", chkMemWs);
             chkMemCache = Ui.Chk("Empty the system file cache", M.FileCache, null);
-            p.Opt("Frees memory Windows keeps for recently used files.",
+            p.Opt("Empties the file cache.",
                 "Windows keeps recently read files in RAM to open them faster. This empties that cache. Recommended.", chkMemCache);
             chkMemModified = Ui.Chk("Flush modified pages", M.ModifiedList, null);
-            p.Opt("Writes changed memory to disk so it can be freed.",
+            p.Opt("Writes changed memory to disk.",
                 "Memory that was changed and is waiting to be written to the page file is written now, so it can be freed. Recommended.", chkMemModified);
             chkMemStandby = Ui.Chk("Empty the low-priority standby list", M.StandbyLow, null);
             p.Opt("Frees cached memory Windows rarely needs.",
                 "The standby list is memory Windows keeps 'just in case'. This empties only its least important part. Recommended.", chkMemStandby);
             chkMemStandbyFull = Ui.Chk("Empty the whole standby list", M.StandbyFull, null);
-            p.Opt("Frees the most, but programs load a bit slower afterwards.",
+            p.Opt("Frees the most; slower reloads.",
                 "Empties the complete standby list. Frees the most memory, but files and programs you use often have to be read from the disk again. OFF by default.", chkMemStandbyFull);
             chkMemCombine = Ui.Chk("Combine identical memory pages", M.Combine, null);
-            p.Opt("Windows 10 / 11: merges duplicate memory (several Roblox windows share a lot).",
+            p.Opt("Merges duplicate memory across windows.",
                 "Windows looks for memory pages with exactly the same content and keeps only one copy. With many Roblox windows there is a lot of duplicate memory, but the search itself costs some CPU for a moment. OFF by default.", chkMemCombine);
 
             EventHandler changed = delegate { OnMemChanged(); };

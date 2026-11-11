@@ -25,6 +25,14 @@ namespace RobloxMultiHub
             int active = ActiveRobloxPid();
             bool trimNow = (DateTime.UtcNow - lastTrim).TotalSeconds >= 20;
             bool trimmedAny = false;
+            // ONE window enumeration for the whole tick (MinimizeIfNeeded used to enumerate PER PID:
+            // nine clients meant nine full desktop walks every two seconds)
+            List<WinInfo> wins = null;
+            if (Store.Settings.MaxAltsMinimize)
+            {
+                try { using (new DpiScope()) wins = WindowLayout.FindRobloxWindows(); }
+                catch (Exception) { wins = null; }
+            }
 
             foreach (int pid in Launcher.RobloxPids())
             {
@@ -40,7 +48,7 @@ namespace RobloxMultiHub
                     SetPriority(pid, ProcessPriorityClass.Idle);
                     SetEfficiency(pid, true);
                 }
-                if (Store.Settings.MaxAltsMinimize) MinimizeIfNeeded(pid);
+                if (wins != null) MinimizeIfNeeded(pid, wins);
                 if (Store.Settings.MaxAltsTrim && trimNow) { TrimWorkingSet(pid); trimmedAny = true; }
             }
             if (trimmedAny) lastTrim = DateTime.UtcNow;
@@ -104,15 +112,10 @@ namespace RobloxMultiHub
             finally { Native.CloseHandle(h); }
         }
 
-        static void MinimizeIfNeeded(int pid)
+        static void MinimizeIfNeeded(int pid, List<WinInfo> wins)
         {
-            try
-            {
-                using (new DpiScope())
-                    foreach (WinInfo w in WindowLayout.FindRobloxWindows())
-                        if (w.Pid == pid && w.HasWindow && !w.Minimized) WindowLayout.Minimize(w.Hwnd);
-            }
-            catch (Exception) { }
+            foreach (WinInfo w in wins)
+                if (w.Pid == pid && w.HasWindow && !w.Minimized) { WindowLayout.Minimize(w.Hwnd); return; }
         }
 
         [StructLayout(LayoutKind.Sequential)]

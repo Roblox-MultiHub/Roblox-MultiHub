@@ -22,8 +22,10 @@ namespace RobloxMultiHub
         CheckBox chkPresence, chkRelaunch, chkWatcherPresence, chkStartup, chkAntiAfk, chkCheckLogins;
         CheckBox chkCheckUpdates;
         CheckBox chkCrashBreaker;
+        CheckBox chkAnimations;
         NumericUpDown numCrashMax;
-        CheckBox chkWebhook, chkWebhookCrash, chkWebhookRelaunch, chkWebhookBatch, chkWebhookLocked;
+        CheckBox chkWebhook, chkWebhookCrash, chkWebhookRelaunch, chkWebhookBatch, chkWebhookLocked, chkWebhookStatus;
+        NumericUpDown numStatusSec;
         RoundTextBox tbWebhook;
         CheckBox chkDiscordRpc;
         RoundTextBox tbDiscordAppId;
@@ -42,6 +44,19 @@ namespace RobloxMultiHub
             Panel page = NewPage("Settings");
             PageBuilder p = new PageBuilder(page, PageW);
             p.Title("Settings", "Changes are saved immediately.");
+
+            p.Section("Interface");
+            chkAnimations = Ui.Chk("Smooth animations (pages, lists, buttons)", S.Animations, null);
+            p.Opt("Turn off to switch instantly.",
+                "Pages slide in, re-sorted lists settle into place and buttons appear with a short eased motion. "
+                + "Turning this off makes every change immediate; nothing else about the app changes.",
+                chkAnimations);
+            chkAnimations.CheckedChanged += delegate
+            {
+                if (loadingSettings) return;
+                Store.Settings.Animations = chkAnimations.Checked;
+                Store.SaveSettings();
+            };
 
             p.Section("Multi-instance");
             chkMulti = Ui.Chk("Enable multi-instance", S.MultiInstance, null);
@@ -62,7 +77,7 @@ namespace RobloxMultiHub
                 "Only closes windows that this app started for that same account. Windows you opened yourself are never touched.",
                 chkAutoClose);
             numMax = Ui.Num(0, 100, S.MaxInstances, 70);
-            p.Opt("Refuse launches beyond this many windows (0 = no limit).",
+            p.Opt("Max windows (0 = no limit).",
                 "A safety net for weak PCs: launches are refused once this many Roblox windows are running.",
                 Ui.Fld("Maximum windows", 150), numMax);
             chkRefreshLaunch = Ui.Chk("Refresh the cookie before every launch", S.RefreshCookieOnLaunch, null);
@@ -72,7 +87,7 @@ namespace RobloxMultiHub
 
             p.Section("Account status");
             chkPresence = Ui.Chk("Show online / in-game status", S.ShowPresence, null);
-            p.Opt("Colored dot and text for every account.",
+            p.Opt("Status dot per account.",
                 "Dot colors: green = in a game or running, blue = online but not in a game, purple = Roblox Studio, grey = offline, red = cookie expired.",
                 chkPresence);
             numPresence = Ui.Num(10, 3600, S.PresenceSec, 80);
@@ -80,7 +95,7 @@ namespace RobloxMultiHub
                 "Lower values show changes faster but use more requests; Roblox may rate-limit very frequent checks.",
                 Ui.Fld("Refresh every (seconds)", 190), numPresence);
             chkCheckLogins = Ui.Chk("Check all saved logins when MultiHub starts", S.CheckLoginsAtStartup, null);
-            p.Opt("Tells you which accounts Roblox signed out since last time.",
+            p.Opt("Warns which accounts got signed out.",
                 "A few seconds after start-up every saved login is tested once (a short pause between accounts, so Roblox does not rate-limit you). Accounts whose login stopped working since the previous check - password changed, logged out everywhere, or locked / reset by Roblox - are listed in one popup, so you know which ones to log in with again. Accounts you were already told about only appear in the activity log.",
                 chkCheckLogins);
 
@@ -94,23 +109,23 @@ namespace RobloxMultiHub
                 "The watcher only looks at windows that this app started.",
                 Ui.Fld("Check every (seconds)", 190), numWatcher);
             chkWatcherPresence = Ui.Chk("Also relaunch when the account left the game", S.WatcherUsePresence, null);
-            p.Opt("Catches windows that stay open after a disconnect.",
+            p.Opt("Catches windows open after a disconnect.",
                 "Uses Roblox's presence information: if an account is no longer in a game for two checks in a row, its window is closed and the account is launched again.",
                 chkWatcherPresence);
             chkCrashBreaker = Ui.Chk("Crash breaker", S.CrashBreaker, null);
             numCrashMax = Ui.Num(1, 20, S.CrashBreakerMax, 70);
-            p.Opt("Stop relaunching an account that keeps dying.",
+            p.Opt("Stops relaunching an account that keeps dying.",
                 "ON by default. Without it, auto-relaunch would keep restarting an account forever if it crashes or is locked straight away - spamming launches and Discord alerts. With it on, if the watcher has to relaunch the same account this many times within a few minutes, it gives up on that one account and leaves it alone for about " + S.CrashBreakerCooldownMin + " minutes (or until you launch it yourself). The other accounts keep running normally.",
                 chkCrashBreaker, Ui.Fld("Give up after", 90), numCrashMax);
 
             chkAntiAfk = Ui.Chk("Anti-AFK", S.AntiAfk, null);
             numAntiAfk = Ui.Num(1, 120, S.AntiAfkMin, 70);
-            p.Opt("Each window briefly comes to the front and gets one small input, this often.",
+            p.Opt("How often the anti-AFK input runs.",
                 "Roblox disconnects an account after about 20 minutes without input. With this ON, every X minutes each Roblox window that this app started is brought to the front for about a third of a second, gets one small input (exactly like your own mouse / keyboard) and then the window you were using is put back. You see a short flash. The window you are using yourself is skipped, and nothing in Roblox is changed.\n\n12 minutes is the recommended value (comfortably under Roblox's ~20 minute limit).\n\nRisk: like multi-instance, this automates input, which Roblox may not like. Use it with your own accounts.",
                 chkAntiAfk, Ui.Fld("Every (minutes)", 110), numAntiAfk);
             cbAntiAfkAction = Ui.Cmb(330, AntiAfk.ActionNames);
             cbAntiAfkAction.SelectedIndex = Math.Max(0, Array.IndexOf(AntiAfk.ActionIds, S.AntiAfkAction));
-            p.Opt("What input is sent - 'Mouse nudge' does not interrupt auto-hatch / auto-farm.",
+            p.Opt("Which input is sent.",
                 "Mouse nudge (recommended): moves the mouse a few pixels and back. It resets Roblox's idle timer but does NOT move your character, so auto-hatch, auto-farm and AFK setups keep running.\n\nJump (Space): the older behaviour - the character jumps once. Simple, but a jump can briefly move you off an egg / spot and interrupt auto-hatch.\n\nZoom camera (I then O): zooms in and back out. No character movement; use it if mouse nudge does not work in a game.",
                 Ui.Fld("Anti-AFK action", 110), cbAntiAfkAction);
 
@@ -121,12 +136,12 @@ namespace RobloxMultiHub
                 chkWebhook);
             tbWebhook = Ui.Txt(330, S.WebhookUrl);
             tbWebhook.UseSystemPasswordChar = true;
-            p.Opt("Paste your webhook URL here.",
+            p.Opt("Paste your webhook URL.",
                 "Looks like https://discord.com/api/webhooks/123.../abc... . Use 'Send a test message' to check it works.",
                 Ui.Fld("Webhook URL", 120), tbWebhook,
                 Ui.Btn("Send a test message", 170, delegate { SendWebhookTest(); }, ""));
             chkWebhookCrash = Ui.Chk("A client closed unexpectedly (crash / kick)", S.WebhookCrash, null);
-            p.Opt("When a window this app started disappears on its own.",
+            p.Opt("A window disappeared on its own.",
                 "Posted when a Roblox window that MultiHub launched closes without you asking - a crash, a kick, or a disconnect. Windows you close yourself are never reported.",
                 chkWebhookCrash);
             chkWebhookRelaunch = Ui.Chk("The watcher brought a client back", S.WebhookRelaunch, null);
@@ -134,7 +149,7 @@ namespace RobloxMultiHub
                 "Posted each time the watcher relaunches an account whose window had disappeared. Needs auto-relaunch (above) to be on.",
                 chkWebhookRelaunch);
             chkWebhookBatch = Ui.Chk("A launch batch finished", S.WebhookBatch, null);
-            p.Opt("When 'Launch selected' / a preset finishes starting accounts.",
+            p.Opt("A launch batch finished.",
                 "Posted once, with how many accounts were started, when a whole batch has launched.",
                 chkWebhookBatch);
             chkWebhookLocked = Ui.Chk("An account came back locked (HTTP 403)", S.WebhookLocked, null);
@@ -142,13 +157,34 @@ namespace RobloxMultiHub
                 "Posted when a check or launch finds that Roblox has locked or blocked an account (HTTP 403), so you notice straight away which account needs attention.",
                 chkWebhookLocked);
 
+            chkWebhookStatus = Ui.Chk("Log status", S.WebhookStatus, null);
+            p.Opt("One live status message in the channel.",
+                "ON: MultiHub posts one message listing every running account - username (linked to its profile), uptime as a live Discord timestamp, the game it is in (linked) and average CPU / RAM since the last update - and EDITS that same message on every refresh instead of posting again. Needs the webhook above. Minimum 15 seconds.",
+                chkWebhookStatus);
+            numStatusSec = Ui.Num(15, 600, Math.Max(15, Math.Min(600, S.WebhookStatusSec)), 70);
+            numStatusSec.ValueChanged += delegate
+            {
+                if (loadingSettings) return;
+                Store.Settings.WebhookStatusSec = (int)numStatusSec.Value;
+                Store.SaveSettings();
+            };
+            chkWebhookStatus.CheckedChanged += delegate
+            {
+                if (loadingSettings) return;
+                Store.Settings.WebhookStatus = chkWebhookStatus.Checked;
+                Store.SaveSettings();
+            };
+            p.Opt("How often the status message refreshes.",
+                "Seconds between refreshes (15 - 600). Smaller = livelier, but every refresh is a Discord API call.",
+                Ui.Fld("Refresh every (seconds)", 190), numStatusSec);
+
             p.Section("Discord status (Rich Presence)");
             chkDiscordRpc = Ui.Chk("Show \"Playing Roblox MultiHub\" on my Discord profile", S.DiscordRpc, null);
-            p.Opt("Shows the app on your Discord while it runs, with how many accounts are running, a timer and buttons.",
+            p.Opt("Shows the app on your Discord profile.",
                 "Like other apps that show \"Playing ...\" on your profile. It needs a Discord Application ID (below). While it is on, your Discord shows Playing Roblox MultiHub, how many accounts are running, how long it has been open, and two buttons (Get Roblox MultiHub / Join Discord) that other people can click. It talks only to the Discord app on your own PC - no bot token, nothing is uploaded. Needs the Discord desktop app to be running.",
                 chkDiscordRpc);
             tbDiscordAppId = Ui.Txt(230, S.DiscordAppId);
-            p.Opt("Your Discord Application ID (a number). Required.",
+            p.Opt("Your Discord Application ID.",
                 "Create one for free: open the Discord Developer Portal (discord.com/developers/applications), click New Application, name it exactly \"Roblox MultiHub\" (that name is what shows after \"Playing\"), open it and copy the Application ID. Paste it here. For the little logo image, upload a picture under Rich Presence > Art Assets named exactly \"logo\". The ID is public - it is safe to share, unlike a bot token.",
                 Ui.Fld("Application ID", 120), tbDiscordAppId);
 
@@ -179,13 +215,13 @@ namespace RobloxMultiHub
                 "English and Dutch are built in; anything not translated stays in English. You can add more languages by dropping a file  lang\\<code>.json  (a JSON object of { \"English text\": \"translation\" }) into the data folder - use 'Open data folder' above. Changing the language restarts the app.",
                 Ui.Fld("Language", 120), cbLang);
             chkStartup = Ui.Chk("Start MultiHub with Windows (minimized)", S.StartWithWindows, null);
-            p.Opt("Starts this app when you log in to Windows.",
+            p.Opt("Starts with Windows.",
                 "Useful with multi-instance: if this app starts before Roblox does, it always wins the lock. Adds a normal Windows startup entry that you can remove here again.",
                 chkStartup);
 
             p.Section("Updates");
             chkCheckUpdates = Ui.Chk("Check for a new version when MultiHub starts", S.CheckUpdates, null);
-            p.Opt("Just tells you when a newer version is out - it never downloads anything by itself.",
+            p.Opt("Notifies about updates; never downloads.",
                 "When the app starts it asks GitHub once what the latest released version is. If that is newer than the version you have, you get a short notice with a button to open the download page. It only reads a version number; it never downloads or replaces the app on its own, so it is completely safe. Turn it off to never check.",
                 chkCheckUpdates);
             p.Opt("Check right now.",
@@ -194,16 +230,16 @@ namespace RobloxMultiHub
 
             p.Section("Advanced");
             tbLauncherUrl = Ui.Txt(290, S.PlaceLauncherUrl);
-            p.Opt("Only change this if Roblox moves the launcher URL.",
+            p.Opt("Only change if Roblox moves it.",
                 "The address the app uses to ask Roblox for a game session. Only change it if launching stops working after a Roblox change and you know the new address. 'Reset' restores the default.",
                 Ui.Fld("Place launcher URL", 130), tbLauncherUrl,
                 Ui.Btn("Reset", 70, delegate { tbLauncherUrl.Text = "https://assetgame.roblox.com/game/PlaceLauncher.ashx"; }, ""));
 
             p.Section("Support this project");
-            p.Opt("Roblox MultiHub is free - a donation keeps it going. Thank you!",
+            p.Opt("Free - donations keep it going.",
                 "This tool is built by our team in a lot of free time and stays completely free. If it saves you time and you want to say thanks, a small donation is hugely appreciated - it is never required and nothing is locked behind it. The button opens the donation page in your browser.",
                 Ui.Btn("Buy us a coffee", 170, delegate { OpenDonate(); }, "primary"));
-            p.Opt("News, updates, help and tickets - come say hi.",
+            p.Opt("News, help and tickets.",
                 "Opens the Roblox MultiHub Discord server in your browser: announcements, update logs, a general chat and a support ticket system if you need help.",
                 Ui.Btn("Join our Discord", 150, delegate { OpenLink(DiscordUrl, "Discord"); }, ""));
 
@@ -401,11 +437,13 @@ namespace RobloxMultiHub
             if (code == Store.Settings.Language) return;
             Store.Settings.Language = code;
             Store.SaveSettings();
-            if (MessageBox.Show(this, "The language is applied after a restart.\r\nRestart Roblox MultiHub now?",
-                "Language", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-            {
-                Application.Restart();
-            }
+            // applied in place: the whole UI is rebuilt with the new language, no restart
+            // (a restart also raced the single-instance mutex -> 'already running')
+            Lang.Load(code);
+            RightToLeft = (code == "ar" || code == "he") ? RightToLeft.Yes : RightToLeft.No;
+            currentPage = "Settings";
+            BuildUi();
+            AddLog("Language: " + code);
         }
 
         void SetStartup(bool on)

@@ -37,25 +37,25 @@ namespace RobloxMultiHub
             p.Section("Where should they go?");
 
             rbGame = Ui.Rad("Join a game", Store.Settings.LastMode == "Game" || string.IsNullOrEmpty(Store.Settings.LastMode), null);
-            p.Opt("Roblox picks any public server, like the normal Play button.",
+            p.Opt("Roblox picks any public server.",
                 "Starts the game exactly like pressing Play on the website: Roblox chooses a public server for every account.\n\nEnter the game's Place ID in the box below, or paste its roblox.com/games/... link - the app finds the Place ID itself. Games you launched before are remembered in the drop-down list.",
                 rbGame);
             cbPlace = new DarkCombo();
             cbPlace.DropDownStyle = ComboBoxStyle.DropDown;
             cbPlace.Width = 250;
             cbPlace.Text = Store.Settings.LastPlaceId;
-            p.Opt("Type the Place ID, or search a game by name.",
+            p.Opt("Type the Place ID, or search by name.",
                 "Paste a number such as 920587237 or a full roblox.com/games/... link - the app finds the Place ID itself. Games you launched before are in the drop-down list.\n\nOr press 'Search game...' to look a game up by name: a popup lists the matches with their players online, and the one you pick is filled in here.",
                 Ui.Fld("Place ID or link", 120), cbPlace, Ui.Btn("Search game...", 120, delegate { SearchGameForLaunch(); }, ""));
             RefreshRecentCombo();
 
             rbJob = Ui.Rad("Join a specific server", Store.Settings.LastMode == "Job", null);
-            p.Opt("Put accounts into one exact server (Job ID).",
+            p.Opt("Put accounts into one exact server.",
                 "Joins one specific server, identified by its Job ID. This is how you get several accounts into the SAME server.\n\nPick a server on the Servers page, paste a Job ID yourself, or press 'Random server' to let the app choose an open public server of the Place ID above.",
                 rbJob);
             tbJob = Ui.Txt(170, Store.Settings.LastJobId);
             btnRandom = Ui.Btn("Random", 80, delegate { PickRandomServer(); }, "");
-            p.Opt("Pick a server from a list, or let the app choose one.",
+            p.Opt("Pick a server, or let the app choose.",
                 "'Pick server...' opens the running servers of the game above in a popup. Sort them by fewest players, most players, lowest ping or highest FPS, then pick one. 'Random' picks any open public server. You can also paste a Job ID yourself.",
                 Ui.Fld("Job ID", 120), tbJob, btnRandom, Ui.Btn("Pick server...", 110, delegate { PickServerForLaunch(); }, ""));
 
@@ -67,7 +67,7 @@ namespace RobloxMultiHub
             p.Row(Ui.Fld("Private server link", 120), tbPrivate);
 
             rbFollow = Ui.Rad("Follow a player", Store.Settings.LastMode == "Follow", null);
-            p.Opt("Join the game a player is currently in.",
+            p.Opt("Join the game a player is in.",
                 "Type a Roblox username. The accounts join the game that player is playing right now. This only works if the player is in a game and their privacy settings allow joining them. The app warns you when the player does not look joinable.",
                 rbFollow);
             tbFollow = Ui.Txt(230, Store.Settings.LastFollow);
@@ -83,17 +83,17 @@ namespace RobloxMultiHub
             p.Section("Launch options");
             numDelay = Ui.Num(0, 600, Store.Settings.LaunchDelaySec, 70);
             numDelay.ValueChanged += delegate { Store.Settings.LaunchDelaySec = (int)numDelay.Value; Store.SaveSettings(); };
-            p.Opt("Pause between accounts so your PC is not overloaded.",
+            p.Opt("Pause between accounts.",
                 "Starting many clients at the same instant often makes some of them fail to load. 6-10 seconds is a good default; lower it on a fast PC, raise it if windows fail to start.",
                 Ui.Fld("Seconds between accounts", 190), numDelay);
 
             chkUseSaved = Ui.Chk("Use each account's own game when it has one", Store.Settings.UseSavedPerAccount, null);
             chkUseSaved.CheckedChanged += delegate { Store.Settings.UseSavedPerAccount = chkUseSaved.Checked; Store.SaveSettings(); };
-            p.Opt("Accounts with their own game ignore the choice above.",
+            p.Opt("Accounts with their own game ignore this.",
                 "Every account can have its own game (game field on the account card, or Edit account). With this ticked, those accounts join their own game while the others use the choice above. If every selected account has its own game, the form above is not needed at all.",
                 chkUseSaved);
 
-            p.Opt("Remember this Place / Job on the selected accounts.",
+            p.Opt("Remember this Place / Job on the selection.",
                 "Copies the Place ID (and Job ID, if 'specific server' is chosen) above into the game field of every selected account, so 'Launch selected' can send every account to its own favourite game later.",
                 Ui.Btn("Save to selected accounts", 200, delegate { SaveToSelected(); }, ""));
 

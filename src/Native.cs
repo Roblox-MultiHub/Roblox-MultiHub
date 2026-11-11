@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Forms;
 
 namespace RobloxMultiHub
 {
@@ -169,6 +170,26 @@ namespace RobloxMultiHub
 
         [DllImport("user32.dll", EntryPoint = "PostMessageW")]
         public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+        public const uint WM_NCLBUTTONDOWN = 0x00A1;
+        public static readonly IntPtr HTCAPTION = (IntPtr)2;
+
+        [DllImport("user32.dll")]
+        public static extern bool ReleaseCapture();
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr SendMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+        // Starts a native window drag from any control: makes Windows believe the mouse went down on
+        // the (nonexistent) title bar. Real clicks over child controls never reach the form's
+        // WM_NCHITTEST, so the header controls must call this themselves.
+        public static void DragWindow(Control from)
+        {
+            Form f = from.FindForm();
+            if (f == null) return;
+            ReleaseCapture();
+            SendMessage(f.Handle, WM_NCLBUTTONDOWN, HTCAPTION, IntPtr.Zero);
+        }
 
         [DllImport("user32.dll")]
         public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint modifiers, uint vk);
