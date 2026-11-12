@@ -9,7 +9,7 @@ using System.Windows.Forms;
 
 namespace RobloxMultiHub
 {
-    // The live status embed ("Log status" in Settings): ONE message in the channel, edited in
+    // The live status embed (Lang.T("Log status") in Settings): ONE message in the channel, edited in
     // place on every refresh, with a chart image of total CPU / RAM history attached.
     //   Accounts: 7/7 | CPU: 12.3% | RAM: 4.2 GB
     //   **[game](link)**

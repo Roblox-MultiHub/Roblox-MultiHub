@@ -80,7 +80,7 @@ namespace RobloxMultiHub
 
             // ---- mode ----
             p.Section("Layout mode");
-            rbAuto = Ui.Rad("Automatic grid  (default)", L.Mode != "Grid" && L.Mode != "FixedSize", null);
+            rbAuto = Ui.Rad(Lang.T("Automatic grid  (default)"), L.Mode != "Grid" && L.Mode != "FixedSize", null);
             p.Opt("Automatic rows and columns.",
                 "Picks rows and columns from the number of windows and your screen shape: 2 windows = side by side, 4 = 2x2, 6 = 3x2, 9 = 3x3. Every window gets the same share of the screen.\n\nIf Roblox's minimum window size does not allow that, the windows overlap neatly instead (the preview shows it).",
                 rbAuto);
@@ -126,7 +126,7 @@ namespace RobloxMultiHub
 
             // ---- automation ----
             p.Section(Lang.T("Automation"));
-            chkAuto = Ui.Chk("Auto-capture new Roblox windows", L.AutoCapture, null);
+            chkAuto = Ui.Chk(Lang.T("Auto-capture new Roblox windows"), L.AutoCapture, null);
             p.Opt("Re-arranges when windows open or close.",
                 "When ON, the layout is applied automatically a moment after a Roblox window opens or closes. It never moves windows continuously, so you can still drag one by hand in between.",
                 chkAuto);
@@ -172,7 +172,7 @@ namespace RobloxMultiHub
                 + "Sort Mode fixes the order the grid is filled in: 'Manual' keeps the order of the list (move rows up/down yourself), 'Account name' sorts by account (account1, account3, account10 - digits count as numbers), 'PID' sorts by process id, lowest first. Windows without an account name go last.",
                 Ui.Btn(Lang.T("Arrange now"), 130, delegate { ArrangeNow(); }, "primary"),
                 Ui.Btn("Refresh list", 110, delegate { RefreshWindowList(); }, ""),
-                Ui.Btn("Restore borders", 130, delegate { WindowLayout.RestoreBorders(); AddLog("Window borders restored."); }, ""),
+                Ui.Btn(Lang.T("Restore borders"), 130, delegate { WindowLayout.RestoreBorders(); AddLog("Window borders restored."); }, ""),
                 cbSortMode);
             p.RowTip("The order of this list decides which window gets which grid cell (left to right, top to bottom). 'Include / exclude' (or a double-click) takes a window out of the grid. 'Pin' places one window at an exact position and size and remembers it for that account. A line without a title is a Roblox process that has not opened its window yet, or a background process.",
                 Ui.Btn("Move up", 78, delegate { MoveRow(-1); }, ""),

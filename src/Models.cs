@@ -184,7 +184,7 @@ namespace RobloxMultiHub
         public bool DiscordRpc = true;
         public string DiscordAppId = "";
 
-        // "Max alts": throttle the Roblox windows you are NOT playing, so many clients stay light.
+        // Lang.T("Max alts"): throttle the Roblox windows you are NOT playing, so many clients stay light.
         public bool MaxAlts = false;
         public int MaxAltsFps = 10;                 // FPS cap used for new launches while Max alts is on
         public bool MaxAltsIdle = true;             // background clients get Idle CPU priority + efficiency mode

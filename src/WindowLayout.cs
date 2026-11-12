@@ -36,7 +36,7 @@ namespace RobloxMultiHub
         public const int FramedMinW = 816;
         public const int FramedMinH = 638;
 
-        // Original window styles, so "Restore borders" can undo borderless mode.
+        // Original window styles, so Lang.T("Restore borders") can undo borderless mode.
         public static readonly Dictionary<IntPtr, int> OriginalStyles = new Dictionary<IntPtr, int>();
 
         // ---------------- monitors ----------------

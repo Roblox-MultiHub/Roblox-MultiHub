@@ -54,7 +54,7 @@ namespace RobloxMultiHub
                 : Lang.T("Not measured yet on this PC."), "muted");
             p.Row(lblProbe);
 
-            p.Opt("Quick numbers without a probe.",
+            p.Opt(Lang.T("Quick numbers without a probe."),
                 "Reads cores, RAM, GPU counters, disks, pagefile and the clients currently running, and estimates how many windows this PC can run. The real per-window cap comes from the probe above.",
                 Ui.Btn(Lang.T("Run diagnostics"), 150, delegate { BetaDiagnostics(); }, ""));
 

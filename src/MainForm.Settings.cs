@@ -100,7 +100,7 @@ namespace RobloxMultiHub
                 chkCheckLogins);
 
             p.Section(Lang.T("Automation"));
-            chkRelaunch = Ui.Chk("Auto-relaunch (watcher)", S.AutoRelaunch, null);
+            chkRelaunch = Ui.Chk(Lang.T("Auto-relaunch (watcher)"), S.AutoRelaunch, null);
             p.Opt("Relaunches accounts whose window disappeared.",
                 "OFF by default. If a Roblox window that this app started disappears (crash, kick, closed), the same account is launched again into the same game. Use the Close / Stop buttons of this app to close windows on purpose.",
                 chkRelaunch);
@@ -109,10 +109,10 @@ namespace RobloxMultiHub
                 "The watcher only looks at windows that this app started.",
                 Ui.Fld("Check every (seconds)", 190), numWatcher);
             chkWatcherPresence = Ui.Chk("Also relaunch when the account left the game", S.WatcherUsePresence, null);
-            p.Opt("Catches windows open after a disconnect.",
+            p.Opt(Lang.T("Catches windows open after a disconnect."),
                 "Uses Roblox's presence information: if an account is no longer in a game for two checks in a row, its window is closed and the account is launched again.",
                 chkWatcherPresence);
-            chkCrashBreaker = Ui.Chk("Crash breaker", S.CrashBreaker, null);
+            chkCrashBreaker = Ui.Chk(Lang.T("Crash breaker"), S.CrashBreaker, null);
             numCrashMax = Ui.Num(1, 20, S.CrashBreakerMax, 70);
             p.Opt("Stops relaunching an account that keeps dying.",
                 "ON by default. Without it, auto-relaunch would keep restarting an account forever if it crashes or is locked straight away - spamming launches and Discord alerts. With it on, if the watcher has to relaunch the same account this many times within a few minutes, it gives up on that one account and leaves it alone for about " + S.CrashBreakerCooldownMin + " minutes (or until you launch it yourself). The other accounts keep running normally.",
@@ -139,7 +139,7 @@ namespace RobloxMultiHub
             p.Opt("Paste your webhook URL.",
                 "Looks like https://discord.com/api/webhooks/123.../abc... . Use 'Send a test message' to check it works.",
                 Ui.Fld("Webhook URL", 120), tbWebhook,
-                Ui.Btn("Send a test message", 170, delegate { SendWebhookTest(); }, ""));
+                Ui.Btn(Lang.T("Send a test message"), 170, delegate { SendWebhookTest(); }, ""));
             chkWebhookCrash = Ui.Chk("A client closed unexpectedly (crash / kick)", S.WebhookCrash, null);
             p.Opt("A window disappeared on its own.",
                 "Posted when a Roblox window that MultiHub launched closes without you asking - a crash, a kick, or a disconnect. Windows you close yourself are never reported.",
@@ -157,7 +157,7 @@ namespace RobloxMultiHub
                 "Posted when a check or launch finds that Roblox has locked or blocked an account (HTTP 403), so you notice straight away which account needs attention.",
                 chkWebhookLocked);
 
-            chkWebhookStatus = Ui.Chk("Log status", S.WebhookStatus, null);
+            chkWebhookStatus = Ui.Chk(Lang.T("Log status"), S.WebhookStatus, null);
             p.Opt("One live status message in the channel.",
                 "ON: MultiHub posts one message listing every running account - username (linked to its profile), uptime as a live Discord timestamp, the game it is in (linked) and average CPU / RAM since the last update - and EDITS that same message on every refresh instead of posting again. Needs the webhook above. Minimum 15 seconds.",
                 chkWebhookStatus);
@@ -238,7 +238,7 @@ namespace RobloxMultiHub
             p.Section(Lang.T("Support this project"));
             p.Opt("Free - donations keep it going.",
                 "This tool is built by our team in a lot of free time and stays completely free. If it saves you time and you want to say thanks, a small donation is hugely appreciated - it is never required and nothing is locked behind it. The button opens the donation page in your browser.",
-                Ui.Btn("Buy us a coffee", 170, delegate { OpenDonate(); }, "primary"));
+                Ui.Btn(Lang.T("Buy us a coffee"), 170, delegate { OpenDonate(); }, "primary"));
             p.Opt("News, help and tickets.",
                 "Opens the Roblox MultiHub Discord server in your browser: announcements, update logs, a general chat and a support ticket system if you need help.",
                 Ui.Btn("Join our Discord", 150, delegate { OpenLink(DiscordUrl, "Discord"); }, ""));

@@ -176,7 +176,7 @@ namespace RobloxMultiHub
                     "Anti-AFK (Settings, off by default) - Roblox kicks accounts after about 20 minutes without input. When ON, every X minutes (default 12, you set it) each Roblox window started by this app comes to the front for about a third of a second, gets one small input and the window you were using is put back. The window you are using yourself is skipped. Pick the action: 'Mouse nudge' (default) resets the idle timer without moving your character, so auto-hatch / auto-farm keep running; 'Jump' presses Space; 'Zoom' presses I then O.",
                     "Auto-relaunch (Settings) - relaunches an account whose window disappeared (crash, kick, closed) into the same game. 'Also relaunch when the account left the game' catches windows that stay open after a disconnect." },
 
-                new string[] { "Macro recorder",
+                new string[] { Lang.T("Macro recorder"),
                     "The Macro button (next to Help) opens a TinyTask-style recorder in its own window. Record (Ctrl+Shift+Alt+R) records your mouse and keyboard, Play (Ctrl+Shift+Alt+P) plays it back; press the same hotkey or button again to stop. The hotkeys also work while a game has the focus.",
                     "Save / Open keep recordings as .rmacro files. Options: playback speed, play N times or until stopped, a pause between repeats, record mouse movement (high resolution or not), your own hotkeys, stay on top (only the macro window, not the hub) and hide the window while it runs.",
                     "'Small' shrinks the window to just the buttons; 'Large' shows all options again. The window remembers which one you used last." },

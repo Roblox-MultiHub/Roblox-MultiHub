@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace RobloxMultiHub
 {
     // Discord Rich Presence: shows "Playing Roblox MultiHub" on your Discord profile while the app runs,
-    // with how many accounts are running, a timer, and "Get Roblox MultiHub" / "Join Discord" buttons.
+    // with how many accounts are running, a timer, and Lang.T("Get Roblox MultiHub") / Lang.T("Join Discord") buttons.
     // It talks to the Discord app already on your PC over its local IPC pipe - no bot token, no library,
     // and nothing leaves your PC except to Discord itself. Needs a Discord Application ID (Settings).
     public static class DiscordRpc
@@ -56,7 +56,7 @@ namespace RobloxMultiHub
         static void DoUpdate(int running, int saved)
         {
             if (!Ensure()) return;
-            string details = running > 0 ? ("Running " + running + (running == 1 ? " alt" : " alts")) : "Multi-account launcher";
+            string details = running > 0 ? ("Running " + running + (running == 1 ? " alt" : " alts")) : Lang.T("Multi-account launcher");
             string state = saved > 0 ? (saved + (saved == 1 ? " account saved" : " accounts saved")) : "Free & open source";
 
             Dictionary<string, object> ts = new Dictionary<string, object>(); ts["start"] = startEpoch;

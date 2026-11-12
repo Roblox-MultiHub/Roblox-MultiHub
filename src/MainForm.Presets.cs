@@ -328,7 +328,7 @@ namespace RobloxMultiHub
 
         async void RunPreset(Preset pr)
         {
-            if (launching) { AddLog("A launch is already running. Press Stop to cancel it."); return; }
+            if (launching) { AddLog(Lang.T("A launch is already running. Press Stop to cancel it.")); return; }
             AddLog("Running preset '" + pr.Name + "'...");
 
             // Remember your own MultiHub settings, so the preset's settings apply only for this run and

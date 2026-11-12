@@ -55,7 +55,7 @@ namespace RobloxMultiHub
             RoundTextBox t2 = null;
             if (confirm)
             {
-                Put(f, Ui.Lbl("Type it again:", "muted"), 16, 80);
+                Put(f, Ui.Lbl(Lang.T("Type it again:"), "muted"), 16, 80);
                 t2 = Put(f, Ui.Txt(386, ""), 16, 102);
                 t2.UseSystemPasswordChar = true;
             }
@@ -64,8 +64,8 @@ namespace RobloxMultiHub
             while (true)
             {
                 if (f.ShowDialog(owner) != DialogResult.OK) { f.Dispose(); return null; }
-                if (t1.Text.Length == 0) { MessageBox.Show(f, "The password cannot be empty."); continue; }
-                if (confirm && t1.Text != t2.Text) { MessageBox.Show(f, "The two passwords do not match."); continue; }
+                if (t1.Text.Length == 0) { MessageBox.Show(f, Lang.T("The password cannot be empty.")); continue; }
+                if (confirm && t1.Text != t2.Text) { MessageBox.Show(f, Lang.T("The two passwords do not match.")); continue; }
                 string pw = t1.Text;
                 f.Dispose();
                 return pw;
@@ -113,7 +113,7 @@ namespace RobloxMultiHub
         // Paste any text that contains cookies. Returns the raw text or null.
         public static string PasteCookies(IWin32Window owner)
         {
-            Form f = Make("Add accounts from cookies", 620, 380);
+            Form f = Make(Lang.T("Add accounts from cookies"), 620, 380);
             Put(f, Ui.Lbl("Paste one or more .ROBLOSECURITY cookies below (any text is fine - the app finds the cookies itself).\r\nEach cookie starts with  _|WARNING:-DO-NOT-SHARE-THIS...", "muted"), 16, 12);
             TextBox t = new TextBox();
             t.Multiline = true;
@@ -137,7 +137,7 @@ namespace RobloxMultiHub
         // Paste a list of user:password lines. Returns the raw text, or null if cancelled.
         public static string PasteUserPass(IWin32Window owner)
         {
-            Form f = Make("Add several accounts (username:password)", 620, 400);
+            Form f = Make(Lang.T("Add several accounts (username:password)"), 620, 400);
             Put(f, Ui.Lbl("Paste one account per line, as  username:password  - exactly like Roblox Account Manager:\r\n\r\n    myaccount1:mypassword1\r\n    myaccount2:mypassword2\r\n\r\nA browser window opens for each account with the fields already filled in. You still press 'Log In'\r\nyourself (and solve any captcha / 2-step); the account is then added automatically.", "muted"), 16, 12);
             TextBox t = new TextBox();
             t.Multiline = true;
@@ -171,7 +171,7 @@ namespace RobloxMultiHub
             }
             else
             {
-                Put(f, Ui.Lbl("Roblox user: " + a.Username + "   (ID " + a.UserId + ")", "muted"), 16, y);
+                Put(f, Ui.Lbl(Lang.T("Roblox user: ") + a.Username + "   (ID " + a.UserId + ")", "muted"), 16, y);
                 y += 30;
             }
 
@@ -183,10 +183,10 @@ namespace RobloxMultiHub
             string cJob = Common(list, x => x.SavedJobId);
             int cFps = list.All(x => x.FpsCap == a.FpsCap) ? a.FpsCap : -1;
 
-            RoundTextBox alias = AddField(f, Mixed("Alias (nickname shown in the list)", cAlias), cAlias, ref y);
-            RoundTextBox desc = AddField(f, Mixed("Description / notes", cDesc), cDesc, ref y);
+            RoundTextBox alias = AddField(f, Mixed(Lang.T("Alias (nickname shown in the list)"), cAlias), cAlias, ref y);
+            RoundTextBox desc = AddField(f, Mixed(Lang.T("Description / notes"), cDesc), cDesc, ref y);
 
-            Put(f, Ui.Lbl(Mixed("Group (type a new name to create a group)", cGroup), "muted"), 16, y);
+            Put(f, Ui.Lbl(Mixed(Lang.T("Group (type a new name to create a group)"), cGroup), "muted"), 16, y);
             DarkCombo grp = new DarkCombo();
             grp.DropDownStyle = ComboBoxStyle.DropDown;
             grp.Width = 488;
@@ -196,10 +196,10 @@ namespace RobloxMultiHub
             Put(f, grp, 16, y + 18);
             y += 50;
 
-            RoundTextBox pass = AddField(f, Mixed("Password (optional - only so you can copy it later)", cPass), cPass, ref y);
+            RoundTextBox pass = AddField(f, Mixed(Lang.T("Password (optional - only so you can copy it later)"), cPass), cPass, ref y);
             pass.UseSystemPasswordChar = true;
-            RoundTextBox place = AddField(f, Mixed("Game for this account - game link, private server link or Place ID", cGame), cGame, ref y);
-            RoundTextBox job = AddField(f, Mixed("Saved Job ID / server (optional)", cJob), cJob, ref y);
+            RoundTextBox place = AddField(f, Mixed(Lang.T("Game for this account - game link, private server link or Place ID"), cGame), cGame, ref y);
+            RoundTextBox job = AddField(f, Mixed(Lang.T("Saved Job ID / server (optional)"), cJob), cJob, ref y);
 
             Put(f, Ui.Lbl(cFps < 0 ? "FPS cap  (0 = use the global cap)  - different per account" : "FPS cap for this account  (0 = use the global cap)", "muted"), 16, y + 4);
             NumericUpDown fps = Put(f, Ui.Num(0, 1000, Math.Max(0, cFps), 80), 424, y);

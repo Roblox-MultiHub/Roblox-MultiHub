@@ -939,7 +939,7 @@ namespace RobloxMultiHub
                 {
                     log("Watcher: " + AppState.Name(d.Account) + " has crashed too often - the crash breaker will stop relaunching it for " + Math.Max(1, Store.Settings.CrashBreakerCooldownMin) + " min.");
                     if (Store.Settings.WebhookCrash)
-                        Webhook.Send("Crash breaker", AppState.Name(d.Account) + " crashed too many times - auto-relaunch paused for " + Math.Max(1, Store.Settings.CrashBreakerCooldownMin) + " min.", Webhook.Red);
+                        Webhook.Send(Lang.T("Crash breaker"), AppState.Name(d.Account) + " crashed too many times - auto-relaunch paused for " + Math.Max(1, Store.Settings.CrashBreakerCooldownMin) + " min.", Webhook.Red);
                 }
                 await Task.Delay(Math.Max(1, Store.Settings.LaunchDelaySec) * 1000);
             }

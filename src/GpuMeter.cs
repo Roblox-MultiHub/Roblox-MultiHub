@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace RobloxMultiHub
 {
-    // Per-process GPU utilization from the Windows "GPU Engine" performance counters (the same
+    // Per-process GPU utilization from the Windows Lang.T("GPU Engine") performance counters (the same
     // numbers Task Manager shows). Instance names look like pid_1234_luid_..._engtype_3D; every
     // engine of a process is summed.
     // IMPORTANT: NextValue() on these counters takes tens to hundreds of milliseconds EACH - with a

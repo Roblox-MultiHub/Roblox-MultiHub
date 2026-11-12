@@ -39,7 +39,7 @@ namespace RobloxMultiHub
 
             p.Section("Frame rate");
             numFps = Ui.Num(0, 1000, Store.Settings.FpsCap, 80);
-            p.Opt("Caps FPS of every window (0 = off).",
+            p.Opt(Lang.T("Caps FPS of every window (0 = off)."),
                 "Caps how many frames per second each Roblox window renders. Lower values use much less CPU and GPU - 30 is a good value for many accounts.\n\nThis changes Roblox's own settings file (the same 'FramerateCap' value you can edit by hand in GlobalBasicSettings_13.xml) right before every launch, so it applies to every account you launch until you change it here. Roblox reads it when a window starts: windows that are already open keep their old cap until you relaunch them. Setting 0 gives control back to Roblox.",
                 Ui.Fld("FPS cap", 120), numFps);
 
@@ -48,7 +48,7 @@ namespace RobloxMultiHub
             p.Opt("Quick presets for everything below.",
                 "A preset simply fills in the options below. Change a single option and the preset switches to 'Custom'.\n\nThe settings are written into Roblox right before every launch, so they apply to EVERY account you launch from this app until you change them here again.",
                 Ui.Fld("Preset", 120), cbPreset);
-            cbQuality = Ui.Cmb(200, "Roblox default", "1  (lowest)", "2", "3", "4", "5", "6", "8", "10", "15", "21  (highest)");
+            cbQuality = Ui.Cmb(200, Lang.T("Roblox default"), "1  (lowest)", "2", "3", "4", "5", "6", "8", "10", "15", "21  (highest)");
             p.Opt("Lower = less GPU and CPU.",
                 "Forces Roblox's graphics-quality level in every game. Low numbers remove most of the shadows, effects and detail, which typically cuts GPU and CPU work a lot. 'Roblox default' leaves the decision to Roblox.",
                 Ui.Fld("Graphics quality", 120), cbQuality);
@@ -260,7 +260,7 @@ namespace RobloxMultiHub
             p.Opt("Frees unused RAM of background windows.",
                 "Empties the working set of each background client, which pushes memory it is not actively using back to Windows. No admin rights needed - it only touches the clients this app launched.",
                 chkMaxTrim);
-            chkMaxMin = Ui.Chk("Also minimize background windows", Store.Settings.MaxAltsMinimize, null);
+            chkMaxMin = Ui.Chk(Lang.T("Also minimize background windows"), Store.Settings.MaxAltsMinimize, null);
             p.Opt("Minimized Roblox windows usually render even less.",
                 "Optional. Minimizes every client except the one you are in. It fights with the Layout page (which arranges windows on screen), so leave it off if you tile your windows.",
                 chkMaxMin);

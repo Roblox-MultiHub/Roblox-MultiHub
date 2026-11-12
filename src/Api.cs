@@ -141,16 +141,16 @@ namespace RobloxMultiHub
             try
             {
                 ApiResult r = await Req(HttpMethod.Get, "https://users.roblox.com/v1/users/authenticated", cookie, null, null, null);
-                if (r.Status == HttpStatusCode.Unauthorized) { u.Error = "Cookie expired or invalid"; return u; }
-                if ((int)r.Status == 403) { u.Locked = true; u.Error = "Account locked or blocked by Roblox (HTTP 403)"; return u; }
-                if ((int)r.Status == 429) { u.Error = "Rate limited (HTTP 429) - try again in a minute"; return u; }
+                if (r.Status == HttpStatusCode.Unauthorized) { u.Error = Lang.T("Cookie expired or invalid"); return u; }
+                if ((int)r.Status == 403) { u.Locked = true; u.Error = Lang.T("Account locked or blocked by Roblox (HTTP 403)"); return u; }
+                if ((int)r.Status == 429) { u.Error = Lang.T("Rate limited (HTTP 429) - try again in a minute"); return u; }
                 if (!r.Ok) { u.Error = "HTTP " + (int)r.Status; return u; }
                 object j = Json.Parse(r.Body);
                 u.Id = Json.Long(j, "id");
                 u.Name = Json.Str(j, "name");
                 u.Display = Json.Str(j, "displayName");
                 u.Valid = u.Id > 0;
-                if (!u.Valid) u.Error = "Unexpected response";
+                if (!u.Valid) u.Error = Lang.T("Unexpected response");
             }
             catch (Exception ex) { u.Error = ex.Message; }
             return u;
@@ -244,7 +244,7 @@ namespace RobloxMultiHub
                     u.Valid = u.Id > 0;
                     return u;
                 }
-                u.Error = "User not found";
+                u.Error = Lang.T("User not found");
             }
             catch (Exception ex) { u.Error = ex.Message; }
             return u;

@@ -89,7 +89,7 @@ namespace RobloxMultiHub
 
             chkUseSaved = Ui.Chk("Use each account's own game when it has one", Store.Settings.UseSavedPerAccount, null);
             chkUseSaved.CheckedChanged += delegate { Store.Settings.UseSavedPerAccount = chkUseSaved.Checked; Store.SaveSettings(); };
-            p.Opt("Accounts with their own game ignore this.",
+            p.Opt(Lang.T("Accounts with their own game ignore this."),
                 "Every account can have its own game (game field on the account card, or Edit account). With this ticked, those accounts join their own game while the others use the choice above. If every selected account has its own game, the form above is not needed at all.",
                 chkUseSaved);
 
@@ -362,7 +362,7 @@ namespace RobloxMultiHub
 
         async void StartLaunch(List<Account> accs)
         {
-            if (launching) { AddLog("A launch is already running. Press Stop to cancel it."); return; }
+            if (launching) { AddLog(Lang.T("A launch is already running. Press Stop to cancel it.")); return; }
             SetLaunching(true);
             try
             {

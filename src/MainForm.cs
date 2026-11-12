@@ -1041,7 +1041,7 @@ namespace RobloxMultiHub
             cbGroupFilter.SelectedIndexChanged += delegate { if (!suspendSel) { RefreshAccountList(); NudgeList(); } };
             btnViewList = Ui.Btn(Lang.T("List"), 52, delegate { SetView(false); }, "toggle");
             btnViewList.Margin = new Padding(0, 7, 2, 0);
-            Ui.Tips.SetToolTip(btnViewList, "Compact list with profile pictures.");
+            Ui.Tips.SetToolTip(btnViewList, Lang.T("Compact list with profile pictures."));
             btnViewCards = Ui.Btn(Lang.T("Cards"), 60, delegate { SetView(true); }, "toggle");
             btnViewCards.Margin = new Padding(0, 7, 0, 0);
             filt.Padding = new Padding(12, 0, 12, 0);        // same left edge as the toolbar and rows
@@ -1251,7 +1251,7 @@ namespace RobloxMultiHub
         void RebuildGroupMenu()
         {
             miGroup.DropDownItems.Clear();
-            miGroup.DropDownItems.Add(Ui.Item("(no group)", delegate { SetGroup(""); }));
+            miGroup.DropDownItems.Add(Ui.Item(Lang.T("(no group)"), delegate { SetGroup(""); }));
             foreach (string g in Store.AllGroups())
             {
                 string name = g;
@@ -1866,7 +1866,7 @@ namespace RobloxMultiHub
         {
             using (OpenFileDialog d = new OpenFileDialog())
             {
-                d.Title = "Choose a text file that contains cookies";
+                d.Title = Lang.T("Choose a text file that contains cookies");
                 d.Filter = "Text / JSON files|*.txt;*.json;*.csv;*.log|All files|*.*";
                 if (d.ShowDialog(this) != DialogResult.OK) return;
                 try { AddFromText(File.ReadAllText(d.FileName)); }

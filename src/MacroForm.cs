@@ -70,7 +70,7 @@ namespace RobloxMultiHub
             bar.Visible = false;
             Controls.Add(bar);
             PageBuilder p = new PageBuilder(host, W);
-            p.Title("Macro recorder", "Record your mouse and keyboard and play it back, like TinyTask. The hotkeys also work while a game has the focus.");
+            p.Title(Lang.T("Macro recorder"), "Record your mouse and keyboard and play it back, like TinyTask. The hotkeys also work while a game has the focus.");
 
             btnOpen = Ui.Btn("Open...", 70, delegate { OpenFile(); }, "");
             btnSave = Ui.Btn("Save...", 70, delegate { SaveFile(); }, "");

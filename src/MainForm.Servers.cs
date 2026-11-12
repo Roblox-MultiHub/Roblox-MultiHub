@@ -37,13 +37,13 @@ namespace RobloxMultiHub
             lvGames.Size = new Size(PageW - PageBuilder.PadX * 2, 150);
             lvGames.Columns.Add("Game", 290);
             lvGames.Columns.Add("Players", 90);
-            lvGames.Columns.Add("Place ID", 110);
+            lvGames.Columns.Add(Lang.T("Place ID"), 110);
             lvGames.MultiSelect = false;
             ListStyle.Attach(lvGames);
             p.Add(lvGames);
             p.Opt("Use a result as the game.",
                 "'Use this game' puts its Place ID on the Launch page. 'Show its servers' also loads the running servers of that game in the server browser below.",
-                Ui.Btn("Use this game", 130, delegate { UseSelectedGame(false); }, "primary"),
+                Ui.Btn(Lang.T("Use this game"), 130, delegate { UseSelectedGame(false); }, "primary"),
                 Ui.Btn("Show its servers", 140, delegate { UseSelectedGame(true); }, ""));
 
             p.Section("Server browser");
@@ -55,7 +55,7 @@ namespace RobloxMultiHub
 
             lvServers = new BufferedListView();
             lvServers.Size = new Size(PageW - PageBuilder.PadX * 2, 210);
-            lvServers.Columns.Add("Server (Job ID)", 270);
+            lvServers.Columns.Add(Lang.T("Server (Job ID)"), 270);
             lvServers.Columns.Add("Players", 80);
             lvServers.Columns.Add("Ping", 60);
             lvServers.Columns.Add("FPS", 60);
@@ -63,7 +63,7 @@ namespace RobloxMultiHub
             ListStyle.Attach(lvServers);
             p.Add(lvServers);
 
-            btnMore = Ui.Btn("Load more", 100, delegate { LoadServers(true); }, "");
+            btnMore = Ui.Btn(Lang.T("Load more"), 100, delegate { LoadServers(true); }, "");
             btnMore.Enabled = false;
             p.Opt("Sends the selection into that server.",
                 "'Join with selected accounts' launches every account you selected on the left into exactly this server, so they all end up together.",
