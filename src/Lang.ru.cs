@@ -1,0 +1,65 @@
+using System.Collections.Generic;
+
+namespace RobloxMultiHub
+{
+    public partial class Lang
+    {
+        static readonly Dictionary<string, string> Russian = new Dictionary<string, string>
+        {
+            { "\U0001F680  Launch", "\U0001F680  Запуск" }, { "\U0001F310  Servers", "\U0001F310  Серверы" },
+            { "\U0001F5A5  Layout", "\U0001F5A5  Раскладка" }, { "\U0001F4CA  Monitor", "\U0001F4CA  Монитор" },
+            { "\U0001F4C4  Presets", "\U0001F4C4  Пресеты" }, { "\u26A1  Perf", "\u26A1  Производительность" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  Бета" }, { "\u2699  Settings", "\u2699  Настройки" },
+            { "\u2753  Help", "\u2753  Помощь" }, { "Accounts", "Аккаунты" },
+            { "Launch selected", "Запустить выбранные" }, { "Launch all", "Запустить все" },
+            { "Launch all listed", "Запустить все" }, { "Stop", "Стоп" }, { "Stop all", "Остановить все" },
+            { "Add accounts", "Добавить аккаунты" }, { "Save preset", "Сохранить пресет" },
+            { "Run diagnostics", "Запустить диагностику" }, { "Check for updates", "Проверить обновления" },
+            { "Back up now", "Сделать бэкап" }, { "Clean memory now", "Очистить память" },
+            { "Arrange now", "Разложить окна" }, { "Close all Roblox processes", "Закрыть все процессы Roblox" },
+            { "Apply to running windows", "Применить к запущенным окнам" }, { "Allow click", "Разрешить клики" },
+            { "Reset secret counters", "Сбросить счётчики секретов" },
+            { "Copy a fresh login ticket", "Скопировать новый тикет входа" },
+            { "Open profile in browser", "Открыть профиль в браузере" },
+            { "Log in with a browser (Edge / Chrome)...", "Войти через браузер (Edge / Chrome)..." },
+            { "Add several with username:password...", "Добавить несколько (логин:пароль)..." },
+            { "Paste cookie(s)...", "Вставить cookie..." }, { "Import cookies from a file...", "Импортировать cookie из файла..." },
+            { "Browse...", "Обзор..." }, { "Cancel", "Отмена" }, { "Check", "Проверить" },
+            { "All groups", "Все группы" }, { "New group...", "Новая группа..." }, { "New group", "Новая группа" },
+            { "Name of the new group:", "Название новой группы:" },
+            { "Max RAM per window", "Макс. RAM на окно" },
+            { "Measured floor on this PC:", "Замеренный минимум на этом ПК:" }, { "Not measured yet on this PC.", "На этом ПК ещё не замерялось." },
+            { "Refresh every (seconds)", "Обновлять каждые (секунд)" }, { "Discord alerts", "Оповещения Discord" },
+            { "Use Windows encryption", "Использовать шифрование Windows" }, { "Support this project", "Поддержать проект" },
+            { "Update available", "Доступно обновление" }, { "Sort accounts by", "Сортировать аккаунты по" },
+            { "My own order (Up / Down buttons)", "Свой порядок (кнопки Вверх / Вниз)" },
+            { "Name  (click again to reverse)", "Имя  (ещё раз — обратный порядок)" },
+            { "CPU usage", "Загрузка ЦП" }, { "Last used", "Последнее использование" }, { "Move to group", "Переместить в группу" },
+            { "In game", "В игре" }, { "Not checked", "Не проверен" }, { "User ID", "ID пользователя" },
+            { "Show account details (age, Robux, Premium)", "Показать данные аккаунта (возраст, Robux, Premium)" },
+            { "Roblox CPU", "ЦП Roblox" }, { "Roblox memory", "Память Roblox" },
+            { "Right now: no Roblox window is running.", "Сейчас не запущено ни одного окна Roblox." },
+            { "Running now:", "Запущено сейчас:" }, { "CPU priority", "Приоритет ЦП" },
+            { "Anti-AFK", "Анти-АФК" }, { "Automation", "Автоматизация" }, { "Advanced", "Дополнительно" },
+            { "Appearance & startup", "Вид и запуск" }, { "Anti-aliasing", "Сглаживание" },
+            { "Hold (ms)", "Удержание (мс)" }, { "X offset", "Смещение X" }, { "Y offset", "Смещение Y" },
+            { "Max click tries", "Макс. попыток клика" },
+            { "Select an account first.", "Сначала выберите аккаунт." },
+            { "Select one or more accounts in the list first.", "Сначала выберите один или несколько аккаунтов в списке." },
+            { "Enter a Place ID first.", "Сначала введите Place ID." },
+            { "Select a preset in the list first.", "Сначала выберите пресет в списке." },
+            { "Select a game in the list first.", "Сначала выберите игру в списке." },
+            { "Select a server in the list first.", "Сначала выберите сервер в списке." },
+            { "Could not load servers:", "Не удалось загрузить серверы:" },
+            { "Launch failed:", "Не удалось запустить:" },
+            { "Account locked", "Аккаунт заблокирован" }, { "Cookie expired", "Cookie истёк" },
+            { "Welcome to Roblox MultiHub", "Добро пожаловать в Roblox MultiHub" },
+            { "Add your accounts", "Добавьте свои аккаунты" }, { "Pick a game", "Выберите игру" },
+            { "Press Launch", "Нажмите «Запуск»" }, { "Go to Launch", "Перейти к запуску" },
+            { "Close Roblox MultiHub", "Закрыть Roblox MultiHub" },
+            { "Loading servers...", "Загрузка серверов..." }, { "Searching...", "Поиск..." },
+            { "Backup saved in ", "Бэкап сохранён в " },
+            { "Backups are made automatically.", "Бэкапы создаются автоматически." }
+        };
+    }
+}

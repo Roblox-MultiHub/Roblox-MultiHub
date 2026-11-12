@@ -226,7 +226,7 @@ namespace RobloxMultiHub
             bool rec = MacroRecorder.Recording;
             bool play = player.Playing;
             btnRec.Text = rec ? "Stop rec." : "Record";
-            btnPlay.Text = play ? "Stop" : "Play";
+            btnPlay.Text = play ? Lang.T("Stop") : "Play";
             btnRec.Enabled = !play;
             btnPlay.Enabled = !rec && (play || events.Count > 0);
             btnOpen.Enabled = !rec && !play;

@@ -1,0 +1,65 @@
+using System.Collections.Generic;
+
+namespace RobloxMultiHub
+{
+    public partial class Lang
+    {
+        static readonly Dictionary<string, string> ChineseSimplified = new Dictionary<string, string>
+        {
+            { "\U0001F680  Launch", "\U0001F680  启动" }, { "\U0001F310  Servers", "\U0001F310  服务器" },
+            { "\U0001F5A5  Layout", "\U0001F5A5  布局" }, { "\U0001F4CA  Monitor", "\U0001F4CA  监控" },
+            { "\U0001F4C4  Presets", "\U0001F4C4  预设" }, { "\u26A1  Perf", "\u26A1  性能" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  测试" }, { "\u2699  Settings", "\u2699  设置" },
+            { "\u2753  Help", "\u2753  帮助" }, { "Accounts", "账号" },
+            { "Launch selected", "启动所选" }, { "Launch all", "启动全部" },
+            { "Launch all listed", "启动全部" }, { "Stop", "停止" }, { "Stop all", "全部停止" },
+            { "Add accounts", "添加账号" }, { "Save preset", "保存预设" },
+            { "Run diagnostics", "运行诊断" }, { "Check for updates", "检查更新" },
+            { "Back up now", "立即备份" }, { "Clean memory now", "立即清理内存" },
+            { "Arrange now", "立即排列" }, { "Close all Roblox processes", "关闭所有 Roblox 进程" },
+            { "Apply to running windows", "应用到运行中的窗口" }, { "Allow click", "允许点击" },
+            { "Reset secret counters", "重置秘密计数器" },
+            { "Copy a fresh login ticket", "复制新的登录票据" },
+            { "Open profile in browser", "在浏览器中打开主页" },
+            { "Log in with a browser (Edge / Chrome)...", "使用浏览器登录 (Edge / Chrome)..." },
+            { "Add several with username:password...", "批量添加账号（用户名:密码）..." },
+            { "Paste cookie(s)...", "粘贴 Cookie..." }, { "Import cookies from a file...", "从文件导入 Cookie..." },
+            { "Browse...", "浏览..." }, { "Cancel", "取消" }, { "Check", "检查" },
+            { "All groups", "所有分组" }, { "New group...", "新建分组..." }, { "New group", "新建分组" },
+            { "Name of the new group:", "新分组的名称：" },
+            { "Max RAM per window", "每个窗口最大内存" },
+            { "Measured floor on this PC:", "本机测得的下限：" }, { "Not measured yet on this PC.", "本机尚未测量。" },
+            { "Refresh every (seconds)", "刷新间隔（秒）" }, { "Discord alerts", "Discord 提醒" },
+            { "Use Windows encryption", "使用 Windows 加密" }, { "Support this project", "支持本项目" },
+            { "Update available", "有可用更新" }, { "Sort accounts by", "账号排序方式" },
+            { "My own order (Up / Down buttons)", "自定义顺序（上移 / 下移按钮）" },
+            { "Name  (click again to reverse)", "名称（再点一次反向排序）" },
+            { "CPU usage", "CPU 占用" }, { "Last used", "上次使用" }, { "Move to group", "移到分组" },
+            { "In game", "游戏中" }, { "Not checked", "未检查" }, { "User ID", "用户 ID" },
+            { "Show account details (age, Robux, Premium)", "显示账号详情（年龄、Robux、Premium）" },
+            { "Roblox CPU", "Roblox CPU" }, { "Roblox memory", "Roblox 内存" },
+            { "Right now: no Roblox window is running.", "当前：没有正在运行的 Roblox 窗口。" },
+            { "Running now:", "正在运行：" }, { "CPU priority", "CPU 优先级" },
+            { "Anti-AFK", "防挂机" }, { "Automation", "自动化" }, { "Advanced", "高级" },
+            { "Appearance & startup", "外观与启动" }, { "Anti-aliasing", "抗锯齿" },
+            { "Hold (ms)", "按住时长 (ms)" }, { "X offset", "X 偏移" }, { "Y offset", "Y 偏移" },
+            { "Max click tries", "最大点击尝试次数" },
+            { "Select an account first.", "请先选择一个账号。" },
+            { "Select one or more accounts in the list first.", "请先在列表中选择一个或多个账号。" },
+            { "Enter a Place ID first.", "请先输入 Place ID。" },
+            { "Select a preset in the list first.", "请先在列表中选择一个预设。" },
+            { "Select a game in the list first.", "请先在列表中选择一个游戏。" },
+            { "Select a server in the list first.", "请先在列表中选择一个服务器。" },
+            { "Could not load servers:", "无法加载服务器：" },
+            { "Launch failed:", "启动失败：" },
+            { "Account locked", "账号被锁定" }, { "Cookie expired", "Cookie 已过期" },
+            { "Welcome to Roblox MultiHub", "欢迎使用 Roblox MultiHub" },
+            { "Add your accounts", "添加你的账号" }, { "Pick a game", "选择一个游戏" },
+            { "Press Launch", "按下启动" }, { "Go to Launch", "前往启动页" },
+            { "Close Roblox MultiHub", "关闭 Roblox MultiHub" },
+            { "Loading servers...", "正在加载服务器..." }, { "Searching...", "搜索中..." },
+            { "Backup saved in ", "备份已保存到 " },
+            { "Backups are made automatically.", "备份会自动创建。" }
+        };
+    }
+}

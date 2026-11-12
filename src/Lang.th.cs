@@ -1,0 +1,65 @@
+using System.Collections.Generic;
+
+namespace RobloxMultiHub
+{
+    public partial class Lang
+    {
+        static readonly Dictionary<string, string> Thai = new Dictionary<string, string>
+        {
+            { "\U0001F680  Launch", "\U0001F680  เปิดเกม" }, { "\U0001F310  Servers", "\U0001F310  เซิร์ฟเวอร์" },
+            { "\U0001F5A5  Layout", "\U0001F5A5  เลย์เอาต์" }, { "\U0001F4CA  Monitor", "\U0001F4CA  มอนิเตอร์" },
+            { "\U0001F4C4  Presets", "\U0001F4C4  พรีเซ็ต" }, { "\u26A1  Perf", "\u26A1  ประสิทธิภาพ" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  เบต้า" }, { "\u2699  Settings", "\u2699  ตั้งค่า" },
+            { "\u2753  Help", "\u2753  ช่วยเหลือ" }, { "Accounts", "บัญชี" },
+            { "Launch selected", "เปิดที่เลือก" }, { "Launch all", "เปิดทั้งหมด" },
+            { "Launch all listed", "เปิดทั้งหมด" }, { "Stop", "หยุด" }, { "Stop all", "หยุดทั้งหมด" },
+            { "Add accounts", "เพิ่มบัญชี" }, { "Save preset", "บันทึกพรีเซ็ต" },
+            { "Run diagnostics", "รันการวินิจฉัย" }, { "Check for updates", "ตรวจหาอัปเดต" },
+            { "Back up now", "สำรองข้อมูลเดี๋ยวนี้" }, { "Clean memory now", "ล้างหน่วยความจำเดี๋ยวนี้" },
+            { "Arrange now", "จัดหน้าต่างเดี๋ยวนี้" }, { "Close all Roblox processes", "ปิดโปรเซส Roblox ทั้งหมด" },
+            { "Apply to running windows", "ใช้กับหน้าต่างที่กำลังทำงาน" }, { "Allow click", "อนุญาตการคลิก" },
+            { "Reset secret counters", "รีเซ็ตตัวนับความลับ" },
+            { "Copy a fresh login ticket", "คัดลอกตั๋วเข้าสู่ระบบใหม่" },
+            { "Open profile in browser", "เปิดโปรไฟล์ในเบราว์เซอร์" },
+            { "Log in with a browser (Edge / Chrome)...", "เข้าสู่ระบบด้วยเบราว์เซอร์ (Edge / Chrome)..." },
+            { "Add several with username:password...", "เพิ่มหลายบัญชี (ยูสเซอร์:พาสเวิร์ด)..." },
+            { "Paste cookie(s)...", "วางคุกกี้..." }, { "Import cookies from a file...", "นำเข้าคุกกี้จากไฟล์..." },
+            { "Browse...", "เรียกดู..." }, { "Cancel", "ยกเลิก" }, { "Check", "ตรวจสอบ" },
+            { "All groups", "ทุกกลุ่ม" }, { "New group...", "กลุ่มใหม่..." }, { "New group", "กลุ่มใหม่" },
+            { "Name of the new group:", "ชื่อกลุ่มใหม่:" },
+            { "Max RAM per window", "RAM สูงสุดต่อหน้าต่าง" },
+            { "Measured floor on this PC:", "ค่าต่ำสุดที่วัดได้บน PC นี้:" }, { "Not measured yet on this PC.", "ยังไม่ได้วัดบน PC นี้" },
+            { "Refresh every (seconds)", "รีเฟรชทุก (วินาที)" }, { "Discord alerts", "แจ้งเตือน Discord" },
+            { "Use Windows encryption", "ใช้การเข้ารหัสของ Windows" }, { "Support this project", "สนับสนุนโปรเจกต์นี้" },
+            { "Update available", "มีอัปเดต" }, { "Sort accounts by", "เรียงบัญชีตาม" },
+            { "My own order (Up / Down buttons)", "ลำดับของฉัน (ปุ่มขึ้น / ลง)" },
+            { "Name  (click again to reverse)", "ชื่อ  (คลิกอีกครั้งเพื่อกลับลำดับ)" },
+            { "CPU usage", "การใช้ CPU" }, { "Last used", "ใช้ล่าสุด" }, { "Move to group", "ย้ายไปกลุ่ม" },
+            { "In game", "อยู่ในเกม" }, { "Not checked", "ยังไม่ตรวจ" }, { "User ID", "ไอดีผู้ใช้" },
+            { "Show account details (age, Robux, Premium)", "แสดงรายละเอียดบัญชี (อายุ, Robux, Premium)" },
+            { "Roblox CPU", "CPU ของ Roblox" }, { "Roblox memory", "หน่วยความจำ Roblox" },
+            { "Right now: no Roblox window is running.", "ตอนนี้: ไม่มีหน้าต่าง Roblox ทำงาน" },
+            { "Running now:", "กำลังทำงาน:" }, { "CPU priority", "ลำดับความสำคัญ CPU" },
+            { "Anti-AFK", "กัน-AFK" }, { "Automation", "อัตโนมัติ" }, { "Advanced", "ขั้นสูง" },
+            { "Appearance & startup", "หน้าตาและการเริ่มต้น" }, { "Anti-aliasing", "ลดรอยหยัก" },
+            { "Hold (ms)", "กดค้าง (ms)" }, { "X offset", "ออฟเซต X" }, { "Y offset", "ออฟเซต Y" },
+            { "Max click tries", "จำนวนคลิกสูงสุด" },
+            { "Select an account first.", "เลือกบัญชีก่อน" },
+            { "Select one or more accounts in the list first.", "เลือกบัญชีอย่างน้อยหนึ่งบัญชีในรายการก่อน" },
+            { "Enter a Place ID first.", "กรอก Place ID ก่อน" },
+            { "Select a preset in the list first.", "เลือกพรีเซ็ตในรายการก่อน" },
+            { "Select a game in the list first.", "เลือกเกมในรายการก่อน" },
+            { "Select a server in the list first.", "เลือกเซิร์ฟเวอร์ในรายการก่อน" },
+            { "Could not load servers:", "โหลดเซิร์ฟเวอร์ไม่ได้:" },
+            { "Launch failed:", "เปิดเกมไม่สำเร็จ:" },
+            { "Account locked", "บัญชีถูกล็อก" }, { "Cookie expired", "คุกกี้หมดอายุ" },
+            { "Welcome to Roblox MultiHub", "ยินดีต้อนรับสู่ Roblox MultiHub" },
+            { "Add your accounts", "เพิ่มบัญชีของคุณ" }, { "Pick a game", "เลือกเกม" },
+            { "Press Launch", "กดเปิดเกม" }, { "Go to Launch", "ไปหน้าเปิดเกม" },
+            { "Close Roblox MultiHub", "ปิด Roblox MultiHub" },
+            { "Loading servers...", "กำลังโหลดเซิร์ฟเวอร์..." }, { "Searching...", "กำลังค้นหา..." },
+            { "Backup saved in ", "บันทึกสำรองไว้ที่ " },
+            { "Backups are made automatically.", "สำรองข้อมูลอัตโนมัติ" }
+        };
+    }
+}

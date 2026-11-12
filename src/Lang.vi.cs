@@ -1,0 +1,65 @@
+using System.Collections.Generic;
+
+namespace RobloxMultiHub
+{
+    public partial class Lang
+    {
+        static readonly Dictionary<string, string> Vietnamese = new Dictionary<string, string>
+        {
+            { "\U0001F680  Launch", "\U0001F680  Khởi chạy" }, { "\U0001F310  Servers", "\U0001F310  Máy chủ" },
+            { "\U0001F5A5  Layout", "\U0001F5A5  Bố cục" }, { "\U0001F4CA  Monitor", "\U0001F4CA  Giám sát" },
+            { "\U0001F4C4  Presets", "\U0001F4C4  Cài đặt sẵn" }, { "\u26A1  Perf", "\u26A1  Hiệu năng" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  Beta" }, { "\u2699  Settings", "\u2699  Cài đặt" },
+            { "\u2753  Help", "\u2753  Trợ giúp" }, { "Accounts", "Tài khoản" },
+            { "Launch selected", "Khởi chạy mục đã chọn" }, { "Launch all", "Khởi chạy tất cả" },
+            { "Launch all listed", "Khởi chạy tất cả" }, { "Stop", "Dừng" }, { "Stop all", "Dừng tất cả" },
+            { "Add accounts", "Thêm tài khoản" }, { "Save preset", "Lưu cài đặt sẵn" },
+            { "Run diagnostics", "Chạy chẩn đoán" }, { "Check for updates", "Kiểm tra bản cập nhật" },
+            { "Back up now", "Sao lưu ngay" }, { "Clean memory now", "Dọn bộ nhớ ngay" },
+            { "Arrange now", "Sắp xếp ngay" }, { "Close all Roblox processes", "Đóng mọi tiến trình Roblox" },
+            { "Apply to running windows", "Áp dụng cho cửa sổ đang chạy" }, { "Allow click", "Cho phép nhấp" },
+            { "Reset secret counters", "Đặt lại bộ đếm bí mật" },
+            { "Copy a fresh login ticket", "Sao vé đăng nhập mới" },
+            { "Open profile in browser", "Mở hồ sơ trong trình duyệt" },
+            { "Log in with a browser (Edge / Chrome)...", "Đăng nhập bằng trình duyệt (Edge / Chrome)..." },
+            { "Add several with username:password...", "Thêm nhiều tài khoản (tên:mật khẩu)..." },
+            { "Paste cookie(s)...", "Dán cookie..." }, { "Import cookies from a file...", "Nhập cookie từ tệp..." },
+            { "Browse...", "Duyệt..." }, { "Cancel", "Hủy" }, { "Check", "Kiểm tra" },
+            { "All groups", "Tất cả nhóm" }, { "New group...", "Nhóm mới..." }, { "New group", "Nhóm mới" },
+            { "Name of the new group:", "Tên nhóm mới:" },
+            { "Max RAM per window", "RAM tối đa mỗi cửa sổ" },
+            { "Measured floor on this PC:", "Mức đo được trên PC này:" }, { "Not measured yet on this PC.", "Chưa đo trên PC này." },
+            { "Refresh every (seconds)", "Làm mới mỗi (giây)" }, { "Discord alerts", "Cảnh báo Discord" },
+            { "Use Windows encryption", "Dùng mã hóa Windows" }, { "Support this project", "Ủng hộ dự án" },
+            { "Update available", "Có bản cập nhật" }, { "Sort accounts by", "Sắp xếp tài khoản theo" },
+            { "My own order (Up / Down buttons)", "Thứ tự riêng (nút Lên / Xuống)" },
+            { "Name  (click again to reverse)", "Tên  (nhấp lần nữa để đảo ngược)" },
+            { "CPU usage", "Dùng CPU" }, { "Last used", "Dùng lần cuối" }, { "Move to group", "Chuyển sang nhóm" },
+            { "In game", "Đang chơi" }, { "Not checked", "Chưa kiểm tra" }, { "User ID", "ID người dùng" },
+            { "Show account details (age, Robux, Premium)", "Hiện chi tiết tài khoản (tuổi, Robux, Premium)" },
+            { "Roblox CPU", "CPU Roblox" }, { "Roblox memory", "Bộ nhớ Roblox" },
+            { "Right now: no Roblox window is running.", "Hiện tại: không có cửa sổ Roblox nào chạy." },
+            { "Running now:", "Đang chạy:" }, { "CPU priority", "Độ ưu tiên CPU" },
+            { "Anti-AFK", "Chống-AFK" }, { "Automation", "Tự động hóa" }, { "Advanced", "Nâng cao" },
+            { "Appearance & startup", "Giao diện & khởi động" }, { "Anti-aliasing", "Khử răng cưa" },
+            { "Hold (ms)", "Giữ (ms)" }, { "X offset", "Lệch X" }, { "Y offset", "Lệch Y" },
+            { "Max click tries", "Số lần nhấp tối đa" },
+            { "Select an account first.", "Hãy chọn một tài khoản trước." },
+            { "Select one or more accounts in the list first.", "Hãy chọn một hoặc nhiều tài khoản trong danh sách trước." },
+            { "Enter a Place ID first.", "Nhập Place ID trước." },
+            { "Select a preset in the list first.", "Chọn cài đặt sẵn trong danh sách trước." },
+            { "Select a game in the list first.", "Chọn game trong danh sách trước." },
+            { "Select a server in the list first.", "Chọn máy chủ trong danh sách trước." },
+            { "Could not load servers:", "Không tải được máy chủ:" },
+            { "Launch failed:", "Khởi chạy thất bại:" },
+            { "Account locked", "Tài khoản bị khóa" }, { "Cookie expired", "Cookie hết hạn" },
+            { "Welcome to Roblox MultiHub", "Chào mừng đến Roblox MultiHub" },
+            { "Add your accounts", "Thêm tài khoản của bạn" }, { "Pick a game", "Chọn một game" },
+            { "Press Launch", "Nhấn Khởi chạy" }, { "Go to Launch", "Đến trang Khởi chạy" },
+            { "Close Roblox MultiHub", "Đóng Roblox MultiHub" },
+            { "Loading servers...", "Đang tải máy chủ..." }, { "Searching...", "Đang tìm..." },
+            { "Backup saved in ", "Bản sao lưu đã lưu vào " },
+            { "Backups are made automatically.", "Bản sao lưu được tạo tự động." }
+        };
+    }
+}

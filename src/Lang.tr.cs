@@ -1,0 +1,65 @@
+using System.Collections.Generic;
+
+namespace RobloxMultiHub
+{
+    public partial class Lang
+    {
+        static readonly Dictionary<string, string> Turkish = new Dictionary<string, string>
+        {
+            { "\U0001F680  Launch", "\U0001F680  Başlat" }, { "\U0001F310  Servers", "\U0001F310  Sunucular" },
+            { "\U0001F5A5  Layout", "\U0001F5A5  Düzen" }, { "\U0001F4CA  Monitor", "\U0001F4CA  İzleyici" },
+            { "\U0001F4C4  Presets", "\U0001F4C4  Hazır ayarlar" }, { "\u26A1  Perf", "\u26A1  Performans" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  Beta" }, { "\u2699  Settings", "\u2699  Ayarlar" },
+            { "\u2753  Help", "\u2753  Yardım" }, { "Accounts", "Hesaplar" },
+            { "Launch selected", "Seçilenleri başlat" }, { "Launch all", "Tümünü başlat" },
+            { "Launch all listed", "Tümünü başlat" }, { "Stop", "Durdur" }, { "Stop all", "Tümünü durdur" },
+            { "Add accounts", "Hesap ekle" }, { "Save preset", "Hazır ayarı kaydet" },
+            { "Run diagnostics", "Tanılamayı çalıştır" }, { "Check for updates", "Güncellemeleri denetle" },
+            { "Back up now", "Şimdi yedekle" }, { "Clean memory now", "Belleği şimdi temizle" },
+            { "Arrange now", "Şimdi diz" }, { "Close all Roblox processes", "Tüm Roblox işlemlerini kapat" },
+            { "Apply to running windows", "Açık pencerelere uygula" }, { "Allow click", "Tıklamaya izin ver" },
+            { "Reset secret counters", "Sayaçları sıfırla" },
+            { "Copy a fresh login ticket", "Yeni bir giriş bileti kopyala" },
+            { "Open profile in browser", "Profili tarayıcıda aç" },
+            { "Log in with a browser (Edge / Chrome)...", "Tarayıcı ile giriş yap (Edge / Chrome)..." },
+            { "Add several with username:password...", "Birkaç hesap ekle (kullanıcı:şifre)..." },
+            { "Paste cookie(s)...", "Cookie yapıştır..." }, { "Import cookies from a file...", "Dosyadan cookie içe aktar..." },
+            { "Browse...", "Gözat..." }, { "Cancel", "İptal" }, { "Check", "Denetle" },
+            { "All groups", "Tüm gruplar" }, { "New group...", "Yeni grup..." }, { "New group", "Yeni grup" },
+            { "Name of the new group:", "Yeni grubun adı:" },
+            { "Max RAM per window", "Pencere başına en fazla RAM" },
+            { "Measured floor on this PC:", "Bu bilgisayarda ölçülen alt sınır:" }, { "Not measured yet on this PC.", "Bu bilgisayarda henüz ölçülmedi." },
+            { "Refresh every (seconds)", "Yenileme aralığı (saniye)" }, { "Discord alerts", "Discord uyarıları" },
+            { "Use Windows encryption", "Windows şifrelemesini kullan" }, { "Support this project", "Bu projeyi destekle" },
+            { "Update available", "Güncelleme var" }, { "Sort accounts by", "Hesapları şuna göre sırala" },
+            { "My own order (Up / Down buttons)", "Kendi sıram (Yukarı / Aşağı düğmeleri)" },
+            { "Name  (click again to reverse)", "Ad  (ters çevirmek için tekrar tıkla)" },
+            { "CPU usage", "CPU kullanımı" }, { "Last used", "Son kullanım" }, { "Move to group", "Gruba taşı" },
+            { "In game", "Oyunda" }, { "Not checked", "Denetlenmedi" }, { "User ID", "Kullanıcı ID" },
+            { "Show account details (age, Robux, Premium)", "Hesap ayrıntılarını göster (yaş, Robux, Premium)" },
+            { "Roblox CPU", "Roblox CPU" }, { "Roblox memory", "Roblox belleği" },
+            { "Right now: no Roblox window is running.", "Şu anda çalışan Roblox penceresi yok." },
+            { "Running now:", "Şu an çalışıyor:" }, { "CPU priority", "CPU önceliği" },
+            { "Anti-AFK", "Anti-AFK" }, { "Automation", "Otomasyon" }, { "Advanced", "Gelişmiş" },
+            { "Appearance & startup", "Görünüm ve başlangıç" }, { "Anti-aliasing", "Kenar yumuşatma" },
+            { "Hold (ms)", "Basılı tut (ms)" }, { "X offset", "X kaydırması" }, { "Y offset", "Y kaydırması" },
+            { "Max click tries", "En fazla tıklama denemesi" },
+            { "Select an account first.", "Önce bir hesap seç." },
+            { "Select one or more accounts in the list first.", "Önce listeden bir veya daha fazla hesap seç." },
+            { "Enter a Place ID first.", "Önce bir Place ID gir." },
+            { "Select a preset in the list first.", "Önce listeden bir hazır ayar seç." },
+            { "Select a game in the list first.", "Önce listeden bir oyun seç." },
+            { "Select a server in the list first.", "Önce listeden bir sunucu seç." },
+            { "Could not load servers:", "Sunucular yüklenemedi:" },
+            { "Launch failed:", "Başlatma başarısız:" },
+            { "Account locked", "Hesap kilitli" }, { "Cookie expired", "Cookie süresi doldu" },
+            { "Welcome to Roblox MultiHub", "Roblox MultiHub'a hoş geldin" },
+            { "Add your accounts", "Hesaplarını ekle" }, { "Pick a game", "Bir oyun seç" },
+            { "Press Launch", "Başlat'a bas" }, { "Go to Launch", "Başlat'a git" },
+            { "Close Roblox MultiHub", "Roblox MultiHub'ı kapat" },
+            { "Loading servers...", "Sunucular yükleniyor..." }, { "Searching...", "Aranıyor..." },
+            { "Backup saved in ", "Yedek şuraya kaydedildi: " },
+            { "Backups are made automatically.", "Yedekler otomatik oluşturulur." }
+        };
+    }
+}

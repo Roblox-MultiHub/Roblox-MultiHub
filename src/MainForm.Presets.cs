@@ -37,7 +37,7 @@ namespace RobloxMultiHub
             lvPresets = new BufferedListView();
             lvPresets.Size = new Size(PageW - PageBuilder.PadX * 2, 180);
             lvPresets.Columns.Add("Name", 170);
-            lvPresets.Columns.Add("Accounts", 70);
+            lvPresets.Columns.Add(Lang.T("Accounts"), 70);
             lvPresets.Columns.Add("Saved", 110);
             lvPresets.Columns.Add("Accounts in launch order", 150);
             lvPresets.MultiSelect = false;
@@ -132,7 +132,7 @@ namespace RobloxMultiHub
             string name = tbPresetName.Text.Trim();
             if (name.Length == 0) { AddLog("Type a name for the preset first."); tbPresetName.Focus(); return; }
             Preset old = FindPreset(name);
-            if (old != null && MessageBox.Show(this, "Replace the preset '" + old.Name + "' with what is running now?", "Save preset", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            if (old != null && MessageBox.Show(this, "Replace the preset '" + old.Name + "' with what is running now?", Lang.T("Save preset"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
             Preset pr = CapturePreset(name);
             if (pr == null) return;
             if (old != null) Store.Settings.Presets[Store.Settings.Presets.IndexOf(old)] = pr;
@@ -146,7 +146,7 @@ namespace RobloxMultiHub
         void UpdateSelectedPreset()
         {
             Preset sel = SelectedPreset();
-            if (sel == null) { AddLog("Lang.T(Lang.T(Select a preset in the list first."); return; }
+            if (sel == null) { AddLog(Lang.T("Select a preset in the list first.")); return; }
             tbPresetName.Text = sel.Name;
             SavePresetFromUi();
         }
@@ -165,7 +165,7 @@ namespace RobloxMultiHub
                 List<Account> sel = SelectedAccounts();
                 if (sel.Count == 0)
                 {
-                    MessageBox.Show(this, "Nothing launched by this app is running, and no accounts are selected.\r\n\r\nLaunch your accounts and arrange the windows first (or select the accounts you want in the preset), then save again.", Lang.T("Save preset");
+                    MessageBox.Show(this, "Nothing launched by this app is running, and no accounts are selected.\r\n\r\nLaunch your accounts and arrange the windows first (or select the accounts you want in the preset), then save again.", "Save preset");
                     return null;
                 }
                 if (MessageBox.Show(this, "Nothing launched by this app is running right now.\r\n\r\nSave the " + sel.Count + " selected account(s) with their own game (or the Launch page)? Their windows will be arranged with the grid when the preset runs.", "Save preset", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return null;
@@ -218,7 +218,7 @@ namespace RobloxMultiHub
         void RenameSelectedPreset()
         {
             Preset sel = SelectedPreset();
-            if (sel == null) { AddLog("Lang.T(Lang.T(Select a preset in the list first."); return; }
+            if (sel == null) { AddLog("Select a preset in the list first."); return; }
             string n = Dialogs.Prompt(this, "Rename preset", "New name for '" + sel.Name + "':", sel.Name);
             if (string.IsNullOrEmpty(n) || n == sel.Name) return;
             Preset other = FindPreset(n);
@@ -233,7 +233,7 @@ namespace RobloxMultiHub
         void DeleteSelectedPreset()
         {
             Preset sel = SelectedPreset();
-            if (sel == null) { AddLog("Lang.T(Lang.T(Select a preset in the list first."); return; }
+            if (sel == null) { AddLog("Select a preset in the list first."); return; }
             if (MessageBox.Show(this, "Delete the preset '" + sel.Name + "'?\r\n(Accounts and windows are not touched.)", "Delete preset", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
             Store.Settings.Presets.Remove(sel);
             if (Store.Settings.StartupPreset == sel.Name) Store.Settings.StartupPreset = "";
@@ -245,7 +245,7 @@ namespace RobloxMultiHub
         void ShowPresetDetails()
         {
             Preset pr = SelectedPreset();
-            if (pr == null) { AddLog("Lang.T(Lang.T(Select a preset in the list first."); return; }
+            if (pr == null) { AddLog("Select a preset in the list first."); return; }
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Preset:  " + pr.Name + "   (saved " + (pr.SavedTicks > 0 ? new DateTime(pr.SavedTicks, DateTimeKind.Utc).ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "?") + ")");
             sb.AppendLine();
@@ -277,7 +277,7 @@ namespace RobloxMultiHub
         void RunSelectedPreset()
         {
             Preset sel = SelectedPreset();
-            if (sel == null) { AddLog("Lang.T(Lang.T(Select a preset in the list first."); return; }
+            if (sel == null) { AddLog("Select a preset in the list first."); return; }
             RunPreset(sel);
         }
 

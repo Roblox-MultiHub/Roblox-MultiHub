@@ -1,0 +1,65 @@
+using System.Collections.Generic;
+
+namespace RobloxMultiHub
+{
+    public partial class Lang
+    {
+        static readonly Dictionary<string, string> ChineseTraditional = new Dictionary<string, string>
+        {
+            { "\U0001F680  Launch", "\U0001F680  啟動" }, { "\U0001F310  Servers", "\U0001F310  伺服器" },
+            { "\U0001F5A5  Layout", "\U0001F5A5  版面" }, { "\U0001F4CA  Monitor", "\U0001F4CA  監控" },
+            { "\U0001F4C4  Presets", "\U0001F4C4  預設" }, { "\u26A1  Perf", "\u26A1  效能" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  測試" }, { "\u2699  Settings", "\u2699  設定" },
+            { "\u2753  Help", "\u2753  說明" }, { "Accounts", "帳號" },
+            { "Launch selected", "啟動所選" }, { "Launch all", "啟動全部" },
+            { "Launch all listed", "啟動全部" }, { "Stop", "停止" }, { "Stop all", "全部停止" },
+            { "Add accounts", "新增帳號" }, { "Save preset", "儲存預設" },
+            { "Run diagnostics", "執行診斷" }, { "Check for updates", "檢查更新" },
+            { "Back up now", "立即備份" }, { "Clean memory now", "立即清理記憶體" },
+            { "Arrange now", "立即排列" }, { "Close all Roblox processes", "關閉所有 Roblox 程序" },
+            { "Apply to running windows", "套用到執行中的視窗" }, { "Allow click", "允許點擊" },
+            { "Reset secret counters", "重設密碼計數器" },
+            { "Copy a fresh login ticket", "複製新的登入票證" },
+            { "Open profile in browser", "在瀏覽器開啟個人檔案" },
+            { "Log in with a browser (Edge / Chrome)...", "使用瀏覽器登入 (Edge / Chrome)..." },
+            { "Add several with username:password...", "批次新增帳號（帳號:密碼）..." },
+            { "Paste cookie(s)...", "貼上 Cookie..." }, { "Import cookies from a file...", "從檔案匯入 Cookie..." },
+            { "Browse...", "瀏覽..." }, { "Cancel", "取消" }, { "Check", "檢查" },
+            { "All groups", "所有群組" }, { "New group...", "新增群組..." }, { "New group", "新增群組" },
+            { "Name of the new group:", "新群組的名稱：" },
+            { "Max RAM per window", "每個視窗最大記憶體" },
+            { "Measured floor on this PC:", "本機測得的下限：" }, { "Not measured yet on this PC.", "本機尚未測量。" },
+            { "Refresh every (seconds)", "重新整理間隔（秒）" }, { "Discord alerts", "Discord 提醒" },
+            { "Use Windows encryption", "使用 Windows 加密" }, { "Support this project", "支持本專案" },
+            { "Update available", "有可用更新" }, { "Sort accounts by", "帳號排序方式" },
+            { "My own order (Up / Down buttons)", "自訂順序（上移 / 下移按鈕）" },
+            { "Name  (click again to reverse)", "名稱（再點一次反向排序）" },
+            { "CPU usage", "CPU 使用率" }, { "Last used", "上次使用" }, { "Move to group", "移到群組" },
+            { "In game", "遊戲中" }, { "Not checked", "未檢查" }, { "User ID", "使用者 ID" },
+            { "Show account details (age, Robux, Premium)", "顯示帳號詳細資料（年齡、Robux、Premium）" },
+            { "Roblox CPU", "Roblox CPU" }, { "Roblox memory", "Roblox 記憶體" },
+            { "Right now: no Roblox window is running.", "目前：沒有執行中的 Roblox 視窗。" },
+            { "Running now:", "執行中：" }, { "CPU priority", "CPU 優先順序" },
+            { "Anti-AFK", "防掛機" }, { "Automation", "自動化" }, { "Advanced", "進階" },
+            { "Appearance & startup", "外觀與啟動" }, { "Anti-aliasing", "抗鋸齒" },
+            { "Hold (ms)", "按住時間 (ms)" }, { "X offset", "X 偏移" }, { "Y offset", "Y 偏移" },
+            { "Max click tries", "最大點擊嘗試次數" },
+            { "Select an account first.", "請先選擇一個帳號。" },
+            { "Select one or more accounts in the list first.", "請先在清單中選擇一或多個帳號。" },
+            { "Enter a Place ID first.", "請先輸入 Place ID。" },
+            { "Select a preset in the list first.", "請先在清單中選擇一個預設。" },
+            { "Select a game in the list first.", "請先在清單中選擇一個遊戲。" },
+            { "Select a server in the list first.", "請先在清單中選擇一個伺服器。" },
+            { "Could not load servers:", "無法載入伺服器：" },
+            { "Launch failed:", "啟動失敗：" },
+            { "Account locked", "帳號被鎖定" }, { "Cookie expired", "Cookie 已過期" },
+            { "Welcome to Roblox MultiHub", "歡迎使用 Roblox MultiHub" },
+            { "Add your accounts", "新增你的帳號" }, { "Pick a game", "選擇一個遊戲" },
+            { "Press Launch", "按下啟動" }, { "Go to Launch", "前往啟動頁" },
+            { "Close Roblox MultiHub", "關閉 Roblox MultiHub" },
+            { "Loading servers...", "正在載入伺服器..." }, { "Searching...", "搜尋中..." },
+            { "Backup saved in ", "備份已儲存到 " },
+            { "Backups are made automatically.", "備份會自動建立。" }
+        };
+    }
+}

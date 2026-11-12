@@ -4,17 +4,12 @@ using System.IO;
 
 namespace RobloxMultiHub
 {
-    // Lightweight translation layer. Strings are looked up by their English text, so any string that
-    // is not translated falls back cleanly to English - a half-translated language still reads fine.
-    //
-    // English and Dutch are built in. More languages (or more strings for an existing one) can be
-    // dropped in as  <data folder>\lang\<code>.json  - a flat JSON object of { "English": "translation" }.
     public partial class Lang
     {
         public static string Current = "en";
         static readonly Dictionary<string, string> map = new Dictionary<string, string>();
 
-        // code, display name. "en" is always first.
+        // code, display name. "en" is always first. RTL languages are intentionally absent.
         public static List<string[]> Available()
         {
             List<string[]> list = new List<string[]>
@@ -30,15 +25,15 @@ namespace RobloxMultiHub
                 new string[] { "tr", "Türkçe (Turkish)" },
                 new string[] { "ru", "Русский (Russian)" },
                 new string[] { "uk", "Українська (Ukrainian)" },
-                                new string[] { "hi", "हिन्दी (Hindi)" },
+                new string[] { "hi", "हिन्दी (Hindi)" },
                 new string[] { "id", "Bahasa Indonesia" },
                 new string[] { "vi", "Tiếng Việt (Vietnamese)" },
                 new string[] { "th", "ไทย (Thai)" },
                 new string[] { "ko", "한국어 (Korean)" },
                 new string[] { "ja", "日本語 (Japanese)" },
                 new string[] { "zh-CN", "简体中文 (Chinese Simplified)" },
-                new string[] { "zh-TW", "繁體中文 (Chinese Traditional)" },
-                            };
+                new string[] { "zh-TW", "繁體中文 (Chinese Traditional)" }
+            };
             try
             {
                 string dir = Path.Combine(Store.Dir, "lang");
@@ -67,7 +62,19 @@ namespace RobloxMultiHub
             if (Current == "pt") Fill(Portuguese);
             if (Current == "fr") Fill(French);
             if (Current == "de") Fill(German);
+            if (Current == "it") Fill(Italian);
             if (Current == "pl") Fill(Polish);
+            if (Current == "tr") Fill(Turkish);
+            if (Current == "ru") Fill(Russian);
+            if (Current == "uk") Fill(Ukrainian);
+            if (Current == "hi") Fill(Hindi);
+            if (Current == "id") Fill(Indonesian);
+            if (Current == "vi") Fill(Vietnamese);
+            if (Current == "th") Fill(Thai);
+            if (Current == "ko") Fill(Korean);
+            if (Current == "ja") Fill(Japanese);
+            if (Current == "zh-CN") Fill(ChineseSimplified);
+            if (Current == "zh-TW") Fill(ChineseTraditional);
 
             // a lang file on disk extends or overrides the built-in table
             try
@@ -94,6 +101,5 @@ namespace RobloxMultiHub
         static void Fill(Dictionary<string, string> d) { foreach (KeyValuePair<string, string> kv in d) map[kv.Key] = kv.Value; }
 
         // dictionaries live in Lang.<code>.cs (one file per language)
-
     }
 }

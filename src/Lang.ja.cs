@@ -1,0 +1,65 @@
+using System.Collections.Generic;
+
+namespace RobloxMultiHub
+{
+    public partial class Lang
+    {
+        static readonly Dictionary<string, string> Japanese = new Dictionary<string, string>
+        {
+            { "\U0001F680  Launch", "\U0001F680  起動" }, { "\U0001F310  Servers", "\U0001F310  サーバー" },
+            { "\U0001F5A5  Layout", "\U0001F5A5  レイアウト" }, { "\U0001F4CA  Monitor", "\U0001F4CA  モニター" },
+            { "\U0001F4C4  Presets", "\U0001F4C4  プリセット" }, { "\u26A1  Perf", "\u26A1  パフォーマンス" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  ベータ" }, { "\u2699  Settings", "\u2699  設定" },
+            { "\u2753  Help", "\u2753  ヘルプ" }, { "Accounts", "アカウント" },
+            { "Launch selected", "選択を起動" }, { "Launch all", "すべて起動" },
+            { "Launch all listed", "すべて起動" }, { "Stop", "停止" }, { "Stop all", "すべて停止" },
+            { "Add accounts", "アカウントを追加" }, { "Save preset", "プリセットを保存" },
+            { "Run diagnostics", "診断を実行" }, { "Check for updates", "更新を確認" },
+            { "Back up now", "今すぐバックアップ" }, { "Clean memory now", "今すぐメモリをクリーン" },
+            { "Arrange now", "今すぐ整列" }, { "Close all Roblox processes", "すべてのRobloxプロセスを終了" },
+            { "Apply to running windows", "実行中のウィンドウに適用" }, { "Allow click", "クリックを許可" },
+            { "Reset secret counters", "シークレットカウンターをリセット" },
+            { "Copy a fresh login ticket", "新しいログインチケットをコピー" },
+            { "Open profile in browser", "ブラウザでプロフィールを開く" },
+            { "Log in with a browser (Edge / Chrome)...", "ブラウザでログイン (Edge / Chrome)..." },
+            { "Add several with username:password...", "複数アカウントを追加 (ユーザー名:パスワード)..." },
+            { "Paste cookie(s)...", "Cookieを貼り付け..." }, { "Import cookies from a file...", "ファイルからCookieをインポート..." },
+            { "Browse...", "参照..." }, { "Cancel", "キャンセル" }, { "Check", "確認" },
+            { "All groups", "すべてのグループ" }, { "New group...", "新しいグループ..." }, { "New group", "新しいグループ" },
+            { "Name of the new group:", "新しいグループ名:" },
+            { "Max RAM per window", "ウィンドウごとの最大RAM" },
+            { "Measured floor on this PC:", "このPCで測定した最小値:" }, { "Not measured yet on this PC.", "このPCでは未測定です。" },
+            { "Refresh every (seconds)", "更新間隔 (秒)" }, { "Discord alerts", "Discord通知" },
+            { "Use Windows encryption", "Windows暗号化を使用" }, { "Support this project", "プロジェクトを支援" },
+            { "Update available", "更新あり" }, { "Sort accounts by", "アカウントの並び替え" },
+            { "My own order (Up / Down buttons)", "自分の順序 (上/下ボタン)" },
+            { "Name  (click again to reverse)", "名前  (もう一度クリックで逆順)" },
+            { "CPU usage", "CPU使用率" }, { "Last used", "最終使用" }, { "Move to group", "グループへ移動" },
+            { "In game", "ゲーム中" }, { "Not checked", "未確認" }, { "User ID", "ユーザーID" },
+            { "Show account details (age, Robux, Premium)", "アカウント詳細を表示 (年齢, Robux, Premium)" },
+            { "Roblox CPU", "Roblox CPU" }, { "Roblox memory", "Robloxメモリ" },
+            { "Right now: no Roblox window is running.", "現在: 実行中のRobloxウィンドウはありません。" },
+            { "Running now:", "実行中:" }, { "CPU priority", "CPU優先度" },
+            { "Anti-AFK", "アンチAFK" }, { "Automation", "オートメーション" }, { "Advanced", "詳細設定" },
+            { "Appearance & startup", "外観と起動" }, { "Anti-aliasing", "アンチエイリアス" },
+            { "Hold (ms)", "長押し (ms)" }, { "X offset", "Xオフセット" }, { "Y offset", "Yオフセット" },
+            { "Max click tries", "最大クリック試行数" },
+            { "Select an account first.", "先にアカウントを選択してください。" },
+            { "Select one or more accounts in the list first.", "先にリストから1つ以上のアカウントを選択してください。" },
+            { "Enter a Place ID first.", "先にPlace IDを入力してください。" },
+            { "Select a preset in the list first.", "先にリストからプリセットを選択してください。" },
+            { "Select a game in the list first.", "先にリストからゲームを選択してください。" },
+            { "Select a server in the list first.", "先にリストからサーバーを選択してください。" },
+            { "Could not load servers:", "サーバーを読み込めませんでした:" },
+            { "Launch failed:", "起動に失敗:" },
+            { "Account locked", "アカウントロック" }, { "Cookie expired", "Cookie期限切れ" },
+            { "Welcome to Roblox MultiHub", "Roblox MultiHubへようこそ" },
+            { "Add your accounts", "アカウントを追加しましょう" }, { "Pick a game", "ゲームを選びましょう" },
+            { "Press Launch", "起動を押しましょう" }, { "Go to Launch", "起動へ移動" },
+            { "Close Roblox MultiHub", "Roblox MultiHubを閉じる" },
+            { "Loading servers...", "サーバー読み込み中..." }, { "Searching...", "検索中..." },
+            { "Backup saved in ", "バックアップ保存先: " },
+            { "Backups are made automatically.", "バックアップは自動的に作成されます。" }
+        };
+    }
+}

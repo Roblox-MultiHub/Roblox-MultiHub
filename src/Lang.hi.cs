@@ -1,0 +1,65 @@
+using System.Collections.Generic;
+
+namespace RobloxMultiHub
+{
+    public partial class Lang
+    {
+        static readonly Dictionary<string, string> Hindi = new Dictionary<string, string>
+        {
+            { "\U0001F680  Launch", "\U0001F680  लॉन्च" }, { "\U0001F310  Servers", "\U0001F310  सर्वर" },
+            { "\U0001F5A5  Layout", "\U0001F5A5  लेआउट" }, { "\U0001F4CA  Monitor", "\U0001F4CA  मॉनिटर" },
+            { "\U0001F4C4  Presets", "\U0001F4C4  प्रीसेट" }, { "\u26A1  Perf", "\u26A1  परफ़ॉर्मेंस" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  बीटा" }, { "\u2699  Settings", "\u2699  सेटिंग्स" },
+            { "\u2753  Help", "\u2753  सहायता" }, { "Accounts", "अकाउंट" },
+            { "Launch selected", "चयनित लॉन्च करें" }, { "Launch all", "सभी लॉन्च करें" },
+            { "Launch all listed", "सभी लॉन्च करें" }, { "Stop", "रोकें" }, { "Stop all", "सभी रोकें" },
+            { "Add accounts", "अकाउंट जोड़ें" }, { "Save preset", "प्रीसेट सहेजें" },
+            { "Run diagnostics", "डायग्नोस्टिक्स चलाएँ" }, { "Check for updates", "अपडेट देखें" },
+            { "Back up now", "अभी बैकअप लें" }, { "Clean memory now", "अभी मेमोरी साफ़ करें" },
+            { "Arrange now", "अभी व्यवस्थित करें" }, { "Close all Roblox processes", "सभी Roblox प्रोसेस बंद करें" },
+            { "Apply to running windows", "चालू विंडो पर लागू करें" }, { "Allow click", "क्लिक की अनुमति दें" },
+            { "Reset secret counters", "सीक्रेट काउंटर रीसेट करें" },
+            { "Copy a fresh login ticket", "नया लॉगिन टिकट कॉपी करें" },
+            { "Open profile in browser", "ब्राउज़र में प्रोफ़ाइल खोलें" },
+            { "Log in with a browser (Edge / Chrome)...", "ब्राउज़र से लॉगिन करें (Edge / Chrome)..." },
+            { "Add several with username:password...", "कई अकाउंट जोड़ें (यूज़रनेम:पासवर्ड)..." },
+            { "Paste cookie(s)...", "कुकी पेस्ट करें..." }, { "Import cookies from a file...", "फ़ाइल से कुकी इंपोर्ट करें..." },
+            { "Browse...", "ब्राउज़..." }, { "Cancel", "रद्द करें" }, { "Check", "जाँचें" },
+            { "All groups", "सभी ग्रुप" }, { "New group...", "नया ग्रुप..." }, { "New group", "नया ग्रुप" },
+            { "Name of the new group:", "नए ग्रुप का नाम:" },
+            { "Max RAM per window", "प्रति विंडो अधिकतम RAM" },
+            { "Measured floor on this PC:", "इस PC पर मापा गया न्यूनतम:" }, { "Not measured yet on this PC.", "इस PC पर अभी नहीं मापा गया।" },
+            { "Refresh every (seconds)", "हर (सेकंड) में रिफ्रेश करें" }, { "Discord alerts", "Discord अलर्ट" },
+            { "Use Windows encryption", "Windows एन्क्रिप्शन इस्तेमाल करें" }, { "Support this project", "इस प्रोजेक्ट को सपोर्ट करें" },
+            { "Update available", "अपडेट उपलब्ध" }, { "Sort accounts by", "अकाउंट क्रमबद्ध करें" },
+            { "My own order (Up / Down buttons)", "अपना क्रम (ऊपर / नीचे बटन)" },
+            { "Name  (click again to reverse)", "नाम  (उलटने के लिए फिर क्लिक करें)" },
+            { "CPU usage", "CPU उपयोग" }, { "Last used", "अंतिम उपयोग" }, { "Move to group", "ग्रुप में ले जाएँ" },
+            { "In game", "गेम में" }, { "Not checked", "जाँचा नहीं गया" }, { "User ID", "यूज़र ID" },
+            { "Show account details (age, Robux, Premium)", "अकाउंट विवरण दिखाएँ (उम्र, Robux, Premium)" },
+            { "Roblox CPU", "Roblox CPU" }, { "Roblox memory", "Roblox मेमोरी" },
+            { "Right now: no Roblox window is running.", "अभी: कोई Roblox विंडो नहीं चल रही।" },
+            { "Running now:", "अभी चल रहे:" }, { "CPU priority", "CPU प्राथमिकता" },
+            { "Anti-AFK", "एंटी-AFK" }, { "Automation", "ऑटोमेशन" }, { "Advanced", "उन्नत" },
+            { "Appearance & startup", "रूप और स्टार्टअप" }, { "Anti-aliasing", "एंटी-अलायसिंग" },
+            { "Hold (ms)", "दबाए रखें (ms)" }, { "X offset", "X ऑफ़सेट" }, { "Y offset", "Y ऑफ़सेट" },
+            { "Max click tries", "अधिकतम क्लिक प्रयास" },
+            { "Select an account first.", "पहले एक अकाउंट चुनें।" },
+            { "Select one or more accounts in the list first.", "पहले सूची में एक या अधिक अकाउंट चुनें।" },
+            { "Enter a Place ID first.", "पहले Place ID दर्ज करें।" },
+            { "Select a preset in the list first.", "पहले सूची से एक प्रीसेट चुनें।" },
+            { "Select a game in the list first.", "पहले सूची से एक गेम चुनें।" },
+            { "Select a server in the list first.", "पहले सूची से एक सर्वर चुनें।" },
+            { "Could not load servers:", "सर्वर लोड नहीं हो सके:" },
+            { "Launch failed:", "लॉन्च विफल:" },
+            { "Account locked", "अकाउंट लॉक" }, { "Cookie expired", "कुकी समाप्त" },
+            { "Welcome to Roblox MultiHub", "Roblox MultiHub में स्वागत है" },
+            { "Add your accounts", "अपने अकाउंट जोड़ें" }, { "Pick a game", "एक गेम चुनें" },
+            { "Press Launch", "लॉन्च दबाएँ" }, { "Go to Launch", "लॉन्च पर जाएँ" },
+            { "Close Roblox MultiHub", "Roblox MultiHub बंद करें" },
+            { "Loading servers...", "सर्वर लोड हो रहे हैं..." }, { "Searching...", "खोज रहे हैं..." },
+            { "Backup saved in ", "बैकअप यहाँ सहेजा गया: " },
+            { "Backups are made automatically.", "बैकअप अपने आप बनते हैं।" }
+        };
+    }
+}

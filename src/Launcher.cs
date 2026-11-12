@@ -724,7 +724,7 @@ namespace RobloxMultiHub
                         LiveInfo li = AppState.Live(a);
                         if (!li.LockedAlerted && Store.Settings.WebhookLocked)
                         {
-                            Webhook.Send("Account locked", AppState.Name(a) + " — Roblox returned HTTP 403 (locked / blocked). Unlock it on roblox.com.", Webhook.Red);
+                            Webhook.Send(Lang.T("Account locked"), AppState.Name(a) + " — Roblox returned HTTP 403 (locked / blocked). Unlock it on roblox.com.", Webhook.Red);
                             li.LockedAlerted = true;
                         }
                         li.Locked = true;

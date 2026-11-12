@@ -37,7 +37,7 @@ namespace RobloxMultiHub
         {
             Button ok = Ui.Btn(okText, 110, null, "primary");
             ok.DialogResult = DialogResult.OK;
-            Button cancel = Ui.Btn("Cancel", 90, null, "");
+            Button cancel = Ui.Btn(Lang.T("Cancel"), 90, null, "");
             cancel.DialogResult = DialogResult.Cancel;
             Put(f, ok, f.ClientSize.Width - 110 - 90 - 30, f.ClientSize.Height - 46);
             Put(f, cancel, f.ClientSize.Width - 90 - 16, f.ClientSize.Height - 46);
@@ -123,7 +123,7 @@ namespace RobloxMultiHub
             t.Size = new Size(588, 240);
             Put(f, t, 16, 56);
             Put(f, Ui.Lbl("Anyone with a cookie can use that account. Never share these, and never paste them into websites.", "warn"), 16, 304);
-            OkCancel(f, "Lang.T(Lang.T(Add accounts");
+            OkCancel(f, Lang.T("Add accounts"));
             Theme.Apply(f);
             f.ActiveControl = t;
             string result = null;
@@ -147,7 +147,7 @@ namespace RobloxMultiHub
             t.Size = new Size(588, 180);
             Put(f, t, 16, 130);
             Put(f, Ui.Lbl("Passwords are only typed into Roblox's own login page. They are not saved unless you fill them in under Edit.", "warn"), 16, 320);
-            OkCancel(f, "Lang.T(Lang.T(Add accounts");
+            OkCancel(f, "Add accounts");
             Theme.Apply(f);
             f.ActiveControl = t;
             string result = null;

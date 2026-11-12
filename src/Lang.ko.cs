@@ -1,0 +1,65 @@
+using System.Collections.Generic;
+
+namespace RobloxMultiHub
+{
+    public partial class Lang
+    {
+        static readonly Dictionary<string, string> Korean = new Dictionary<string, string>
+        {
+            { "\U0001F680  Launch", "\U0001F680  실행" }, { "\U0001F310  Servers", "\U0001F310  서버" },
+            { "\U0001F5A5  Layout", "\U0001F5A5  레이아웃" }, { "\U0001F4CA  Monitor", "\U0001F4CA  모니터" },
+            { "\U0001F4C4  Presets", "\U0001F4C4  프리셋" }, { "\u26A1  Perf", "\u26A1  성능" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  베타" }, { "\u2699  Settings", "\u2699  설정" },
+            { "\u2753  Help", "\u2753  도움말" }, { "Accounts", "계정" },
+            { "Launch selected", "선택 항목 실행" }, { "Launch all", "모두 실행" },
+            { "Launch all listed", "모두 실행" }, { "Stop", "정지" }, { "Stop all", "모두 정지" },
+            { "Add accounts", "계정 추가" }, { "Save preset", "프리셋 저장" },
+            { "Run diagnostics", "진단 실행" }, { "Check for updates", "업데이트 확인" },
+            { "Back up now", "지금 백업" }, { "Clean memory now", "지금 메모리 정리" },
+            { "Arrange now", "지금 정렬" }, { "Close all Roblox processes", "모든 Roblox 프로세스 종료" },
+            { "Apply to running windows", "실행 중인 창에 적용" }, { "Allow click", "클릭 허용" },
+            { "Reset secret counters", "시크릿 카운터 초기화" },
+            { "Copy a fresh login ticket", "새 로그인 티켓 복사" },
+            { "Open profile in browser", "브라우저에서 프로필 열기" },
+            { "Log in with a browser (Edge / Chrome)...", "브라우저로 로그인 (Edge / Chrome)..." },
+            { "Add several with username:password...", "여러 계정 추가 (아이디:비밀번호)..." },
+            { "Paste cookie(s)...", "쿠키 붙여넣기..." }, { "Import cookies from a file...", "파일에서 쿠키 가져오기..." },
+            { "Browse...", "찾아보기..." }, { "Cancel", "취소" }, { "Check", "확인" },
+            { "All groups", "모든 그룹" }, { "New group...", "새 그룹..." }, { "New group", "새 그룹" },
+            { "Name of the new group:", "새 그룹 이름:" },
+            { "Max RAM per window", "창당 최대 RAM" },
+            { "Measured floor on this PC:", "이 PC에서 측정된 최솟값:" }, { "Not measured yet on this PC.", "이 PC에서 아직 측정 안 됨." },
+            { "Refresh every (seconds)", "새로 고침 간격 (초)" }, { "Discord alerts", "Discord 알림" },
+            { "Use Windows encryption", "Windows 암호화 사용" }, { "Support this project", "이 프로젝트 후원" },
+            { "Update available", "업데이트 있음" }, { "Sort accounts by", "계정 정렬 기준" },
+            { "My own order (Up / Down buttons)", "직접 지정 (위/아래 버튼)" },
+            { "Name  (click again to reverse)", "이름  (다시 클릭하면 역순)" },
+            { "CPU usage", "CPU 사용량" }, { "Last used", "마지막 사용" }, { "Move to group", "그룹으로 이동" },
+            { "In game", "게임 중" }, { "Not checked", "확인 안 됨" }, { "User ID", "사용자 ID" },
+            { "Show account details (age, Robux, Premium)", "계정 정보 표시 (나이, Robux, Premium)" },
+            { "Roblox CPU", "Roblox CPU" }, { "Roblox memory", "Roblox 메모리" },
+            { "Right now: no Roblox window is running.", "현재 실행 중인 Roblox 창이 없습니다." },
+            { "Running now:", "현재 실행 중:" }, { "CPU priority", "CPU 우선 순위" },
+            { "Anti-AFK", "안티-AFK" }, { "Automation", "자동화" }, { "Advanced", "고급" },
+            { "Appearance & startup", "화면과 시작" }, { "Anti-aliasing", "안티앨리어싱" },
+            { "Hold (ms)", "누르기 (ms)" }, { "X offset", "X 오프셋" }, { "Y offset", "Y 오프셋" },
+            { "Max click tries", "최대 클릭 시도" },
+            { "Select an account first.", "먼저 계정을 선택하세요." },
+            { "Select one or more accounts in the list first.", "먼저 목록에서 하나 이상의 계정을 선택하세요." },
+            { "Enter a Place ID first.", "먼저 Place ID를 입력하세요." },
+            { "Select a preset in the list first.", "먼저 목록에서 프리셋을 선택하세요." },
+            { "Select a game in the list first.", "먼저 목록에서 게임을 선택하세요." },
+            { "Select a server in the list first.", "먼저 목록에서 서버를 선택하세요." },
+            { "Could not load servers:", "서버를 불러올 수 없습니다:" },
+            { "Launch failed:", "실행 실패:" },
+            { "Account locked", "계정 잠김" }, { "Cookie expired", "쿠키 만료" },
+            { "Welcome to Roblox MultiHub", "Roblox MultiHub에 오신 것을 환영합니다" },
+            { "Add your accounts", "계정을 추가하세요" }, { "Pick a game", "게임을 고르세요" },
+            { "Press Launch", "실행을 누르세요" }, { "Go to Launch", "실행으로 이동" },
+            { "Close Roblox MultiHub", "Roblox MultiHub 닫기" },
+            { "Loading servers...", "서버 불러오는 중..." }, { "Searching...", "검색 중..." },
+            { "Backup saved in ", "백업 저장됨: " },
+            { "Backups are made automatically.", "백업은 자동으로 생성됩니다." }
+        };
+    }
+}

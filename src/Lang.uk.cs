@@ -1,0 +1,65 @@
+using System.Collections.Generic;
+
+namespace RobloxMultiHub
+{
+    public partial class Lang
+    {
+        static readonly Dictionary<string, string> Ukrainian = new Dictionary<string, string>
+        {
+            { "\U0001F680  Launch", "\U0001F680  Запуск" }, { "\U0001F310  Servers", "\U0001F310  Сервери" },
+            { "\U0001F5A5  Layout", "\U0001F5A5  Розкладка" }, { "\U0001F4CA  Monitor", "\U0001F4CA  Монітор" },
+            { "\U0001F4C4  Presets", "\U0001F4C4  Пресети" }, { "\u26A1  Perf", "\u26A1  Продуктивність" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  Бета" }, { "\u2699  Settings", "\u2699  Налаштування" },
+            { "\u2753  Help", "\u2753  Довідка" }, { "Accounts", "Акаунти" },
+            { "Launch selected", "Запустити вибрані" }, { "Launch all", "Запустити всі" },
+            { "Launch all listed", "Запустити всі" }, { "Stop", "Стоп" }, { "Stop all", "Зупинити всі" },
+            { "Add accounts", "Додати акаунти" }, { "Save preset", "Зберегти пресет" },
+            { "Run diagnostics", "Запустити діагностику" }, { "Check for updates", "Перевірити оновлення" },
+            { "Back up now", "Зробити бекап" }, { "Clean memory now", "Очистити пам'ять" },
+            { "Arrange now", "Розкласти вікна" }, { "Close all Roblox processes", "Закрити всі процеси Roblox" },
+            { "Apply to running windows", "Застосувати до запущених вікон" }, { "Allow click", "Дозволити кліки" },
+            { "Reset secret counters", "Скинути лічильники секретів" },
+            { "Copy a fresh login ticket", "Скопіювати новий тікет входу" },
+            { "Open profile in browser", "Відкрити профіль у браузері" },
+            { "Log in with a browser (Edge / Chrome)...", "Увійти через браузер (Edge / Chrome)..." },
+            { "Add several with username:password...", "Додати кілька (логін:пароль)..." },
+            { "Paste cookie(s)...", "Вставити cookie..." }, { "Import cookies from a file...", "Імпортувати cookie з файла..." },
+            { "Browse...", "Огляд..." }, { "Cancel", "Скасувати" }, { "Check", "Перевірити" },
+            { "All groups", "Усі групи" }, { "New group...", "Нова група..." }, { "New group", "Нова група" },
+            { "Name of the new group:", "Назва нової групи:" },
+            { "Max RAM per window", "Макс. RAM на вікно" },
+            { "Measured floor on this PC:", "Виміряний мінімум на цьому ПК:" }, { "Not measured yet on this PC.", "На цьому ПК ще не вимірювалось." },
+            { "Refresh every (seconds)", "Оновлювати кожні (секунд)" }, { "Discord alerts", "Сповіщення Discord" },
+            { "Use Windows encryption", "Використати шифрування Windows" }, { "Support this project", "Підтримати проєкт" },
+            { "Update available", "Доступне оновлення" }, { "Sort accounts by", "Сортувати акаунти за" },
+            { "My own order (Up / Down buttons)", "Свій порядок (кнопки Вгору / Вниз)" },
+            { "Name  (click again to reverse)", "Ім'я  (ще раз — зворотний порядок)" },
+            { "CPU usage", "Завантаження ЦП" }, { "Last used", "Останнє використання" }, { "Move to group", "Перемістити до групи" },
+            { "In game", "У грі" }, { "Not checked", "Не перевірено" }, { "User ID", "ID користувача" },
+            { "Show account details (age, Robux, Premium)", "Показати дані акаунта (вік, Robux, Premium)" },
+            { "Roblox CPU", "ЦП Roblox" }, { "Roblox memory", "Пам'ять Roblox" },
+            { "Right now: no Roblox window is running.", "Зараз не запущено жодного вікна Roblox." },
+            { "Running now:", "Запущено зараз:" }, { "CPU priority", "Пріоритет ЦП" },
+            { "Anti-AFK", "Анти-АФК" }, { "Automation", "Автоматизація" }, { "Advanced", "Додатково" },
+            { "Appearance & startup", "Вигляд і запуск" }, { "Anti-aliasing", "Згладжування" },
+            { "Hold (ms)", "Утримання (мс)" }, { "X offset", "Зміщення X" }, { "Y offset", "Зміщення Y" },
+            { "Max click tries", "Макс. спроб кліку" },
+            { "Select an account first.", "Спочатку виберіть акаунт." },
+            { "Select one or more accounts in the list first.", "Спочатку виберіть один або кілька акаунтів у списку." },
+            { "Enter a Place ID first.", "Спочатку введіть Place ID." },
+            { "Select a preset in the list first.", "Спочатку виберіть пресет у списку." },
+            { "Select a game in the list first.", "Спочатку виберіть гру у списку." },
+            { "Select a server in the list first.", "Спочатку виберіть сервер у списку." },
+            { "Could not load servers:", "Не вдалося завантажити сервери:" },
+            { "Launch failed:", "Не вдалося запустити:" },
+            { "Account locked", "Акаунт заблоковано" }, { "Cookie expired", "Cookie прострочив" },
+            { "Welcome to Roblox MultiHub", "Ласкаво просимо до Roblox MultiHub" },
+            { "Add your accounts", "Додайте свої акаунти" }, { "Pick a game", "Виберіть гру" },
+            { "Press Launch", "Натисніть «Запуск»" }, { "Go to Launch", "Перейти до запуску" },
+            { "Close Roblox MultiHub", "Закрити Roblox MultiHub" },
+            { "Loading servers...", "Завантаження серверів..." }, { "Searching...", "Пошук..." },
+            { "Backup saved in ", "Бекап збережено в " },
+            { "Backups are made automatically.", "Бекапи створюються автоматично." }
+        };
+    }
+}

@@ -1,0 +1,65 @@
+using System.Collections.Generic;
+
+namespace RobloxMultiHub
+{
+    public partial class Lang
+    {
+        static readonly Dictionary<string, string> Indonesian = new Dictionary<string, string>
+        {
+            { "\U0001F680  Launch", "\U0001F680  Luncurkan" }, { "\U0001F310  Servers", "\U0001F310  Server" },
+            { "\U0001F5A5  Layout", "\U0001F5A5  Tata letak" }, { "\U0001F4CA  Monitor", "\U0001F4CA  Monitor" },
+            { "\U0001F4C4  Presets", "\U0001F4C4  Preset" }, { "\u26A1  Perf", "\u26A1  Performa" },
+            { "\U0001F9EA  Beta", "\U0001F9EA  Beta" }, { "\u2699  Settings", "\u2699  Pengaturan" },
+            { "\u2753  Help", "\u2753  Bantuan" }, { "Accounts", "Akun" },
+            { "Launch selected", "Luncurkan pilihan" }, { "Launch all", "Luncurkan semua" },
+            { "Launch all listed", "Luncurkan semua" }, { "Stop", "Berhenti" }, { "Stop all", "Hentikan semua" },
+            { "Add accounts", "Tambah akun" }, { "Save preset", "Simpan preset" },
+            { "Run diagnostics", "Jalankan diagnostik" }, { "Check for updates", "Periksa pembaruan" },
+            { "Back up now", "Cadangkan sekarang" }, { "Clean memory now", "Bersihkan memori sekarang" },
+            { "Arrange now", "Atur sekarang" }, { "Close all Roblox processes", "Tutup semua proses Roblox" },
+            { "Apply to running windows", "Terapkan ke jendela aktif" }, { "Allow click", "Izinkan klik" },
+            { "Reset secret counters", "Reset penghitung rahasia" },
+            { "Copy a fresh login ticket", "Salin tiket login baru" },
+            { "Open profile in browser", "Buka profil di browser" },
+            { "Log in with a browser (Edge / Chrome)...", "Masuk dengan browser (Edge / Chrome)..." },
+            { "Add several with username:password...", "Tambah beberapa akun (pengguna:sandi)..." },
+            { "Paste cookie(s)...", "Tempel cookie..." }, { "Import cookies from a file...", "Impor cookie dari file..." },
+            { "Browse...", "Telusuri..." }, { "Cancel", "Batal" }, { "Check", "Periksa" },
+            { "All groups", "Semua grup" }, { "New group...", "Grup baru..." }, { "New group", "Grup baru" },
+            { "Name of the new group:", "Nama grup baru:" },
+            { "Max RAM per window", "RAM maks per jendela" },
+            { "Measured floor on this PC:", "Batang bawah terukur di PC ini:" }, { "Not measured yet on this PC.", "Belum diukur di PC ini." },
+            { "Refresh every (seconds)", "Segarkan setiap (detik)" }, { "Discord alerts", "Peringatan Discord" },
+            { "Use Windows encryption", "Gunakan enkripsi Windows" }, { "Support this project", "Dukung proyek ini" },
+            { "Update available", "Pembaruan tersedia" }, { "Sort accounts by", "Urutkan akun berdasarkan" },
+            { "My own order (Up / Down buttons)", "Urutan sendiri (tombol Naik / Turun)" },
+            { "Name  (click again to reverse)", "Nama  (klik lagi untuk membalik)" },
+            { "CPU usage", "Penggunaan CPU" }, { "Last used", "Terakhir dipakai" }, { "Move to group", "Pindah ke grup" },
+            { "In game", "Dalam game" }, { "Not checked", "Belum diperiksa" }, { "User ID", "ID pengguna" },
+            { "Show account details (age, Robux, Premium)", "Tampilkan detail akun (usia, Robux, Premium)" },
+            { "Roblox CPU", "CPU Roblox" }, { "Roblox memory", "Memori Roblox" },
+            { "Right now: no Roblox window is running.", "Saat ini: tidak ada jendela Roblox berjalan." },
+            { "Running now:", "Berjalan sekarang:" }, { "CPU priority", "Prioritas CPU" },
+            { "Anti-AFK", "Anti-AFK" }, { "Automation", "Otomatisasi" }, { "Advanced", "Lanjutan" },
+            { "Appearance & startup", "Tampilan & startup" }, { "Anti-aliasing", "Anti-aliasing" },
+            { "Hold (ms)", "Tahan (ms)" }, { "X offset", "Offset X" }, { "Y offset", "Offset Y" },
+            { "Max click tries", "Maks. percobaan klik" },
+            { "Select an account first.", "Pilih akun dulu." },
+            { "Select one or more accounts in the list first.", "Pilih dulu satu atau beberapa akun di daftar." },
+            { "Enter a Place ID first.", "Masukkan Place ID dulu." },
+            { "Select a preset in the list first.", "Pilih preset di daftar dulu." },
+            { "Select a game in the list first.", "Pilih game di daftar dulu." },
+            { "Select a server in the list first.", "Pilih server di daftar dulu." },
+            { "Could not load servers:", "Gagal memuat server:" },
+            { "Launch failed:", "Gagal meluncurkan:" },
+            { "Account locked", "Akun terkunci" }, { "Cookie expired", "Cookie kedaluwarsa" },
+            { "Welcome to Roblox MultiHub", "Selamat datang di Roblox MultiHub" },
+            { "Add your accounts", "Tambahkan akunmu" }, { "Pick a game", "Pilih game" },
+            { "Press Launch", "Tekan Luncurkan" }, { "Go to Launch", "Buka Luncurkan" },
+            { "Close Roblox MultiHub", "Tutup Roblox MultiHub" },
+            { "Loading servers...", "Memuat server..." }, { "Searching...", "Mencari..." },
+            { "Backup saved in ", "Cadangan disimpan di " },
+            { "Backups are made automatically.", "Cadangan dibuat otomatis." }
+        };
+    }
+}

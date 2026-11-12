@@ -303,7 +303,7 @@ namespace RobloxMultiHub
                 lastGame = game.Trim();
             }
             LaunchButton.CornerColor = Theme.Panel2;
-            LaunchButton.Text = running ? "Stop" : "Launch";
+            LaunchButton.Text = running ? Lang.T("Stop") : "Launch";
             LaunchButton.SetStop(running);
             bool changed = pill != pillText || pillColor != pillCol || Selected != selected;
             pill = pillText;

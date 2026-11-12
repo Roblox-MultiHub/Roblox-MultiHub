@@ -55,7 +55,7 @@ namespace RobloxMultiHub
             Label status = Dialogs.Put(f, Ui.Lbl("Type part of a game's name and press Enter.", "muted"), 16, 376);
             GameInfo chosen = null;
             RoundButton use = Dialogs.Put(f, Ui.Btn("Use this game", 130, null, "primary"), f.ClientSize.Width - 130 - 100 - 28, f.ClientSize.Height - 46);
-            RoundButton cancel = Dialogs.Put(f, Ui.Btn("Cancel", 90, null, ""), f.ClientSize.Width - 90 - 16, f.ClientSize.Height - 46);
+            RoundButton cancel = Dialogs.Put(f, Ui.Btn(Lang.T("Cancel"), 90, null, ""), f.ClientSize.Width - 90 - 16, f.ClientSize.Height - 46);
             cancel.DialogResult = DialogResult.Cancel;
             f.CancelButton = cancel;
 
@@ -115,7 +115,7 @@ namespace RobloxMultiHub
             list.MultiSelect = false;
             ListStyle.Attach(list);
             Dialogs.Put(f, list, 16, 56);
-            Label status = Dialogs.Put(f, Ui.Lbl("Loading servers...", "muted"), 16, 436);
+            Label status = Dialogs.Put(f, Ui.Lbl(Lang.T("Loading servers..."), "muted"), 16, 436);
             string chosen = null;
             RoundButton use = Dialogs.Put(f, Ui.Btn("Use this server", 140, null, "primary"), f.ClientSize.Width - 140 - 100 - 28, f.ClientSize.Height - 46);
             RoundButton cancel = Dialogs.Put(f, Ui.Btn("Cancel", 90, null, ""), f.ClientSize.Width - 90 - 16, f.ClientSize.Height - 46);
@@ -143,7 +143,7 @@ namespace RobloxMultiHub
             {
                 if (busy) return;
                 busy = true;
-                status.Text = Lang.T("Loading servers...");
+                status.Text = "Loading servers...";
                 if (!append) { all.Clear(); next = ""; }
                 int mode = Math.Max(0, sort.SelectedIndex);
                 int pages = (!append && mode >= 2) ? 3 : 1;     // ping / FPS need a bigger sample to sort well
