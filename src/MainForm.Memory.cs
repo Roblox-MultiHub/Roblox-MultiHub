@@ -11,6 +11,7 @@ namespace RobloxMultiHub
     public partial class MainForm
     {
         Label lblRam, lblMemState;
+        CheckBox chkVeryLow;
         CheckBox chkAutoClean, chkMemWs, chkMemCache, chkMemModified, chkMemStandby, chkMemStandbyFull, chkMemCombine;
         NumericUpDown numMemLimit, numMemInterval;
         RoundButton btnCleanNow;
@@ -26,6 +27,12 @@ namespace RobloxMultiHub
             p.Section("Memory (RAM)");
             lblRam = Ui.Lbl("", "");
             p.Row(lblRam);
+
+            chkVeryLow = Ui.Chk("VeryLow memory priority for all clients", Store.Settings.VeryLowMem, null);
+            p.Opt("Windows reclaims Roblox pages first.",
+                "One call per client. When anything else on the PC needs RAM, Windows takes it from the Roblox clients first instead of your other programs. Recommended ON for farms.",
+                chkVeryLow);
+            chkVeryLow.CheckedChanged += delegate { if (!loadingMem) { Store.Settings.VeryLowMem = chkVeryLow.Checked; Store.SaveSettings(); } };
 
             btnCleanNow = Ui.Btn("Clean memory now", 150, delegate { CleanMemoryNow(); }, "primary");
             p.Opt("Frees RAM right away.",

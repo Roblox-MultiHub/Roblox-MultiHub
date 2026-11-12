@@ -242,6 +242,18 @@ namespace RobloxMultiHub
             p.Opt("News, help and tickets.",
                 "Opens the Roblox MultiHub Discord server in your browser: announcements, update logs, a general chat and a support ticket system if you need help.",
                 Ui.Btn("Join our Discord", 150, delegate { OpenLink(DiscordUrl, "Discord"); }, ""));
+            p.Opt("Everything a supporter needs, in one file.",
+                "Writes a detailed text file next to the app data: your settings (webhook URL masked), Windows, CPU, GPU, motherboard, BIOS, every disk and where the pagefile is, the Roblox install and its flags, a count of accounts, every running client with its live overhead, hub overhead, and the recent log.",
+                Ui.Btn("Create debug log", 170, delegate
+                {
+                    try
+                    {
+                        string f = SupportBundle.Create();
+                        AddLog("Debug log written: " + f);
+                        System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + f + "\"");
+                    }
+                    catch (Exception ex) { AddLog("Debug log failed: " + ex.Message); }
+                }, ""));
 
             p.Section("About");
             p.Hint("Independent project - not affiliated with Roblox.",

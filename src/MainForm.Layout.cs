@@ -22,6 +22,7 @@ namespace RobloxMultiHub
         RadioButton rbAuto, rbGrid, rbFixed;
         NumericUpDown numRows, numCols, numGap, numMargin, numScale, numFixW, numFixH, numAutoDelay;
         CheckBox chkStretch, chkBorderless, chkTop, chkTitles, chkAuto, chkHotkeys;
+        CheckBox chkHideBar;
         ComboBox cbSortMode;
         static readonly string[] SortModeKeys = new string[] { "Manual", "Name", "Pid" };
         Panel previewPanel;
@@ -123,6 +124,11 @@ namespace RobloxMultiHub
             p.Opt("Rename windows to the account name.",
                 "Changes the title of windows started by this app to 'Roblox - AccountName', so you can tell them apart in the taskbar. OFF by default.",
                 chkTitles);
+            chkHideBar = Ui.Chk("Hide Roblox windows from the taskbar and Alt-Tab", Store.Settings.HideTaskbar, null);
+            p.Opt("Cleans up a crowded taskbar.",
+                "Applies the Windows tool-window style to every Roblox window (also within seconds of a new one opening). The windows stay visible on screen; they only disappear from the taskbar and Alt-Tab. Untick to bring them back.",
+                chkHideBar);
+            chkHideBar.CheckedChanged += delegate { if (!loadingLayout) { Store.Settings.HideTaskbar = chkHideBar.Checked; Store.SaveSettings(); Launcher.ApplyTaskbarHiding(); } };
 
             // ---- automation ----
             p.Section(Lang.T("Automation"));

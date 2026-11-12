@@ -787,6 +787,7 @@ namespace RobloxMultiHub
                     MaxAlts.Tick();
                     RamCap.Tick();
                     UpdateBetaLive();
+                    UpdatePerfCap();
                     DiscordRpc.Update(UsageMonitor.Count, Store.Accounts.Count);
                 }
                 if (currentPage == "Layout" && tickN % 2 == 0) RefreshWindowList();
