@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace RobloxMultiHub
 {
@@ -114,9 +114,6 @@ namespace RobloxMultiHub
             { "Min", "最小" },
             { "Monitor", "監控" },
             { "No Roblox window is running. Launch some accounts and they will show up here.", "沒有正在執行的 Roblox 視窗。啟動帳號後它們會顯示在這裡。" },
-            { "⚙  Settings", "⚙  設定" },
-            { "⚡  Perf", "⚡  效能" },
-            { "❓  Help", "❓  說明" },
         };
     }
 }

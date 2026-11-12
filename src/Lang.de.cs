@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace RobloxMultiHub
 {
@@ -114,9 +114,6 @@ namespace RobloxMultiHub
             { "Min", "Min" },
             { "Monitor", "Monitor" },
             { "No Roblox window is running. Launch some accounts and they will show up here.", "Kein Roblox-Fenster läuft. Starte Konten und sie erscheinen hier." },
-            { "⚙  Settings", "⚙  Einstellungen" },
-            { "⚡  Perf", "⚡  Leistung" },
-            { "❓  Help", "❓  Hilfe" },
         };
     }
 }
