@@ -18,7 +18,7 @@ namespace RobloxMultiHub
             StringBuilder s = new StringBuilder();
             Section(s, "ROBLOX MULTIHUB SUPPORT BUNDLE");
             Line(s, "Created", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-            Line(s, "App version", "1.3.8-fork");
+            Line(s, "App version", Application.ProductVersion);
             Line(s, "App path", Application.ExecutablePath);
             Line(s, "Data folder", Store.Dir);
             Line(s, "Elevated", MemClean.IsElevated().ToString());

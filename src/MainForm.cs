@@ -815,12 +815,12 @@ namespace RobloxMultiHub
             }
             else if (st == "Waiting")
             {
-                lblMulti.Text = Lang.T("Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.");
+                lblMulti.Text = "Multi-instance: WAITING\r\nClose all Roblox, or restart your PC, then reopen.";
                 lblMulti.ForeColor = Theme.Warn;
             }
             else
             {
-                lblMulti.Text = "Multi-instance: " + st;
+                lblMulti.Text = "Multi-instance: " + st + "\r\nTry restarting your PC, then reopen this app.";
                 lblMulti.ForeColor = Theme.Bad;
             }
         }
