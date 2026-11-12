@@ -439,11 +439,15 @@ namespace RobloxMultiHub
             Store.SaveSettings();
             // applied in place: the whole UI is rebuilt with the new language, no restart
             // (a restart also raced the single-instance mutex -> 'already running')
-            Lang.Load(code);
-            RightToLeft = (code == "ar" || code == "he") ? RightToLeft.Yes : RightToLeft.No;
-            currentPage = "Settings";
-            BuildUi();
-            AddLog("Language: " + code);
+            // the rebuild disposes the very combo/button whose handler we are inside -
+            // defer it so the click unwinds first (disposing mid-handler froze the UI)
+            BeginInvoke(new Action(delegate
+            {
+                Lang.Load(code);
+                currentPage = "Settings";
+                BuildUi();
+                AddLog("Language: " + code);
+            }));
         }
 
         void SetStartup(bool on)

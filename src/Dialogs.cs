@@ -97,7 +97,7 @@ namespace RobloxMultiHub
             t.Text = text.Replace("\r\n", "\n").Replace("\n", "\r\n");
             t.Size = new Size(528, 250);
             Put(f, t, 16, 14);
-            Button close = Ui.Btn("Close", 90, null, "primary");
+            Button close = Ui.Btn(Lang.T("Close"), 90, null, "primary");
             close.DialogResult = DialogResult.OK;
             Put(f, close, f.ClientSize.Width - 106, f.ClientSize.Height - 46);
             Button copy = Ui.Btn("Copy", 90, delegate { Util.Copy(text); }, "");

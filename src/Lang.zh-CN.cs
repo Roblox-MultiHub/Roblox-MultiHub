@@ -106,7 +106,17 @@ namespace RobloxMultiHub
             { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "所有选项。多开、性能、提醒、开机启动等。" },
             { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "录制并回放鼠标 + 键盘（类似 TinyTask），在独立窗口中。" },
             { "New features that are still being tested. They move to their proper page once proven.", "仍在测试的新功能，验证后会移到相应页面。" },
-            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "点击打开设置。多开功能让多个 Roblox 窗口同时运行。" }
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "点击打开设置。多开功能让多个 Roblox 窗口同时运行。" },
+            { "Cards", "卡片" },
+            { "Close", "关闭" },
+            { "Focus", "聚焦" },
+            { "List", "列表" },
+            { "Min", "最小" },
+            { "Monitor", "监控" },
+            { "No Roblox window is running. Launch some accounts and they will show up here.", "没有正在运行的 Roblox 窗口。启动账号后它们会显示在这里。" },
+            { "⚙  Settings", "⚙  设置" },
+            { "⚡  Perf", "⚡  性能" },
+            { "❓  Help", "❓  帮助" },
         };
     }
 }

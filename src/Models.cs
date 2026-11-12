@@ -135,7 +135,7 @@ namespace RobloxMultiHub
         public bool WroteClientFile = false;
         public int FpsCap = 0;                      // 0 = leave Roblox's own setting alone
         public bool WroteFpsCap = false;
-        public string View = "List";                // List | Cards
+        public string View = Lang.T("List");                // List | Cards
         public int SplitW = 600;
         public bool AutoRelaunch = false;
         public int WatcherSec = 60;

@@ -106,7 +106,17 @@ namespace RobloxMultiHub
             { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "모든 옵션. 멀티 인스턴스, 성능, 알림, 시작 등." },
             { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "마우스 + 키보드를 녹화하고 재생(TinyTask 방식)합니다." },
             { "New features that are still being tested. They move to their proper page once proven.", "테스트 중인 새 기능. 검증되면 각자의 페이지로 이동합니다." },
-            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "설정을 엽니다. 멀티 인스턴스가 여러 Roblox 창을 동시에 실행하게 합니다." }
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "설정을 엽니다. 멀티 인스턴스가 여러 Roblox 창을 동시에 실행하게 합니다." },
+            { "Cards", "카드" },
+            { "Close", "닫기" },
+            { "Focus", "포커스" },
+            { "List", "목록" },
+            { "Min", "최소" },
+            { "Monitor", "모니터" },
+            { "No Roblox window is running. Launch some accounts and they will show up here.", "실행 중인 Roblox 창이 없습니다. 계정을 실행하면 여기 표시됩니다." },
+            { "⚙  Settings", "⚙  설정" },
+            { "⚡  Perf", "⚡  성능" },
+            { "❓  Help", "❓  도움말" },
         };
     }
 }

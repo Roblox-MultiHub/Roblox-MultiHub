@@ -72,7 +72,7 @@ namespace RobloxMultiHub
             cbMonitor.SelectedIndex = Math.Max(0, monitors.IndexOf(WindowLayout.PickMonitor(monitors, L.Monitor)));
             p.Opt("Which screen the windows go on.",
                 "All windows are placed on this monitor. Pick another one if you have several.",
-                Ui.Fld("Monitor", 80), cbMonitor);
+                Ui.Fld(Lang.T("Monitor"), 80), cbMonitor);
             chkWork = Ui.Chk("Keep windows clear of the taskbar", L.UseWorkArea, null);
             p.Opt("Stays out of the taskbar area.",
                 "On = use the usable part of the screen. Off = use the entire screen, even behind the taskbar.",
@@ -181,7 +181,7 @@ namespace RobloxMultiHub
                 Ui.Btn("Pin size/pos...", 120, delegate { PinSelected(); }, ""),
                 Ui.Btn("Unpin", 64, delegate { UnpinSelected(); }, ""));
             p.RowTip("Focus brings a window to the front, Minimize minimizes it, 'Close selected' closes the selected Roblox processes and 'Close ALL Roblox' closes every Roblox process.",
-                Ui.Btn("Focus", 70, delegate { FocusSelected(); }, ""),
+                Ui.Btn(Lang.T("Focus"), 70, delegate { FocusSelected(); }, ""),
                 Ui.Btn("Minimize", 84, delegate { MinimizeSelected(); }, ""),
                 Ui.Btn("Close selected", 120, delegate { CloseSelectedWindows(); }, "danger"),
                 Ui.Btn("Close ALL Roblox", 130, delegate { CloseAllRoblox(); }, "danger"));

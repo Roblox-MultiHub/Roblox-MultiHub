@@ -106,7 +106,17 @@ namespace RobloxMultiHub
             { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "ตัวเลือกทั้งหมด มัลติอินสแตนซ์ เปอร์เซ็นต์ แจ้งเตือน การเริ่มต้น และอื่น ๆ" },
             { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "บันทึกและเล่นซ้ำเมาส์ + คีย์บอร์ด (เหมือน TinyTask) ในหน้าต่างของตัวเอง" },
             { "New features that are still being tested. They move to their proper page once proven.", "ฟีเจอร์ใหม่ที่ยังทดสอบอยู่ จะย้ายไปหน้าของมันเมื่อพิสูจน์แล้ว" },
-            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "เปิดหน้าตั้งค่า มัลติอินสแตนซ์ทำให้เปิดหน้าต่าง Roblox หลายบานพร้อมกันได้" }
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "เปิดหน้าตั้งค่า มัลติอินสแตนซ์ทำให้เปิดหน้าต่าง Roblox หลายบานพร้อมกันได้" },
+            { "Cards", "การ์ด" },
+            { "Close", "ปิด" },
+            { "Focus", "โฟกัส" },
+            { "List", "รายการ" },
+            { "Min", "Min" },
+            { "Monitor", "มอนิเตอร์" },
+            { "No Roblox window is running. Launch some accounts and they will show up here.", "ไม่มีหน้าต่าง Roblox ทำงาน เปิดบัญชีแล้วจะปรากฏที่นี่" },
+            { "⚙  Settings", "⚙  ตั้งค่า" },
+            { "⚡  Perf", "⚡  ประสิทธิภาพ" },
+            { "❓  Help", "❓  ช่วยเหลือ" },
         };
     }
 }

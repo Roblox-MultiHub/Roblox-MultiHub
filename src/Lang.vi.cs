@@ -106,7 +106,17 @@ namespace RobloxMultiHub
             { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "Mọi tùy chọn. Đa phiên bản, hiệu năng, cảnh báo, khởi động và hơn thế." },
             { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "Ghi và phát lại chuột + bàn phím (giống TinyTask) trong cửa sổ riêng." },
             { "New features that are still being tested. They move to their proper page once proven.", "Tính năng mới đang thử nghiệm. Chuyển sang trang đúng khi đã chứng minh." },
-            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Mở Cài đặt. Đa phiên bản cho phép nhiều cửa sổ Roblox chạy cùng lúc." }
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Mở Cài đặt. Đa phiên bản cho phép nhiều cửa sổ Roblox chạy cùng lúc." },
+            { "Cards", "Thẻ" },
+            { "Close", "Đóng" },
+            { "Focus", "Tập trung" },
+            { "List", "Danh sách" },
+            { "Min", "Min" },
+            { "Monitor", "Giám sát" },
+            { "No Roblox window is running. Launch some accounts and they will show up here.", "Không có cửa sổ Roblox nào đang chạy. Khởi chạy tài khoản và chúng sẽ xuất hiện ở đây." },
+            { "⚙  Settings", "⚙  Cài đặt" },
+            { "⚡  Perf", "⚡  Hiệu năng" },
+            { "❓  Help", "❓  Trợ giúp" },
         };
     }
 }

@@ -106,7 +106,17 @@ namespace RobloxMultiHub
             { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "Alle Optionen. Multi-Instanz, Leistung, Hinweise, Start und mehr." },
             { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "Zeichnet Maus + Tastatur auf und spielt sie ab (wie TinyTask) im eigenen Fenster." },
             { "New features that are still being tested. They move to their proper page once proven.", "Neue Funktionen im Test. Sie wandern auf die richtige Seite, sobald sie sich bewährt haben." },
-            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Öffnet die Einstellungen. Multi-Instanz erlaubt mehrere Roblox-Fenster gleichzeitig." }
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Öffnet die Einstellungen. Multi-Instanz erlaubt mehrere Roblox-Fenster gleichzeitig." },
+            { "Cards", "Karten" },
+            { "Close", "Schließen" },
+            { "Focus", "Fokussieren" },
+            { "List", "Liste" },
+            { "Min", "Min" },
+            { "Monitor", "Monitor" },
+            { "No Roblox window is running. Launch some accounts and they will show up here.", "Kein Roblox-Fenster läuft. Starte Konten und sie erscheinen hier." },
+            { "⚙  Settings", "⚙  Einstellungen" },
+            { "⚡  Perf", "⚡  Leistung" },
+            { "❓  Help", "❓  Hilfe" },
         };
     }
 }

@@ -138,7 +138,7 @@ namespace RobloxMultiHub
             ApplyTheme();
             ShowPage(currentPage != "" ? currentPage : "Home");
             RefreshAccountList();
-            SetView(Store.Settings.View == "Cards");
+            SetView(Store.Settings.View == Lang.T("Cards"));
             if (tick != null) tick.Start();
         }
 
@@ -417,7 +417,7 @@ namespace RobloxMultiHub
             top.Controls.Add(NavBtn("Launch", Lang.T("\U0001F680  Launch"), false, null));
             top.Controls.Add(NavBtn("Servers", Lang.T("\U0001F310  Servers"), false, null));
             top.Controls.Add(NavBtn("Layout", Lang.T("\u25A6  Layout"), false, null));
-            top.Controls.Add(NavBtn("Monitor", Lang.T("\U0001F4CA  Monitor"), false, null));
+            top.Controls.Add(NavBtn(Lang.T("Monitor"), Lang.T("\U0001F4CA  Monitor"), false, null));
             top.Controls.Add(NavBtn("Presets", Lang.T("\U0001F4BE  Presets"), false, null));
             top.Controls.Add(NavBtn("Perf", Lang.T("⚡  Perf"), false, null));
             top.Controls.Add(NavBtn("Beta", Lang.T("\U0001F9EA  Beta"), false, Lang.T("New features that are still being tested. They move to their proper page once proven.")));

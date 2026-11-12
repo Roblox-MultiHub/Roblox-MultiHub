@@ -106,7 +106,17 @@ namespace RobloxMultiHub
             { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "Semua opsi. Multi-instance, performa, peringatan, startup, dan lainnya." },
             { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "Merekam dan memutar ulang mouse + keyboard (seperti TinyTask) di jendelanya sendiri." },
             { "New features that are still being tested. They move to their proper page once proven.", "Fitur baru yang masih diuji. Pindah ke halamannya setelah terbukti." },
-            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Membuka Pengaturan. Multi-instance membuat beberapa jendela Roblox berjalan bersamaan." }
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Membuka Pengaturan. Multi-instance membuat beberapa jendela Roblox berjalan bersamaan." },
+            { "Cards", "Kartu" },
+            { "Close", "Tutup" },
+            { "Focus", "Fokus" },
+            { "List", "Daftar" },
+            { "Min", "Min" },
+            { "Monitor", "Monitor" },
+            { "No Roblox window is running. Launch some accounts and they will show up here.", "Tidak ada jendela Roblox berjalan. Luncurkan akun dan akan muncul di sini." },
+            { "⚙  Settings", "⚙  Pengaturan" },
+            { "⚡  Perf", "⚡  Performa" },
+            { "❓  Help", "❓  Bantuan" },
         };
     }
 }

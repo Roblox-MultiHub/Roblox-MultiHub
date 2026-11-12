@@ -106,7 +106,17 @@ namespace RobloxMultiHub
             { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "Tüm seçenekler. Çoklu örnek, performans, uyarılar, başlangıç ve dahası." },
             { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "Fare + klavyeyi kaydeder ve tekrar oynatır (TinyTask gibi) kendi penceresinde." },
             { "New features that are still being tested. They move to their proper page once proven.", "Test edilmekte olan yeni özellikler. Kanıtlanınca kendi sayfalarına geçerler." },
-            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Ayarlar'ı açar. Çoklu örnek, birden çok Roblox penceresinin aynı anda çalışmasını sağlar." }
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Ayarlar'ı açar. Çoklu örnek, birden çok Roblox penceresinin aynı anda çalışmasını sağlar." },
+            { "Cards", "Kartlar" },
+            { "Close", "Kapat" },
+            { "Focus", "Odakla" },
+            { "List", "Liste" },
+            { "Min", "Min" },
+            { "Monitor", "İzleyici" },
+            { "No Roblox window is running. Launch some accounts and they will show up here.", "Çalışan Roblox penceresi yok. Hesap başlat, burada görünecekler." },
+            { "⚙  Settings", "⚙  Ayarlar" },
+            { "⚡  Perf", "⚡  Performans" },
+            { "❓  Help", "❓  Yardım" },
         };
     }
 }
