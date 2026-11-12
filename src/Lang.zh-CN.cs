@@ -94,7 +94,19 @@ namespace RobloxMultiHub
             { "Also minimize background windows", "同时最小化后台窗口" },
             { "Compact list with profile pictures.", "带头像的紧凑列表。" },
             { "Accounts with their own game ignore this.", "拥有独立游戏的账号会忽略此项。" },
-            { "Measured cap floor on this PC:", "本机测得的最低上限：" }
+            { "Measured cap floor on this PC:", "本机测得的最低上限：" },
+            { "\U0001F3E0  Home", "\U0001F3E0  主页" }, { "\u25A6  Layout", "\u25A6  布局" },
+            { "\U0001F4BE  Presets", "\U0001F4BE  预设" }, { "\U0001F3AC  Macro", "\U0001F3AC  宏" },
+            { "Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.", "多开：已启用\r\n请只从此应用启动 Roblox。" },
+            { "Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.", "多开：已关闭（仅一个 Roblox 窗口）\r\n点击此处可在设置中开启。" },
+            { "Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.", "多开：等待中 - 另一个 Roblox\r\n占用了锁。点击此处修复。" },
+            { "nothing running", "没有在运行的" }, { "Running", "运行中" },
+            { "Online", "在线" }, { "Offline", "离线" },
+            { "Guides, FAQ and troubleshooting.", "指南、常见问题与故障排除。" },
+            { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "所有选项。多开、性能、提醒、开机启动等。" },
+            { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "录制并回放鼠标 + 键盘（类似 TinyTask），在独立窗口中。" },
+            { "New features that are still being tested. They move to their proper page once proven.", "仍在测试的新功能，验证后会移到相应页面。" },
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "点击打开设置。多开功能让多个 Roblox 窗口同时运行。" }
         };
     }
 }

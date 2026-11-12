@@ -94,7 +94,19 @@ namespace RobloxMultiHub
             { "Also minimize background windows", "Cũng thu nhỏ các cửa sổ nền" },
             { "Compact list with profile pictures.", "Danh sách gọn có ảnh đại diện." },
             { "Accounts with their own game ignore this.", "Tài khoản có game riêng sẽ bỏ qua mục này." },
-            { "Measured cap floor on this PC:", "Mức giới hạn thấp nhất đo được trên máy này:" }
+            { "Measured cap floor on this PC:", "Mức giới hạn thấp nhất đo được trên máy này:" },
+            { "\U0001F3E0  Home", "\U0001F3E0  Trang chủ" }, { "\u25A6  Layout", "\u25A6  Bố cục" },
+            { "\U0001F4BE  Presets", "\U0001F4BE  Cài đặt sẵn" }, { "\U0001F3AC  Macro", "\U0001F3AC  Macro" },
+            { "Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.", "Đa phiên bản: ĐANG BẬT\r\nChỉ khởi chạy Roblox từ ứng dụng này." },
+            { "Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.", "Đa phiên bản: TẮT (chỉ MỘT cửa sổ Roblox)\r\nBấm vào đây để bật trong Cài đặt." },
+            { "Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.", "Đa phiên bản: ĐANG CHỜ - Roblox khác\r\nđang giữ khóa. Bấm vào đây để xử lý." },
+            { "nothing running", "không có gì đang chạy" }, { "Running", "Đang chạy" },
+            { "Online", "Trực tuyến" }, { "Offline", "Ngoại tuyến" },
+            { "Guides, FAQ and troubleshooting.", "Hướng dẫn, FAQ và khắc phục sự cố." },
+            { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "Mọi tùy chọn. Đa phiên bản, hiệu năng, cảnh báo, khởi động và hơn thế." },
+            { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "Ghi và phát lại chuột + bàn phím (giống TinyTask) trong cửa sổ riêng." },
+            { "New features that are still being tested. They move to their proper page once proven.", "Tính năng mới đang thử nghiệm. Chuyển sang trang đúng khi đã chứng minh." },
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Mở Cài đặt. Đa phiên bản cho phép nhiều cửa sổ Roblox chạy cùng lúc." }
         };
     }
 }

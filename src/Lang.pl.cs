@@ -94,7 +94,19 @@ namespace RobloxMultiHub
             { "Also minimize background windows", "Minimalizuj też okna w tle" },
             { "Compact list with profile pictures.", "Kompaktowa lista ze zdjęciami profilowymi." },
             { "Accounts with their own game ignore this.", "Konta z własną grą ignorują to." },
-            { "Measured cap floor on this PC:", "Zmierzone minimum limitu na tym PC:" }
+            { "Measured cap floor on this PC:", "Zmierzone minimum limitu na tym PC:" },
+            { "\U0001F3E0  Home", "\U0001F3E0  Start" }, { "\u25A6  Layout", "\u25A6  Układ" },
+            { "\U0001F4BE  Presets", "\U0001F4BE  Profile" }, { "\U0001F3AC  Macro", "\U0001F3AC  Makro" },
+            { "Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.", "Multi-instancja: AKTYWNA\r\nUruchamiaj Roblox tylko z tej aplikacji." },
+            { "Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.", "Multi-instancja: WYŁ. (tylko JEDNO okno Roblox)\r\nKliknij, aby włączyć w Ustawieniach." },
+            { "Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.", "Multi-instancja: CZEKA - inny Roblox\r\ntrzyma blokadę. Kliknij, aby naprawić." },
+            { "nothing running", "nic nie działa" }, { "Running", "Działa" },
+            { "Online", "Online" }, { "Offline", "Offline" },
+            { "Guides, FAQ and troubleshooting.", "Poradniki, FAQ i rozwiązywanie problemów." },
+            { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "Wszystkie opcje. Multi-instancja, wydajność, alerty, start i więcej." },
+            { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "Nagrywa i odtwarza mysz + klawiaturę (jak TinyTask) we własnym oknie." },
+            { "New features that are still being tested. They move to their proper page once proven.", "Nowe funkcje w testach. Trafią na swoją stronę, gdy się sprawdzą." },
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Otwiera Ustawienia. Multi-instancja pozwala uruchamiać wiele okien Roblox naraz." }
         };
     }
 }

@@ -94,7 +94,19 @@ namespace RobloxMultiHub
             { "Also minimize background windows", "Hintergrundfenster ebenfalls minimieren" },
             { "Compact list with profile pictures.", "Kompakte Liste mit Profilbildern." },
             { "Accounts with their own game ignore this.", "Konten mit eigenem Spiel ignorieren dies." },
-            { "Measured cap floor on this PC:", "Gemessenes Limit-Minimum auf diesem PC:" }
+            { "Measured cap floor on this PC:", "Gemessenes Limit-Minimum auf diesem PC:" },
+            { "\U0001F3E0  Home", "\U0001F3E0  Start" }, { "\u25A6  Layout", "\u25A6  Layout" },
+            { "\U0001F4BE  Presets", "\U0001F4BE  Voreinstellungen" }, { "\U0001F3AC  Macro", "\U0001F3AC  Makro" },
+            { "Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.", "Multi-Instanz: AKTIV\r\nStarte Roblox nur über diese App." },
+            { "Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.", "Multi-Instanz: AUS (nur EIN Roblox-Fenster)\r\nHier klicken, um sie in den Einstellungen zu aktivieren." },
+            { "Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.", "Multi-Instanz: WARTET - ein anderes Roblox\r\nhält die Sperre. Hier klicken zum Beheben." },
+            { "nothing running", "nichts läuft" }, { "Running", "Läuft" },
+            { "Online", "Online" }, { "Offline", "Offline" },
+            { "Guides, FAQ and troubleshooting.", "Anleitungen, FAQ und Fehlerbehebung." },
+            { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "Alle Optionen. Multi-Instanz, Leistung, Hinweise, Start und mehr." },
+            { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "Zeichnet Maus + Tastatur auf und spielt sie ab (wie TinyTask) im eigenen Fenster." },
+            { "New features that are still being tested. They move to their proper page once proven.", "Neue Funktionen im Test. Sie wandern auf die richtige Seite, sobald sie sich bewährt haben." },
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Öffnet die Einstellungen. Multi-Instanz erlaubt mehrere Roblox-Fenster gleichzeitig." }
         };
     }
 }

@@ -94,7 +94,19 @@ namespace RobloxMultiHub
             { "Also minimize background windows", "Minimalkan juga jendela latar" },
             { "Compact list with profile pictures.", "Daftar ringkas dengan foto profil." },
             { "Accounts with their own game ignore this.", "Akun dengan game sendiri mengabaikan ini." },
-            { "Measured cap floor on this PC:", "Batas bawah terukur di PC ini:" }
+            { "Measured cap floor on this PC:", "Batas bawah terukur di PC ini:" },
+            { "\U0001F3E0  Home", "\U0001F3E0  Beranda" }, { "\u25A6  Layout", "\u25A6  Tata letak" },
+            { "\U0001F4BE  Presets", "\U0001F4BE  Preset" }, { "\U0001F3AC  Macro", "\U0001F3AC  Makro" },
+            { "Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.", "Multi-instance: AKTIF\r\nJalankan Roblox hanya dari aplikasi ini." },
+            { "Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.", "Multi-instance: MATI (hanya SATU jendela Roblox)\r\nKlik di sini untuk menyalakannya di Pengaturan." },
+            { "Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.", "Multi-instance: MENUNGGU - Roblox lain\r\nmemegang kunci. Klik di sini untuk memperbaiki." },
+            { "nothing running", "tidak ada yang berjalan" }, { "Running", "Berjalan" },
+            { "Online", "Daring" }, { "Offline", "Luring" },
+            { "Guides, FAQ and troubleshooting.", "Panduan, FAQ, dan pemecahan masalah." },
+            { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "Semua opsi. Multi-instance, performa, peringatan, startup, dan lainnya." },
+            { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "Merekam dan memutar ulang mouse + keyboard (seperti TinyTask) di jendelanya sendiri." },
+            { "New features that are still being tested. They move to their proper page once proven.", "Fitur baru yang masih diuji. Pindah ke halamannya setelah terbukti." },
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Membuka Pengaturan. Multi-instance membuat beberapa jendela Roblox berjalan bersamaan." }
         };
     }
 }

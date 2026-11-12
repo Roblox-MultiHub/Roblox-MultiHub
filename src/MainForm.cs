@@ -194,7 +194,7 @@ namespace RobloxMultiHub
             lblMulti.TextAlign = ContentAlignment.MiddleRight;
             lblMulti.Cursor = Cursors.Hand;
             lblMulti.Click += delegate { ShowPage("Settings"); };
-            Ui.Tips.SetToolTip(lblMulti, "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.");
+            Ui.Tips.SetToolTip(lblMulti, Lang.T("Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time."));
             topBar.Controls.Add(lblMulti);
 
             // real clicks over child controls never reach the form's hit-test, so every header control
@@ -407,9 +407,9 @@ namespace RobloxMultiHub
             sep.Width = 178;
             sep.Margin = new Padding(1, 6, 1, 8);
             bottom.Controls.Add(sep);
-            bottom.Controls.Add(NavBtn("Settings", Lang.T("⚙  Settings"), false, "Open all options and toggles. Multi-instance, performance, alerts, startup and more."));
-            bottom.Controls.Add(NavBtn("Help", Lang.T("❓  Help"), false, "Guides, FAQ and troubleshooting."));
-            bottom.Controls.Add(NavBtn("Macro", Lang.T("\U0001F3AC  Macro"), true, "Record and replay mouse + keyboard (like TinyTask) in its own window."));
+            bottom.Controls.Add(NavBtn("Settings", Lang.T("⚙  Settings"), false, Lang.T("Open all options and toggles. Multi-instance, performance, alerts, startup and more.")));
+            bottom.Controls.Add(NavBtn("Help", Lang.T("❓  Help"), false, Lang.T("Guides, FAQ and troubleshooting.")));
+            bottom.Controls.Add(NavBtn("Macro", Lang.T("\U0001F3AC  Macro"), true, Lang.T("Record and replay mouse + keyboard (like TinyTask) in its own window.")));
 
             FlowLayoutPanel top = NewNavFlow();
             top.Dock = DockStyle.Top;
@@ -420,7 +420,7 @@ namespace RobloxMultiHub
             top.Controls.Add(NavBtn("Monitor", Lang.T("\U0001F4CA  Monitor"), false, null));
             top.Controls.Add(NavBtn("Presets", Lang.T("\U0001F4BE  Presets"), false, null));
             top.Controls.Add(NavBtn("Perf", Lang.T("⚡  Perf"), false, null));
-            top.Controls.Add(NavBtn("Beta", Lang.T("\U0001F9EA  Beta"), false, "New features that are still being tested. They move to their proper page once proven."));
+            top.Controls.Add(NavBtn("Beta", Lang.T("\U0001F9EA  Beta"), false, Lang.T("New features that are still being tested. They move to their proper page once proven.")));
 
             side.Controls.Add(bottom);
             side.Controls.Add(top);
@@ -804,17 +804,17 @@ namespace RobloxMultiHub
             string st = MultiInstance.State;
             if (!MultiInstance.Enabled)
             {
-                lblMulti.Text = "Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.";
+                lblMulti.Text = Lang.T("Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.");
                 lblMulti.ForeColor = Theme.Warn;
             }
             else if (st == "Active")
             {
-                lblMulti.Text = "Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.";
+                lblMulti.Text = Lang.T("Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.");
                 lblMulti.ForeColor = Theme.Good;
             }
             else if (st == "Waiting")
             {
-                lblMulti.Text = "Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.";
+                lblMulti.Text = Lang.T("Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.");
                 lblMulti.ForeColor = Theme.Warn;
             }
             else
@@ -834,7 +834,7 @@ namespace RobloxMultiHub
             if (statRun == null) return;
             int count = UsageMonitor.Count;
             statRun.Value.Text = runningIds.Count + " / " + Store.Accounts.Count;
-            statRun.Sub.Text = count == 0 ? "nothing running" : count + " Roblox window(s)";
+            statRun.Sub.Text = count == 0 ? Lang.T("nothing running") : count + " Roblox window(s)";
             statCpu.Value.Text = count == 0 ? "0%" : CpuText(UsageMonitor.TotalCpu);
             statRam.Value.Text = Util.FormatBytes(UsageMonitor.TotalRam);
             if (count == 0)
@@ -1499,11 +1499,11 @@ namespace RobloxMultiHub
             LiveInfo li = AppState.Live(a);
             if (li.Locked) { text = Lang.T("Account locked"); color = Theme.Bad; return; }
             if (li.CookieBad) { text = Lang.T("Cookie expired"); color = Theme.Bad; return; }
-            if (runningIds.Contains(a.Id)) { text = "Running"; color = Theme.Good; return; }
+            if (runningIds.Contains(a.Id)) { text = Lang.T("Running"); color = Theme.Good; return; }
             if (li.PresenceType == 2) { text = Lang.T("In game"); color = Theme.Good; }
             else if (li.PresenceType == 3) { text = "Studio"; color = Theme.Purple; }
-            else if (li.PresenceType == 1) { text = "Online"; color = Theme.Info; }
-            else if (li.PresenceType == 0) { text = "Offline"; color = Theme.Muted; }
+            else if (li.PresenceType == 1) { text = Lang.T("Online"); color = Theme.Info; }
+            else if (li.PresenceType == 0) { text = Lang.T("Offline"); color = Theme.Muted; }
             else { text = Lang.T("Not checked"); color = Theme.Border; }
         }
 
@@ -2122,7 +2122,7 @@ namespace RobloxMultiHub
                     if (pi.Type == 2) li.Where = "In game: " + (string.IsNullOrEmpty(pi.Location) ? "(unknown)" : pi.Location);
                     else if (pi.Type == 3) li.Where = "In Roblox Studio";
                     else if (pi.Type == 1) li.Where = "Online (website / app)";
-                    else li.Where = "Offline";
+                    else li.Where = Lang.T("Offline");
                 }
             }
             catch (Exception ex) { Log.Error("presence", ex); }

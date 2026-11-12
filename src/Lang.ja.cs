@@ -94,7 +94,19 @@ namespace RobloxMultiHub
             { "Also minimize background windows", "背景ウィンドウも最小化" },
             { "Compact list with profile pictures.", "アイコン付きのコンパクトな一覧。" },
             { "Accounts with their own game ignore this.", "独自のゲーム設定を持つアカウントは無視します。" },
-            { "Measured cap floor on this PC:", "このPCで測定した最低上限:" }
+            { "Measured cap floor on this PC:", "このPCで測定した最低上限:" },
+            { "\U0001F3E0  Home", "\U0001F3E0  ホーム" }, { "\u25A6  Layout", "\u25A6  レイアウト" },
+            { "\U0001F4BE  Presets", "\U0001F4BE  プリセット" }, { "\U0001F3AC  Macro", "\U0001F3AC  マクロ" },
+            { "Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.", "マルチインスタンス: 有効\r\nRobloxはこのアプリからのみ起動してください。" },
+            { "Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.", "マルチインスタンス: 無効 (Robloxウィンドウは1つのみ)\r\nここをクリックして設定でオンにします。" },
+            { "Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.", "マルチインスタンス: 待機中 - 別のRobloxが\r\nロックを保持中です。クリックして修正。" },
+            { "nothing running", "実行中なし" }, { "Running", "実行中" },
+            { "Online", "オンライン" }, { "Offline", "オフライン" },
+            { "Guides, FAQ and troubleshooting.", "ガイド、FAQ、トラブル解決。" },
+            { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "すべてのオプション。マルチインスタンス、パフォーマンス、通知、起動など。" },
+            { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "マウス+キーボードを録画・再生（TinyTask風）します。" },
+            { "New features that are still being tested. They move to their proper page once proven.", "テスト中の新機能。実証されると本来のページへ移動します。" },
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "設定を開きます。マルチインスタンスで複数のRobloxウィンドウを同時に実行できます。" }
         };
     }
 }

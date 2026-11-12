@@ -94,7 +94,19 @@ namespace RobloxMultiHub
             { "Also minimize background windows", "बैकग्राउंड विंडो भी छोटी करें" },
             { "Compact list with profile pictures.", "प्रोफ़ाइल फ़ोटो के साथ छोटी सूची।" },
             { "Accounts with their own game ignore this.", "अपना गेम रखने वाले अकाउंट इसे नज़रअंदाज़ करते हैं।" },
-            { "Measured cap floor on this PC:", "इस PC पर मापा लिमिट न्यूनतम:" }
+            { "Measured cap floor on this PC:", "इस PC पर मापा लिमिट न्यूनतम:" },
+            { "\U0001F3E0  Home", "\U0001F3E0  होम" }, { "\u25A6  Layout", "\u25A6  लेआउट" },
+            { "\U0001F4BE  Presets", "\U0001F4BE  प्रीसेट" }, { "\U0001F3AC  Macro", "\U0001F3AC  मैक्रो" },
+            { "Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.", "मल्टी-इंस्टेंस: चालू\r\nRoblox केवल इसी ऐप से लॉन्च करें।" },
+            { "Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.", "मल्टी-इंस्टेंस: बंद (केवल एक Roblox विंडो)\r\nचालू करने के लिए यहाँ क्लिक करें।" },
+            { "Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.", "मल्टी-इंस्टेंस: प्रतीक्षा - दूसरे Roblox के\r\nपास लॉक है। ठीक करने के लिए क्लिक करें।" },
+            { "nothing running", "कुछ भी नहीं चल रहा" }, { "Running", "चल रहा है" },
+            { "Online", "ऑनलाइन" }, { "Offline", "ऑफ़लाइन" },
+            { "Guides, FAQ and troubleshooting.", "गाइड, FAQ और समस्या समाधान।" },
+            { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "सभी विकल्प। मल्टी-इंस्टेंस, परफ़ॉर्मेंस, अलर्ट, स्टार्टअप और भी।" },
+            { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "माउस + कीबोर्ड रिकॉर्ड और रिप्ले करें (TinyTask जैसा) अपनी विंडो में।" },
+            { "New features that are still being tested. They move to their proper page once proven.", "नई सुविधाएँ टेस्ट में हैं। साबित होने पर अपने पेज पर चली जाती हैं।" },
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "सेटिंग्स खोलता है। मल्टी-इंस्टेंस से कई Roblox विंडो एक साथ चलती हैं।" }
         };
     }
 }

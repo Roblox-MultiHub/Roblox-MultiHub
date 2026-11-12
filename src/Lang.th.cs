@@ -94,7 +94,19 @@ namespace RobloxMultiHub
             { "Also minimize background windows", "ย่อหน้าต่างเบื้องหลังด้วย" },
             { "Compact list with profile pictures.", "รายการกระชับพร้อมรูปโปรไฟล์" },
             { "Accounts with their own game ignore this.", "บัญชีที่มีเกมของตัวเองจะข้ามข้อนี้" },
-            { "Measured cap floor on this PC:", "ขั้นต่ำของลิมิตที่วัดได้บนเครื่องนี้:" }
+            { "Measured cap floor on this PC:", "ขั้นต่ำของลิมิตที่วัดได้บนเครื่องนี้:" },
+            { "\U0001F3E0  Home", "\U0001F3E0  หน้าแรก" }, { "\u25A6  Layout", "\u25A6  เลย์เอาต์" },
+            { "\U0001F4BE  Presets", "\U0001F4BE  พรีเซ็ต" }, { "\U0001F3AC  Macro", "\U0001F3AC  มาโคร" },
+            { "Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.", "มัลติอินสแตนซ์: เปิดใช้งาน\r\nเปิดเกม Roblox ผ่านแอปนี้เท่านั้น" },
+            { "Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.", "มัลติอินสแตนซ์: ปิด (หน้าต่าง Roblox บานเดียว)\r\nคลิกที่นี่เพื่อเปิดในหน้าตั้งค่า" },
+            { "Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.", "มัลติอินสแตนซ์: รออยู่ - Roblox ตัวอื่น\r\nครองล็อกอยู่ คลิกที่นี่เพื่อแก้ไข" },
+            { "nothing running", "ไม่มีอะไรทำงานอยู่" }, { "Running", "กำลังทำงาน" },
+            { "Online", "ออนไลน์" }, { "Offline", "ออฟไลน์" },
+            { "Guides, FAQ and troubleshooting.", "คู่มือ คำถามที่พบบ่อย และการแก้ปัญหา" },
+            { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "ตัวเลือกทั้งหมด มัลติอินสแตนซ์ เปอร์เซ็นต์ แจ้งเตือน การเริ่มต้น และอื่น ๆ" },
+            { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "บันทึกและเล่นซ้ำเมาส์ + คีย์บอร์ด (เหมือน TinyTask) ในหน้าต่างของตัวเอง" },
+            { "New features that are still being tested. They move to their proper page once proven.", "ฟีเจอร์ใหม่ที่ยังทดสอบอยู่ จะย้ายไปหน้าของมันเมื่อพิสูจน์แล้ว" },
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "เปิดหน้าตั้งค่า มัลติอินสแตนซ์ทำให้เปิดหน้าต่าง Roblox หลายบานพร้อมกันได้" }
         };
     }
 }

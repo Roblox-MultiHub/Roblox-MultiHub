@@ -99,7 +99,20 @@ namespace RobloxMultiHub
             { "Also minimize background windows", "Minimizar también las ventanas en segundo plano" },
             { "Compact list with profile pictures.", "Lista compacta con fotos de perfil." },
             { "Accounts with their own game ignore this.", "Las cuentas con su propio juego ignoran esto." },
-            { "Measured cap floor on this PC:", "Mínimo de límite medido en este PC:" }
+            { "Measured cap floor on this PC:", "Mínimo de límite medido en este PC:" },
+            // wave 3: exact nav keys (correct emojis) + header/status strings
+            { "\U0001F3E0  Home", "\U0001F3E0  Inicio" }, { "\u25A6  Layout", "\u25A6  Disposición" },
+            { "\U0001F4BE  Presets", "\U0001F4BE  Preajustes" }, { "\U0001F3AC  Macro", "\U0001F3AC  Macro" },
+            { "Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.", "Multi-instancia: ACTIVA\r\nInicia Roblox solo desde esta app." },
+            { "Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.", "Multi-instancia: APAGADA  (solo UNA ventana de Roblox)\r\nHaz clic para activarla en Ajustes." },
+            { "Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.", "Multi-instancia: ESPERANDO - otro Roblox\r\ntiene el bloqueo. Haz clic para arreglarlo." },
+            { "nothing running", "nada en ejecución" }, { "Running", "En ejecución" },
+            { "Online", "En línea" }, { "Offline", "Desconectado" },
+            { "Guides, FAQ and troubleshooting.", "Guías, preguntas frecuentes y solución de problemas." },
+            { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "Todas las opciones y interruptores. Multi-instancia, rendimiento, alertas, inicio y más." },
+            { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "Graba y repite ratón + teclado (como TinyTask) en su propia ventana." },
+            { "New features that are still being tested. They move to their proper page once proven.", "Funciones nuevas aún en prueba. Pasan a su página cuando demuestran valer." },
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Abre Ajustes. La multi-instancia permite varias ventanas de Roblox a la vez." }
         };
     }
 }

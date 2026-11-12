@@ -94,7 +94,19 @@ namespace RobloxMultiHub
             { "Also minimize background windows", "배경 창도 최소화" },
             { "Compact list with profile pictures.", "프로필 사진이 있는 간결한 목록." },
             { "Accounts with their own game ignore this.", "자체 게임이 있는 계정은 이 설정을 무시합니다." },
-            { "Measured cap floor on this PC:", "이 PC에서 측정된 최저 한도:" }
+            { "Measured cap floor on this PC:", "이 PC에서 측정된 최저 한도:" },
+            { "\U0001F3E0  Home", "\U0001F3E0  홈" }, { "\u25A6  Layout", "\u25A6  레이아웃" },
+            { "\U0001F4BE  Presets", "\U0001F4BE  프리셋" }, { "\U0001F3AC  Macro", "\U0001F3AC  매크로" },
+            { "Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.", "멀티 인스턴스: 활성\r\nRoblox는 이 앱에서만 실행하세요." },
+            { "Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.", "멀티 인스턴스: 꺼짐 (Roblox 창 하나만)\r\n여기를 눌러 설정에서 켜세요." },
+            { "Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.", "멀티 인스턴스: 대기 중 - 다른 Roblox가\r\n잠금을 갖고 있습니다. 눌러서 해결하세요." },
+            { "nothing running", "실행 중 없음" }, { "Running", "실행 중" },
+            { "Online", "온라인" }, { "Offline", "오프라인" },
+            { "Guides, FAQ and troubleshooting.", "가이드, FAQ 및 문제 해결." },
+            { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "모든 옵션. 멀티 인스턴스, 성능, 알림, 시작 등." },
+            { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "마우스 + 키보드를 녹화하고 재생(TinyTask 방식)합니다." },
+            { "New features that are still being tested. They move to their proper page once proven.", "테스트 중인 새 기능. 검증되면 각자의 페이지로 이동합니다." },
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "설정을 엽니다. 멀티 인스턴스가 여러 Roblox 창을 동시에 실행하게 합니다." }
         };
     }
 }

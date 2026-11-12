@@ -94,7 +94,19 @@ namespace RobloxMultiHub
             { "Also minimize background windows", "Arka plan pencerelerini de küçült" },
             { "Compact list with profile pictures.", "Profil fotoğraflı kompakt liste." },
             { "Accounts with their own game ignore this.", "Kendi oyunu olan hesaplar bunu yok sayar." },
-            { "Measured cap floor on this PC:", "Bu PC'de ölçülen limit alt sınırı:" }
+            { "Measured cap floor on this PC:", "Bu PC'de ölçülen limit alt sınırı:" },
+            { "\U0001F3E0  Home", "\U0001F3E0  Ana sayfa" }, { "\u25A6  Layout", "\u25A6  Düzen" },
+            { "\U0001F4BE  Presets", "\U0001F4BE  Hazır ayarlar" }, { "\U0001F3AC  Macro", "\U0001F3AC  Makro" },
+            { "Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.", "Çoklu örnek: AKTİF\r\nRoblox'u yalnızca bu uygulamadan başlat." },
+            { "Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.", "Çoklu örnek: KAPALI (tek bir Roblox penceresi)\r\nAçmak için Ayarlar'a girmek üzere buraya tıkla." },
+            { "Multi-instance: WAITING - another Roblox\r\nowns the lock. Click here to fix it.", "Çoklu örnek: BEKLİYOR - başka bir Roblox\r\nkilidi tutuyor. Düzenlemek için tıkla." },
+            { "nothing running", "hiçbir şey çalışmıyor" }, { "Running", "Çalışıyor" },
+            { "Online", "Çevrimiçi" }, { "Offline", "Çevrimdışı" },
+            { "Guides, FAQ and troubleshooting.", "Rehberler, SSS ve sorun giderme." },
+            { "Open all options and toggles. Multi-instance, performance, alerts, startup and more.", "Tüm seçenekler. Çoklu örnek, performans, uyarılar, başlangıç ve dahası." },
+            { "Record and replay mouse + keyboard (like TinyTask) in its own window.", "Fare + klavyeyi kaydeder ve tekrar oynatır (TinyTask gibi) kendi penceresinde." },
+            { "New features that are still being tested. They move to their proper page once proven.", "Test edilmekte olan yeni özellikler. Kanıtlanınca kendi sayfalarına geçerler." },
+            { "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.", "Ayarlar'ı açar. Çoklu örnek, birden çok Roblox penceresinin aynı anda çalışmasını sağlar." }
         };
     }
 }
