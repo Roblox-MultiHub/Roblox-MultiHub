@@ -89,7 +89,7 @@ namespace RobloxMultiHub
 
             chkUseSaved = Ui.Chk("Use each account's own game when it has one", Store.Settings.UseSavedPerAccount, null);
             chkUseSaved.CheckedChanged += delegate { Store.Settings.UseSavedPerAccount = chkUseSaved.Checked; Store.SaveSettings(); };
-            p.Opt("Accounts with their own game ignore this.",
+            p.Opt(Lang.T("Accounts with their own game ignore this."),
                 "Every account can have its own game (game field on the account card, or Edit account). With this ticked, those accounts join their own game while the others use the choice above. If every selected account has its own game, the form above is not needed at all.",
                 chkUseSaved);
 
@@ -98,9 +98,9 @@ namespace RobloxMultiHub
                 Ui.Btn("Save to selected accounts", 200, delegate { SaveToSelected(); }, ""));
 
             p.Section("Go");
-            btnLaunch = Ui.Btn("Launch selected", 150, delegate { LaunchSelected(); }, "primary");
-            btnLaunchAll = Ui.Btn("Launch all listed", 150, delegate { LaunchAllListed(); }, "");
-            btnStop = Ui.Btn("Stop", 80, delegate { StopLaunch(); }, "danger");
+            btnLaunch = Ui.Btn(Lang.T("Launch selected"), 150, delegate { LaunchSelected(); }, "primary");
+            btnLaunchAll = Ui.Btn(Lang.T("Launch all listed"), 150, delegate { LaunchAllListed(); }, "");
+            btnStop = Ui.Btn(Lang.T("Stop"), 80, delegate { StopLaunch(); }, "danger");
             btnStop.Enabled = false;
             p.Opt("Starts the accounts one after another.",
                 "'Launch selected' starts the accounts you clicked, 'Launch all listed' starts every account that is visible in the list (respects search and group filter), 'Stop' cancels a running sequence after the current account.\n\nTurn multi-instance on first (top right). Windows are NOT moved unless you use the Layout page - auto-capture is off by default.",
@@ -205,7 +205,7 @@ namespace RobloxMultiHub
         async void PickRandomServer()
         {
             long pid = Util.ParsePlaceId(cbPlace.Text);
-            if (pid <= 0) { AddLog("Enter a Place ID first."); return; }
+            if (pid <= 0) { AddLog(Lang.T("Enter a Place ID first.")); return; }
             AddLog("Looking up servers of place " + pid + "...");
             ServerPage sp = await Api.Servers(pid, false, "", AnyCookie());
             if (sp.Error.Length > 0) { AddLog("Could not load servers: " + sp.Error); return; }
@@ -332,7 +332,7 @@ namespace RobloxMultiHub
             List<Account> sel = SelectedAccounts();
             if (sel.Count == 0)
             {
-                AddLog("Select one or more accounts in the list first.");
+                AddLog(Lang.T("Select one or more accounts in the list first."));
                 ShowPage("Launch");
                 return;
             }
@@ -343,7 +343,7 @@ namespace RobloxMultiHub
         {
             List<Account> all = FilteredAccounts();
             if (all.Count == 0) { AddLog("There are no accounts in the list."); return; }
-            if (all.Count > 3 && MessageBox.Show(this, "Launch all " + all.Count + " listed accounts?", "Launch all", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            if (all.Count > 3 && MessageBox.Show(this, "Launch all " + all.Count + " listed accounts?", Lang.T("Launch all"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
             StartLaunch(all);
         }
 
@@ -362,7 +362,7 @@ namespace RobloxMultiHub
 
         async void StartLaunch(List<Account> accs)
         {
-            if (launching) { AddLog("A launch is already running. Press Stop to cancel it."); return; }
+            if (launching) { AddLog(Lang.T("A launch is already running. Press Stop to cancel it.")); return; }
             SetLaunching(true);
             try
             {

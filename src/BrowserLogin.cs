@@ -44,12 +44,12 @@ namespace RobloxMultiHub
 
         // Returns the cookie once validate(cookie) says it works, or null if cancelled / browser closed.
         // When prefillUser is given, the login form's username and password are filled in automatically;
-        // the user still presses "Log In" themselves (and solves any captcha / 2-step).
+        // the user still presses Lang.T("Log In") themselves (and solves any captcha / 2-step).
         public static async Task<string> GetCookie(Action<string> log, CancellationToken ct, Func<string, Task<bool>> validate,
             string prefillUser = null, string prefillPass = null)
         {
             string exe = FindBrowser();
-            if (exe == null) { log("No Microsoft Edge or Google Chrome was found on this PC."); return null; }
+            if (exe == null) { log(Lang.T("No Microsoft Edge or Google Chrome was found on this PC.")); return null; }
 
             string profile = Path.Combine(Path.GetTempPath(), "rmh_login_" + Guid.NewGuid().ToString("N"));
             int port = FreePort();
@@ -110,7 +110,7 @@ namespace RobloxMultiHub
                     }
                 }
             }
-            catch (OperationCanceledException) { log("Browser login cancelled."); }
+            catch (OperationCanceledException) { log(Lang.T("Browser login cancelled.")); }
             catch (Exception ex)
             {
                 Log.Error("BrowserLogin", ex);

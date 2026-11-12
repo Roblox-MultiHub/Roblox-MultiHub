@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace RobloxMultiHub
 {
-    // "Max alts": keeps the Roblox windows you are NOT playing light on the PC. The client in the
+    // Lang.T("Max alts"): keeps the Roblox windows you are NOT playing light on the PC. The client in the
     // foreground is left at full speed; every other client gets Idle CPU priority plus Windows'
     // own efficiency mode (EcoQoS), and now and then a memory trim. Nothing inside Roblox is
     // touched - only the standard Windows process controls that Task Manager also uses.

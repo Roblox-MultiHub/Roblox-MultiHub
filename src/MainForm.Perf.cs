@@ -15,6 +15,9 @@ namespace RobloxMultiHub
         TextBox tbPreview, tbCustomFlags;
         Label lblPerfLive;
         NumericUpDown numFps;
+        NumericUpDown numMaxRam;
+        RoundButton btnProbe;
+        Label lblProbe;
         bool loadingPerf;
 
         static readonly string[] PresetKeys = new string[] { "Default", "Light", "LowCpu", "Lowest", "Custom" };
@@ -37,9 +40,39 @@ namespace RobloxMultiHub
             BuildMemorySection(p);
             BuildMaxAltsSection(p);
 
+            p.Section(Lang.T("Max RAM per window"));
+            numMaxRam = Ui.Num(0, 32768, Math.Max(0, Store.Settings.MaxRamMb), 80);
+            p.Opt("Maximum RAM per window (0 = off).",
+                "Windows stops every window from keeping more than this many MB of RAM: pages the game is not using right now are pushed out to the pagefile and stay there until the game really needs them. The RAM counter of each window stays near this number instead of growing all day.\n\n"
+                + "Start high (800 MB is a good first try) and lower it step by step; when a window starts to stutter you went too low, go a little back up. 0 turns it off.\n\n"
+                + "The cap is applied to every Roblox window within about 2 seconds (also right after it starts) and is removed when MultiHub closes.",
+                Ui.Fld("Max RAM (MB)", 110), numMaxRam);
+
+            numMaxRam.ValueChanged += delegate
+            {
+                if (loadingPerf) return;
+                Store.Settings.MaxRamMb = (int)numMaxRam.Value;
+                Store.SaveSettings();
+                RamCap.Tick();
+                UpdatePerfCap();
+            };
+
+            btnProbe = Ui.Btn("Find my real cap", 160, delegate
+            {
+                if (UsageMonitor.Count == 0) { AddLog("Cap probe: launch your accounts first - it measures them while they idle."); return; }
+                CapProber.Start(AddLog);
+            }, "primary");
+            p.Opt("Measures your clients to find the real floor.",
+                "While your accounts idle like normal, this lowers 'Max RAM per window' by 50 MB every ~3 minutes and watches hard page faults (pages being read back from disk). Above the floor they stay near zero; below it they climb - the last cap that stayed clean IS your number, measured on your PC with your games. It ends there automatically; click again to stop early.",
+                btnProbe);
+            lblProbe = Ui.Lbl(Store.Settings.RamCapFloorMb > 0
+                ? "Measured floor on this PC: " + Store.Settings.RamCapFloorMb + " MB per window."
+                : Lang.T("Not measured yet on this PC."), "muted");
+            p.Row(lblProbe);
+
             p.Section("Frame rate");
             numFps = Ui.Num(0, 1000, Store.Settings.FpsCap, 80);
-            p.Opt("Caps FPS of every window (0 = off).",
+            p.Opt(Lang.T("Caps FPS of every window (0 = off)."),
                 "Caps how many frames per second each Roblox window renders. Lower values use much less CPU and GPU - 30 is a good value for many accounts.\n\nThis changes Roblox's own settings file (the same 'FramerateCap' value you can edit by hand in GlobalBasicSettings_13.xml) right before every launch, so it applies to every account you launch until you change it here. Roblox reads it when a window starts: windows that are already open keep their old cap until you relaunch them. Setting 0 gives control back to Roblox.",
                 Ui.Fld("FPS cap", 120), numFps);
 
@@ -48,7 +81,7 @@ namespace RobloxMultiHub
             p.Opt("Quick presets for everything below.",
                 "A preset simply fills in the options below. Change a single option and the preset switches to 'Custom'.\n\nThe settings are written into Roblox right before every launch, so they apply to EVERY account you launch from this app until you change them here again.",
                 Ui.Fld("Preset", 120), cbPreset);
-            cbQuality = Ui.Cmb(200, "Roblox default", "1  (lowest)", "2", "3", "4", "5", "6", "8", "10", "15", "21  (highest)");
+            cbQuality = Ui.Cmb(200, Lang.T("Roblox default"), "1  (lowest)", "2", "3", "4", "5", "6", "8", "10", "15", "21  (highest)");
             p.Opt("Lower = less GPU and CPU.",
                 "Forces Roblox's graphics-quality level in every game. Low numbers remove most of the shadows, effects and detail, which typically cuts GPU and CPU work a lot. 'Roblox default' leaves the decision to Roblox.",
                 Ui.Fld("Graphics quality", 120), cbQuality);
@@ -59,7 +92,7 @@ namespace RobloxMultiHub
             cbMsaa = Ui.Cmb(200, "Roblox default", "Off", "2x", "4x", "8x");
             p.Opt("Smooths jagged edges; turning it off is cheaper.",
                 "Anti-aliasing (MSAA) smooths jagged edges but costs GPU time. 'Off' is the cheapest. If it has no visible effect on your PC, leave it on 'Roblox default'.",
-                Ui.Fld("Anti-aliasing", 120), cbMsaa);
+                Ui.Fld(Lang.T("Anti-aliasing"), 120), cbMsaa);
             mcTweaks = new MultiCombo();
             mcTweaks.Width = 240;
             mcTweaks.Items = new string[] { "No grass", "Cheapest distant unions", "Pause lighting updates", "Plain grey sky" };
@@ -100,15 +133,21 @@ namespace RobloxMultiHub
                 "Add your own flags as a JSON object. Flags that are not on Roblox's list are skipped, unless you tick the box: then they are written anyway (useful if Roblox extends its list later). Roblox ignores them as long as they are not on its list.",
                 chkUnlisted);
 
-            p.Section("CPU priority");
+            p.Section(Lang.T("CPU priority"));
             cbPriority = Ui.Cmb(300, "Normal", "Below normal  (keeps your PC responsive)", "Idle  (lowest)");
             p.Opt("Stops many windows from slowing down your PC.",
                 "Set automatically on every window this app launches. It does not make Roblox do less work, but other programs get CPU time first, so your PC stays responsive with many windows open. No Roblox files are touched.",
                 Ui.Fld("Window priority", 120), cbPriority);
             p.Opt("Apply now, or minimize all.",
                 "'Apply to running windows' sets the priority on the Roblox windows that are already open. 'Minimize all' minimizes every Roblox window - minimized windows usually use less GPU. 'Arrange now' on the Layout page brings them back.",
-                Ui.Btn("Apply to running windows", 200, delegate { ApplyPriorityNow(); }, ""),
+                Ui.Btn(Lang.T("Apply to running windows"), 200, delegate { ApplyPriorityNow(); }, ""),
                 Ui.Btn("Minimize all Roblox windows", 210, delegate { MinimizeAllRoblox(); }, ""));
+
+            p.Section(Lang.T("Share these settings"));
+            p.Opt("One line of text for another PC.",
+                "Copies every setting on this page - graphics, FPS, CPU priority, Max RAM, memory cleaning and Max alts - as one line of text you can send. The other PC presses Import with that text in the clipboard and gets the exact same settings.",
+                Ui.Btn(Lang.T("Copy"), 90, delegate { CopyPerfConfig(); }, ""),
+                Ui.Btn(Lang.T("Import"), 90, delegate { ImportPerfConfig(); }, ""));
 
             LoadGfxControls();
 
@@ -260,7 +299,7 @@ namespace RobloxMultiHub
             p.Opt("Frees unused RAM of background windows.",
                 "Empties the working set of each background client, which pushes memory it is not actively using back to Windows. No admin rights needed - it only touches the clients this app launched.",
                 chkMaxTrim);
-            chkMaxMin = Ui.Chk("Also minimize background windows", Store.Settings.MaxAltsMinimize, null);
+            chkMaxMin = Ui.Chk(Lang.T("Also minimize background windows"), Store.Settings.MaxAltsMinimize, null);
             p.Opt("Minimized Roblox windows usually render even less.",
                 "Optional. Minimizes every client except the one you are in. It fights with the Layout page (which arranges windows on screen), so leave it off if you tile your windows.",
                 chkMaxMin);
@@ -276,6 +315,165 @@ namespace RobloxMultiHub
             chkMaxIdle.CheckedChanged += delegate { if (loadingPerf) return; Store.Settings.MaxAltsIdle = chkMaxIdle.Checked; Store.SaveSettings(); if (!chkMaxIdle.Checked) MaxAlts.Reset(); };
             chkMaxTrim.CheckedChanged += delegate { if (loadingPerf) return; Store.Settings.MaxAltsTrim = chkMaxTrim.Checked; Store.SaveSettings(); };
             chkMaxMin.CheckedChanged += delegate { if (loadingPerf) return; Store.Settings.MaxAltsMinimize = chkMaxMin.Checked; Store.SaveSettings(); };
+        }
+
+        void UpdatePerfCap()
+        {
+            if (lblProbe == null) return;
+            if (CapProber.State == CapProber.Phase.Settle || CapProber.State == CapProber.Phase.Measure)
+            {
+                if (numMaxRam != null && numMaxRam.Value != Store.Settings.MaxRamMb)
+                {
+                    loadingPerf = true;
+                    numMaxRam.Value = Math.Max(0, Math.Min(32768, Store.Settings.MaxRamMb));
+                    loadingPerf = false;
+                }
+                lblProbe.Text = "Cap probe: " + CapProber.Status;
+                lblProbe.ForeColor = Theme.Accent;
+                return;
+            }
+            lblProbe.ForeColor = Theme.Muted;
+            string floor = Store.Settings.RamCapFloorMb > 0
+                ? "Measured floor on this PC: " + Store.Settings.RamCapFloorMb + " MB per window."
+                : Lang.T("Not measured yet on this PC.");
+            int count = UsageMonitor.Count;
+            if (count > 0 && Store.Settings.MaxRamMb > 0)
+                floor += "  " + RamCap.CappedCount + " of " + count + " window(s) hold the cap of " + Store.Settings.MaxRamMb + " MB.";
+            lblProbe.Text = floor;
+        }
+
+        void CopyPerfConfig()
+        {
+            try
+            {
+                GfxSettings G = Store.Settings.Gfx;
+                MemSettings M = Store.Settings.Mem;
+                Dictionary<string, object> c = new Dictionary<string, object>();
+                c["v"] = 1;
+                c["GfxPreset"] = G.Preset;
+                c["GfxQuality"] = G.Quality;
+                c["GfxTexture"] = G.Texture;
+                c["GfxMsaa"] = G.Msaa;
+                c["GfxNoGrass"] = G.NoGrass;
+                c["GfxPauseVoxelizer"] = G.PauseVoxelizer;
+                c["GfxGraySky"] = G.GraySky;
+                c["GfxLowCsg"] = G.LowCsg;
+                c["GfxApi"] = G.Api;
+                c["GfxWriteUnlisted"] = G.WriteUnlisted;
+                c["CustomFlags"] = Store.Settings.CustomClientSettings;
+                c["FpsCap"] = Store.Settings.FpsCap;
+                c["Priority"] = Store.Settings.Priority;
+                c["MaxRamMb"] = Store.Settings.MaxRamMb;
+                c["VeryLowMem"] = Store.Settings.VeryLowMem;
+                c["MaxAlts"] = Store.Settings.MaxAlts;
+                c["MaxAltsIdle"] = Store.Settings.MaxAltsIdle;
+                c["MaxAltsTrim"] = Store.Settings.MaxAltsTrim;
+                c["MaxAltsMinimize"] = Store.Settings.MaxAltsMinimize;
+                c["MemAutoClean"] = M.AutoClean;
+                c["MemThreshold"] = M.Threshold;
+                c["MemIntervalMin"] = M.IntervalMin;
+                c["MemWorkingSets"] = M.WorkingSets;
+                c["MemFileCache"] = M.FileCache;
+                c["MemModifiedList"] = M.ModifiedList;
+                c["MemStandbyLow"] = M.StandbyLow;
+                c["MemStandbyFull"] = M.StandbyFull;
+                c["MemCombine"] = M.Combine;
+                Util.Copy(Json.To(c));
+                AddLog(Lang.T("Performance settings copied - send this text to the other PC."));
+            }
+            catch (Exception ex) { AddLog("Copy failed: " + ex.Message); }
+        }
+
+        void ImportPerfConfig()
+        {
+            try
+            {
+                string text = Clipboard.GetText().Trim();
+                if (text.Length == 0) { AddLog(Lang.T("The clipboard is empty - copy the settings text first.")); return; }
+                object o = Json.Parse(text);
+                IDictionary<string, object> c = Json.Obj(o);
+                if (c == null || !c.ContainsKey("GfxPreset")) { AddLog(Lang.T("That clipboard text is not valid performance settings.")); return; }
+                ApplyPerfConfig(c);
+                AddLog(Lang.T("Performance settings imported."));
+            }
+            catch (Exception ex) { AddLog("Import failed: " + ex.Message); }
+        }
+
+        void ApplyPerfConfig(IDictionary<string, object> c)
+        {
+            GfxSettings G = Store.Settings.Gfx;
+            G.Preset = ClampKey(Json.Str(c, "GfxPreset"), PresetKeys, "Default");
+            G.Quality = ClampInt(Json.Long(c, "GfxQuality"), 0, 21);
+            G.Texture = ClampInt(Json.Long(c, "GfxTexture"), -1, 3);
+            G.Msaa = ClampInt(Json.Long(c, "GfxMsaa"), 0, 8);
+            G.NoGrass = Json.Bool(c, "GfxNoGrass");
+            G.PauseVoxelizer = Json.Bool(c, "GfxPauseVoxelizer");
+            G.GraySky = Json.Bool(c, "GfxGraySky");
+            G.LowCsg = Json.Bool(c, "GfxLowCsg");
+            G.Api = ClampKey(Json.Str(c, "GfxApi"), ApiKeys, "Default");
+            G.WriteUnlisted = Json.Bool(c, "GfxWriteUnlisted");
+            Store.Settings.CustomClientSettings = Json.Str(c, "CustomFlags");
+            Store.Settings.FpsCap = ClampInt(Json.Long(c, "FpsCap"), 0, 1000);
+            Store.Settings.Priority = ClampKey(Json.Str(c, "Priority"), PriorityKeys, "Normal");
+            Store.Settings.MaxRamMb = ClampInt(Json.Long(c, "MaxRamMb"), 0, 32768);
+            Store.Settings.VeryLowMem = Json.Bool(c, "VeryLowMem");
+            Store.Settings.MaxAlts = Json.Bool(c, "MaxAlts");
+            Store.Settings.MaxAltsIdle = Json.Bool(c, "MaxAltsIdle");
+            Store.Settings.MaxAltsTrim = Json.Bool(c, "MaxAltsTrim");
+            Store.Settings.MaxAltsMinimize = Json.Bool(c, "MaxAltsMinimize");
+            MemSettings M = Store.Settings.Mem;
+            M.AutoClean = Json.Bool(c, "MemAutoClean");
+            M.Threshold = ClampInt(Json.Long(c, "MemThreshold"), 30, 98);
+            M.IntervalMin = ClampInt(Json.Long(c, "MemIntervalMin"), 0, 1440);
+            M.WorkingSets = Json.Bool(c, "MemWorkingSets");
+            M.FileCache = Json.Bool(c, "MemFileCache");
+            M.ModifiedList = Json.Bool(c, "MemModifiedList");
+            M.StandbyLow = Json.Bool(c, "MemStandbyLow");
+            M.StandbyFull = Json.Bool(c, "MemStandbyFull");
+            M.Combine = Json.Bool(c, "MemCombine");
+            Store.SaveSettings();
+            SyncPerfControls();
+            RamCap.Tick();
+            if (Store.Settings.MaxAlts) MaxAlts.Tick(); else MaxAlts.Reset();
+            Launcher.ApplyLowMemoryPriority();
+        }
+
+        void SyncPerfControls()
+        {
+            loadingPerf = true;
+            if (numFps != null) numFps.Value = Math.Max(0, Math.Min(1000, Store.Settings.FpsCap));
+            if (tbCustomFlags != null) tbCustomFlags.Text = Store.Settings.CustomClientSettings;
+            if (numMaxRam != null) numMaxRam.Value = Math.Max(0, Math.Min(32768, Store.Settings.MaxRamMb));
+            if (chkMaxAlts != null) chkMaxAlts.Checked = Store.Settings.MaxAlts;
+            if (chkMaxIdle != null) chkMaxIdle.Checked = Store.Settings.MaxAltsIdle;
+            if (chkMaxTrim != null) chkMaxTrim.Checked = Store.Settings.MaxAltsTrim;
+            if (chkMaxMin != null) chkMaxMin.Checked = Store.Settings.MaxAltsMinimize;
+            loadingPerf = false;
+            LoadGfxControls();
+
+            loadingMem = true;
+            if (chkVeryLow != null) chkVeryLow.Checked = Store.Settings.VeryLowMem;
+            if (chkAutoClean != null) chkAutoClean.Checked = Store.Settings.Mem.AutoClean;
+            if (numMemLimit != null) numMemLimit.Value = Store.Settings.Mem.Threshold;
+            if (numMemInterval != null) numMemInterval.Value = Store.Settings.Mem.IntervalMin;
+            if (chkMemWs != null) chkMemWs.Checked = Store.Settings.Mem.WorkingSets;
+            if (chkMemCache != null) chkMemCache.Checked = Store.Settings.Mem.FileCache;
+            if (chkMemModified != null) chkMemModified.Checked = Store.Settings.Mem.ModifiedList;
+            if (chkMemStandby != null) chkMemStandby.Checked = Store.Settings.Mem.StandbyLow;
+            if (chkMemStandbyFull != null) chkMemStandbyFull.Checked = Store.Settings.Mem.StandbyFull;
+            if (chkMemCombine != null) chkMemCombine.Checked = Store.Settings.Mem.Combine;
+            loadingMem = false;
+            UpdateMemUi();
+            UpdatePreview();
+            UpdatePerfCap();
+        }
+
+        static int ClampInt(long v, int min, int max) { return (int)Math.Max(min, Math.Min(max, v)); }
+
+        static string ClampKey(string v, string[] keys, string fallback)
+        {
+            if (Array.IndexOf(keys, v) >= 0) return v;
+            return fallback;
         }
     }
 }

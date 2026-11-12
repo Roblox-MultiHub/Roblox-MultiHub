@@ -48,7 +48,7 @@ namespace RobloxMultiHub
                     if (a.LoginLost) stillLost.Add(a);
                     else { a.LoginLost = true; lost.Add(a); }
                 }
-                else if (u.Error.StartsWith("Cookie expired"))
+                else if (u.Error.StartsWith(Lang.T("Cookie expired")))
                 {
                     failures = 0;
                     li.CookieBad = true;

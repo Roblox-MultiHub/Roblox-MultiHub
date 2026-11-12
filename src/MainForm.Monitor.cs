@@ -13,7 +13,7 @@ namespace RobloxMultiHub
 
         void BuildMonitorPage()
         {
-            Panel page = NewPage("Monitor");
+            Panel page = NewPage(Lang.T("Monitor"));
 
             Label title = Ui.Lbl(Lang.T("Monitor"), "title");
             title.Location = new Point(PageBuilder.PadX, 14);

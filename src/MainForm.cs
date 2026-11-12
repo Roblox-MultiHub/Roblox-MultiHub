@@ -138,7 +138,7 @@ namespace RobloxMultiHub
             ApplyTheme();
             ShowPage(currentPage != "" ? currentPage : "Home");
             RefreshAccountList();
-            SetView(Store.Settings.View == "Cards");
+            SetView(Store.Settings.View == Lang.T("Cards"));
             if (tick != null) tick.Start();
         }
 
@@ -194,7 +194,7 @@ namespace RobloxMultiHub
             lblMulti.TextAlign = ContentAlignment.MiddleRight;
             lblMulti.Cursor = Cursors.Hand;
             lblMulti.Click += delegate { ShowPage("Settings"); };
-            Ui.Tips.SetToolTip(lblMulti, "Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time.");
+            Ui.Tips.SetToolTip(lblMulti, Lang.T("Click to open Settings. Multi-instance is what lets several Roblox windows run at the same time."));
             topBar.Controls.Add(lblMulti);
 
             // real clicks over child controls never reach the form's hit-test, so every header control
@@ -251,7 +251,7 @@ namespace RobloxMultiHub
             topBar.Controls.Add(btnWinMin);
             btnWinClose = Ui.Btn("\u2715", 30, delegate { Close(); }, "danger");
             btnWinClose.Height = 30;
-            Ui.Tips.SetToolTip(btnWinClose, "Close Roblox MultiHub");
+            Ui.Tips.SetToolTip(btnWinClose, Lang.T("Close Roblox MultiHub"));
             topBar.Controls.Add(btnWinClose);
 
             // header controls that must keep their own clicks
@@ -407,9 +407,9 @@ namespace RobloxMultiHub
             sep.Width = 178;
             sep.Margin = new Padding(1, 6, 1, 8);
             bottom.Controls.Add(sep);
-            bottom.Controls.Add(NavBtn("Settings", Lang.T("⚙  Settings"), false, "Open all options and toggles. Multi-instance, performance, alerts, startup and more."));
-            bottom.Controls.Add(NavBtn("Help", Lang.T("❓  Help"), false, "Guides, FAQ and troubleshooting."));
-            bottom.Controls.Add(NavBtn("Macro", Lang.T("\U0001F3AC  Macro"), true, "Record and replay mouse + keyboard (like TinyTask) in its own window."));
+            bottom.Controls.Add(NavBtn("Settings", Lang.T("⚙  Settings"), false, Lang.T("Open all options and toggles. Multi-instance, performance, alerts, startup and more.")));
+            bottom.Controls.Add(NavBtn("Help", Lang.T("❓  Help"), false, Lang.T("Guides, FAQ and troubleshooting.")));
+            bottom.Controls.Add(NavBtn("Macro", Lang.T("\U0001F3AC  Macro"), true, Lang.T("Record and replay mouse + keyboard (like TinyTask) in its own window.")));
 
             FlowLayoutPanel top = NewNavFlow();
             top.Dock = DockStyle.Top;
@@ -417,10 +417,10 @@ namespace RobloxMultiHub
             top.Controls.Add(NavBtn("Launch", Lang.T("\U0001F680  Launch"), false, null));
             top.Controls.Add(NavBtn("Servers", Lang.T("\U0001F310  Servers"), false, null));
             top.Controls.Add(NavBtn("Layout", Lang.T("\u25A6  Layout"), false, null));
-            top.Controls.Add(NavBtn("Monitor", Lang.T("\U0001F4CA  Monitor"), false, null));
+            top.Controls.Add(NavBtn(Lang.T("Monitor"), Lang.T("\U0001F4CA  Monitor"), false, null));
             top.Controls.Add(NavBtn("Presets", Lang.T("\U0001F4BE  Presets"), false, null));
             top.Controls.Add(NavBtn("Perf", Lang.T("⚡  Perf"), false, null));
-            top.Controls.Add(NavBtn("Beta", Lang.T("\U0001F9EA  Beta"), false, "New features that are still being tested. They move to their proper page once proven."));
+            top.Controls.Add(NavBtn("Beta", Lang.T("\U0001F9EA  Beta"), false, Lang.T("New features that are still being tested. They move to their proper page once proven.")));
 
             side.Controls.Add(bottom);
             side.Controls.Add(top);
@@ -579,7 +579,7 @@ namespace RobloxMultiHub
             Panel page = NewPage("Home");
             page.AutoScroll = true;
 
-            Label title = Ui.Lbl("Welcome to Roblox MultiHub", "title");
+            Label title = Ui.Lbl(Lang.T("Welcome to Roblox MultiHub"), "title");
             title.Location = new Point(20, 20);
             page.Controls.Add(title);
 
@@ -589,9 +589,9 @@ namespace RobloxMultiHub
 
             string[][] steps = new string[][]
             {
-                new string[] { "1", "Add your accounts", "Sign in with a browser, or paste cookies. They're encrypted and stay on this PC." },
-                new string[] { "2", "Pick a game", "Paste a game link, a place ID or a private server on the Launch page." },
-                new string[] { "3", "Press Launch", "Launch as many accounts as you want, then line the windows up on the Layout page." }
+                new string[] { "1", Lang.T("Add your accounts"), "Sign in with a browser, or paste cookies. They're encrypted and stay on this PC." },
+                new string[] { "2", Lang.T("Pick a game"), "Paste a game link, a place ID or a private server on the Launch page." },
+                new string[] { "3", Lang.T("Press Launch"), "Launch as many accounts as you want, then line the windows up on the Layout page." }
             };
             int cardW = 206, cardH = 158, gap = 12, x = 20, y = 96;
             foreach (string[] s in steps)
@@ -613,7 +613,7 @@ namespace RobloxMultiHub
             add.Click += delegate { if (addMenu != null) addMenu.Show(add, new Point(0, add.Height)); };
             page.Controls.Add(add);
 
-            RoundButton goLaunch = Ui.Btn("Go to Launch", 140, delegate { ShowPage("Launch"); }, "");
+            RoundButton goLaunch = Ui.Btn(Lang.T("Go to Launch"), 140, delegate { ShowPage("Launch"); }, "");
             goLaunch.Height = 40; goLaunch.Location = new Point(206, y + cardH + 24);
             page.Controls.Add(goLaunch);
         }
@@ -787,6 +787,7 @@ namespace RobloxMultiHub
                     MaxAlts.Tick();
                     RamCap.Tick();
                     UpdateBetaLive();
+                    UpdatePerfCap();
                     DiscordRpc.Update(UsageMonitor.Count, Store.Accounts.Count);
                 }
                 if (currentPage == "Layout" && tickN % 2 == 0) RefreshWindowList();
@@ -804,12 +805,12 @@ namespace RobloxMultiHub
             string st = MultiInstance.State;
             if (!MultiInstance.Enabled)
             {
-                lblMulti.Text = "Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.";
+                lblMulti.Text = Lang.T("Multi-instance: OFF  (only ONE Roblox window)\r\nClick here to turn it on in Settings.");
                 lblMulti.ForeColor = Theme.Warn;
             }
             else if (st == "Active")
             {
-                lblMulti.Text = "Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.";
+                lblMulti.Text = Lang.T("Multi-instance: ACTIVE\r\nLaunch Roblox only from this app.");
                 lblMulti.ForeColor = Theme.Good;
             }
             else if (st == "Waiting")
@@ -834,7 +835,7 @@ namespace RobloxMultiHub
             if (statRun == null) return;
             int count = UsageMonitor.Count;
             statRun.Value.Text = runningIds.Count + " / " + Store.Accounts.Count;
-            statRun.Sub.Text = count == 0 ? "nothing running" : count + " Roblox window(s)";
+            statRun.Sub.Text = count == 0 ? Lang.T("nothing running") : count + " Roblox window(s)";
             statCpu.Value.Text = count == 0 ? "0%" : CpuText(UsageMonitor.TotalCpu);
             statRam.Value.Text = Util.FormatBytes(UsageMonitor.TotalRam);
             if (count == 0)
@@ -849,7 +850,7 @@ namespace RobloxMultiHub
             }
             if (lblPerfLive != null)
                 lblPerfLive.Text = count == 0
-                    ? "Right now: no Roblox window is running."
+                    ? Lang.T("Right now: no Roblox window is running.")
                     : "Right now: " + count + " Roblox window(s) use " + CpuText(UsageMonitor.TotalCpu) + " CPU and " + Util.FormatBytes(UsageMonitor.TotalRam)
                       + " memory in total  (avg " + CpuText(UsageMonitor.TotalCpu / count) + " and " + Util.FormatBytes(UsageMonitor.TotalRam / count) + " per account).";
             UpdateFooterButtons();
@@ -1004,7 +1005,7 @@ namespace RobloxMultiHub
             Ui.Tips.SetToolTip(bEdit, "Edit alias, group, notes, password and the game of each account.");
             RoundButton bRemove = Ui.Btn("Remove", 66, delegate { RemoveSelected(); }, "danger");
             Ui.Tips.SetToolTip(bRemove, "Delete the selected account(s) from this app (does not touch the Roblox account itself).");
-            RoundButton bCheck = Ui.Btn("Check", 54, delegate { CheckAccounts(); }, "");
+            RoundButton bCheck = Ui.Btn(Lang.T("Check"), 54, delegate { CheckAccounts(); }, "");
             Ui.Tips.SetToolTip(bCheck, "Check cookies: tests whether the saved login of the selected accounts (or all, if none selected) still works.");
             RoundButton bActions = Ui.Btn("More", 52, null, "");
             bActions.Click += delegate { accMenu.Show(bActions, new Point(0, bActions.Height)); };
@@ -1041,7 +1042,7 @@ namespace RobloxMultiHub
             cbGroupFilter.SelectedIndexChanged += delegate { if (!suspendSel) { RefreshAccountList(); NudgeList(); } };
             btnViewList = Ui.Btn(Lang.T("List"), 52, delegate { SetView(false); }, "toggle");
             btnViewList.Margin = new Padding(0, 7, 2, 0);
-            Ui.Tips.SetToolTip(btnViewList, "Compact list with profile pictures.");
+            Ui.Tips.SetToolTip(btnViewList, Lang.T("Compact list with profile pictures."));
             btnViewCards = Ui.Btn(Lang.T("Cards"), 60, delegate { SetView(true); }, "toggle");
             btnViewCards.Margin = new Padding(0, 7, 0, 0);
             filt.Padding = new Padding(12, 0, 12, 0);        // same left edge as the toolbar and rows
@@ -1150,7 +1151,7 @@ namespace RobloxMultiHub
         }
 
         // Footer of the accounts panel, every button only present when it can be used:
-        // Stop while something is running ("Stop" / "Stop all"), 'Launch all' while at least one
+        // Stop while something is running (Lang.T("Stop") / "Stop all"), 'Launch all' while at least one
         // listed account is not running, and the order arrows while an account is selected.
         void UpdateFooterButtons()
         {
@@ -1209,10 +1210,10 @@ namespace RobloxMultiHub
         void BuildMenus()
         {
             addMenu = Ui.Menu();
-            addMenu.Items.Add(Ui.Item("Log in with a browser (Edge / Chrome)...", delegate { AddByBrowser(); }));
-            addMenu.Items.Add(Ui.Item("Add several with username:password...", delegate { AddSeveralByBrowser(); }));
-            addMenu.Items.Add(Ui.Item("Paste cookie(s)...", delegate { AddByPaste(); }));
-            addMenu.Items.Add(Ui.Item("Import cookies from a file...", delegate { AddByFile(); }));
+            addMenu.Items.Add(Ui.Item(Lang.T("Log in with a browser (Edge / Chrome)..."), delegate { AddByBrowser(); }));
+            addMenu.Items.Add(Ui.Item(Lang.T("Add several with username:password..."), delegate { AddSeveralByBrowser(); }));
+            addMenu.Items.Add(Ui.Item(Lang.T("Paste cookie(s)..."), delegate { AddByPaste(); }));
+            addMenu.Items.Add(Ui.Item(Lang.T("Import cookies from a file..."), delegate { AddByFile(); }));
             addMenu.Items.Add(new ToolStripSeparator());
             addMenu.Items.Add(Ui.Item("Tip: you can also drag a text file or text onto the accounts", null));
             addMenu.Items[addMenu.Items.Count - 1].Enabled = false;
@@ -1224,23 +1225,23 @@ namespace RobloxMultiHub
             copy.DropDownItems.Add(Ui.Item("Username", delegate { CopyField(delegate(Account a) { return a.Username; }); }));
             copy.DropDownItems.Add(Ui.Item("Password", delegate { CopyField(delegate(Account a) { return a.Password; }); }));
             copy.DropDownItems.Add(Ui.Item("Username:Password", delegate { CopyField(delegate(Account a) { return a.Username + ":" + a.Password; }); }));
-            copy.DropDownItems.Add(Ui.Item("User ID", delegate { CopyField(delegate(Account a) { return a.UserId.ToString(); }); }));
+            copy.DropDownItems.Add(Ui.Item(Lang.T("User ID"), delegate { CopyField(delegate(Account a) { return a.UserId.ToString(); }); }));
             copy.DropDownItems.Add(Ui.Item("Cookie (.ROBLOSECURITY) - keep secret!", delegate { CopyField(delegate(Account a) { return a.Cookie; }); }));
             accMenu.Items.Add(copy);
-            accMenu.Items.Add(Ui.Item("Show account details (age, Robux, Premium)", delegate { ShowDetails(); }));
-            accMenu.Items.Add(Ui.Item("Copy a fresh login ticket", delegate { CopyTicket(); }));
-            accMenu.Items.Add(Ui.Item("Open profile in browser", delegate { OpenProfile(); }));
+            accMenu.Items.Add(Ui.Item(Lang.T("Show account details (age, Robux, Premium)"), delegate { ShowDetails(); }));
+            accMenu.Items.Add(Ui.Item(Lang.T("Copy a fresh login ticket"), delegate { CopyTicket(); }));
+            accMenu.Items.Add(Ui.Item(Lang.T("Open profile in browser"), delegate { OpenProfile(); }));
             accMenu.Items.Add(Ui.Item("Refresh cookie (rotates it, signs out other sessions)", delegate { RotateSelected(); }));
             accMenu.Items.Add(new ToolStripSeparator());
-            ToolStripMenuItem sort = Ui.Item("Sort accounts by", null);
-            sort.DropDownItems.Add(Ui.Item("My own order (Up / Down buttons)", delegate { SetSort(-1); }));
-            sort.DropDownItems.Add(Ui.Item("Name  (click again to reverse)", delegate { SetSort(1); }));
+            ToolStripMenuItem sort = Ui.Item(Lang.T("Sort accounts by"), null);
+            sort.DropDownItems.Add(Ui.Item(Lang.T("My own order (Up / Down buttons)"), delegate { SetSort(-1); }));
+            sort.DropDownItems.Add(Ui.Item(Lang.T("Name  (click again to reverse)"), delegate { SetSort(1); }));
             sort.DropDownItems.Add(Ui.Item("Group", delegate { SetSort(2); }));
             sort.DropDownItems.Add(Ui.Item("Status", delegate { SetSort(3); }));
-            sort.DropDownItems.Add(Ui.Item("CPU usage", delegate { SetSort(4); }));
-            sort.DropDownItems.Add(Ui.Item("Last used", delegate { SetSort(5); }));
+            sort.DropDownItems.Add(Ui.Item(Lang.T("CPU usage"), delegate { SetSort(4); }));
+            sort.DropDownItems.Add(Ui.Item(Lang.T("Last used"), delegate { SetSort(5); }));
             accMenu.Items.Add(sort);
-            miGroup = Ui.Item("Move to group", null);
+            miGroup = Ui.Item(Lang.T("Move to group"), null);
             accMenu.Items.Add(miGroup);
             accMenu.Items.Add(Ui.Item("Edit...", delegate { EditSelected(); }));
             accMenu.Items.Add(Ui.Item("Remove", delegate { RemoveSelected(); }));
@@ -1251,16 +1252,16 @@ namespace RobloxMultiHub
         void RebuildGroupMenu()
         {
             miGroup.DropDownItems.Clear();
-            miGroup.DropDownItems.Add(Ui.Item("(no group)", delegate { SetGroup(""); }));
+            miGroup.DropDownItems.Add(Ui.Item(Lang.T("(no group)"), delegate { SetGroup(""); }));
             foreach (string g in Store.AllGroups())
             {
                 string name = g;
                 miGroup.DropDownItems.Add(Ui.Item(name, delegate { SetGroup(name); }));
             }
             miGroup.DropDownItems.Add(new ToolStripSeparator());
-            miGroup.DropDownItems.Add(Ui.Item("New group...", delegate
+            miGroup.DropDownItems.Add(Ui.Item(Lang.T("New group..."), delegate
             {
-                string n = Dialogs.Prompt(this, "New group", "Name of the new group:", "");
+                string n = Dialogs.Prompt(this, Lang.T("New group"), Lang.T("Name of the new group:"), "");
                 if (!string.IsNullOrEmpty(n)) SetGroup(n);
             }));
             foreach (ToolStripItem it in miGroup.DropDownItems) StyleItem(it);
@@ -1497,14 +1498,14 @@ namespace RobloxMultiHub
         void PillFor(Account a, out string text, out Color color)
         {
             LiveInfo li = AppState.Live(a);
-            if (li.Locked) { text = "Account locked"; color = Theme.Bad; return; }
-            if (li.CookieBad) { text = "Cookie expired"; color = Theme.Bad; return; }
-            if (runningIds.Contains(a.Id)) { text = "Running"; color = Theme.Good; return; }
-            if (li.PresenceType == 2) { text = "In game"; color = Theme.Good; }
+            if (li.Locked) { text = Lang.T("Account locked"); color = Theme.Bad; return; }
+            if (li.CookieBad) { text = Lang.T("Cookie expired"); color = Theme.Bad; return; }
+            if (runningIds.Contains(a.Id)) { text = Lang.T("Running"); color = Theme.Good; return; }
+            if (li.PresenceType == 2) { text = Lang.T("In game"); color = Theme.Good; }
             else if (li.PresenceType == 3) { text = "Studio"; color = Theme.Purple; }
-            else if (li.PresenceType == 1) { text = "Online"; color = Theme.Info; }
-            else if (li.PresenceType == 0) { text = "Offline"; color = Theme.Muted; }
-            else { text = "Not checked"; color = Theme.Border; }
+            else if (li.PresenceType == 1) { text = Lang.T("Online"); color = Theme.Info; }
+            else if (li.PresenceType == 0) { text = Lang.T("Offline"); color = Theme.Muted; }
+            else { text = Lang.T("Not checked"); color = Theme.Border; }
         }
 
         string GameText(Account a)
@@ -1647,7 +1648,7 @@ namespace RobloxMultiHub
         List<Account> FilteredAccounts()
         {
             string q = tbSearch == null ? "" : tbSearch.Text.Trim().ToLowerInvariant();
-            string grp = (cbGroupFilter == null || cbGroupFilter.SelectedItem == null) ? "All groups" : cbGroupFilter.SelectedItem.ToString();
+            string grp = (cbGroupFilter == null || cbGroupFilter.SelectedItem == null) ? Lang.T("All groups") : cbGroupFilter.SelectedItem.ToString();
             IEnumerable<Account> list = Store.Accounts;
             if (q.Length > 0)
                 list = list.Where(a => (a.Username + " " + a.Alias + " " + a.Description + " " + a.Group + " " + a.DisplayName).ToLowerInvariant().Contains(q));
@@ -1866,7 +1867,7 @@ namespace RobloxMultiHub
         {
             using (OpenFileDialog d = new OpenFileDialog())
             {
-                d.Title = "Choose a text file that contains cookies";
+                d.Title = Lang.T("Choose a text file that contains cookies");
                 d.Filter = "Text / JSON files|*.txt;*.json;*.csv;*.log|All files|*.*";
                 if (d.ShowDialog(this) != DialogResult.OK) return;
                 try { AddFromText(File.ReadAllText(d.FileName)); }
@@ -1927,7 +1928,7 @@ namespace RobloxMultiHub
         void EditSelected()
         {
             List<Account> sel = SelectedAccounts();
-            if (sel.Count == 0) { AddLog("Select an account first."); return; }
+            if (sel.Count == 0) { AddLog(Lang.T("Select an account first.")); return; }
             if (Dialogs.EditAccounts(this, sel))
             {
                 foreach (Account a in sel)
@@ -2122,7 +2123,7 @@ namespace RobloxMultiHub
                     if (pi.Type == 2) li.Where = "In game: " + (string.IsNullOrEmpty(pi.Location) ? "(unknown)" : pi.Location);
                     else if (pi.Type == 3) li.Where = "In Roblox Studio";
                     else if (pi.Type == 1) li.Where = "Online (website / app)";
-                    else li.Where = "Offline";
+                    else li.Where = Lang.T("Offline");
                 }
             }
             catch (Exception ex) { Log.Error("presence", ex); }

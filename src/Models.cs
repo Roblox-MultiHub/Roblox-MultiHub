@@ -22,6 +22,7 @@ namespace RobloxMultiHub
         public long TrackerId;              // stable "browser tracker id" for this account
         public long LastUsedTicks;
         public int Order;
+        public long SecretsFound;
         public bool LoginLost;              // Roblox ended this login and you were already told (startup check)
     }
 
@@ -134,7 +135,7 @@ namespace RobloxMultiHub
         public bool WroteClientFile = false;
         public int FpsCap = 0;                      // 0 = leave Roblox's own setting alone
         public bool WroteFpsCap = false;
-        public string View = "List";                // List | Cards
+        public string View = Lang.T("List");                // List | Cards
         public int SplitW = 600;
         public bool AutoRelaunch = false;
         public int WatcherSec = 60;
@@ -183,7 +184,7 @@ namespace RobloxMultiHub
         public bool DiscordRpc = true;
         public string DiscordAppId = "";
 
-        // "Max alts": throttle the Roblox windows you are NOT playing, so many clients stay light.
+        // Lang.T("Max alts"): throttle the Roblox windows you are NOT playing, so many clients stay light.
         public bool MaxAlts = false;
         public int MaxAltsFps = 10;                 // FPS cap used for new launches while Max alts is on
         public bool MaxAltsIdle = true;             // background clients get Idle CPU priority + efficiency mode
@@ -195,6 +196,14 @@ namespace RobloxMultiHub
         public int RamCapFloorMb = 0;             // measured by the cap probe; 0 = not measured yet
         public bool VeryLowMem = true;            // VeryLow memory priority on every client
         public bool HideTaskbar = false;          // Roblox windows off the taskbar / Alt-Tab
+        public bool DetectSecrets = false;
+        public string SecretImagePath = "";
+        public int SecretHoldMs = 350;
+        public int SecretOffsetX = 0;
+        public int SecretOffsetY = -18;
+        public bool SecretAllowClick = true;
+        public int SecretMaxTries = 3;
+        public int LogHours = 12;
     }
 
     // RAM cleaner (Performance page). The cleaning itself is done by an admin helper process.

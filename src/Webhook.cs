@@ -136,7 +136,7 @@ namespace RobloxMultiHub
             });
         }
 
-        // Always sent (used by the "Send a test message" button, which passes its own URL).
+        // Always sent (used by the Lang.T("Send a test message") button, which passes its own URL).
         public static void SendTo(string url, string title, string desc, int color)
         {
             Post(url, title, desc, color);

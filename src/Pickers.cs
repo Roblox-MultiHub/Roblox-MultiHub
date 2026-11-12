@@ -48,14 +48,14 @@ namespace RobloxMultiHub
             list.Size = new Size(608, 310);
             list.Columns.Add("Game", 330);
             list.Columns.Add("Players", 100);
-            list.Columns.Add("Place ID", 150);
+            list.Columns.Add(Lang.T("Place ID"), 150);
             list.MultiSelect = false;
             ListStyle.Attach(list);
             Dialogs.Put(f, list, 16, 58);
             Label status = Dialogs.Put(f, Ui.Lbl("Type part of a game's name and press Enter.", "muted"), 16, 376);
             GameInfo chosen = null;
-            RoundButton use = Dialogs.Put(f, Ui.Btn("Use this game", 130, null, "primary"), f.ClientSize.Width - 130 - 100 - 28, f.ClientSize.Height - 46);
-            RoundButton cancel = Dialogs.Put(f, Ui.Btn("Cancel", 90, null, ""), f.ClientSize.Width - 90 - 16, f.ClientSize.Height - 46);
+            RoundButton use = Dialogs.Put(f, Ui.Btn(Lang.T("Use this game"), 130, null, "primary"), f.ClientSize.Width - 130 - 100 - 28, f.ClientSize.Height - 46);
+            RoundButton cancel = Dialogs.Put(f, Ui.Btn(Lang.T("Cancel"), 90, null, ""), f.ClientSize.Width - 90 - 16, f.ClientSize.Height - 46);
             cancel.DialogResult = DialogResult.Cancel;
             f.CancelButton = cancel;
 
@@ -65,7 +65,7 @@ namespace RobloxMultiHub
                 string text = q.Text.Trim();
                 if (text.Length == 0 || busy) return;
                 busy = true;
-                status.Text = "Searching...";
+                status.Text = Lang.T("Searching...");
                 list.Items.Clear();
                 List<GameInfo> res = await Api.SearchGames(text, cookie);
                 foreach (GameInfo g in res)
@@ -84,7 +84,7 @@ namespace RobloxMultiHub
             };
             EventHandler accept = delegate
             {
-                if (list.SelectedItems.Count == 0) { status.Text = "Select a game in the list first."; return; }
+                if (list.SelectedItems.Count == 0) { status.Text = Lang.T("Select a game in the list first."); return; }
                 chosen = list.SelectedItems[0].Tag as GameInfo;
                 f.DialogResult = DialogResult.OK;
             };
@@ -104,18 +104,18 @@ namespace RobloxMultiHub
             Form f = Dialogs.Make("Pick a server - place " + placeId, 720, 540);
             DarkCombo sort = Dialogs.Put(f, Ui.Cmb(190, ServerSort.Names), 16, 14);
             RoundButton refresh = Dialogs.Put(f, Ui.Btn("Refresh", 90, null, ""), 216, 12);
-            RoundButton more = Dialogs.Put(f, Ui.Btn("Load more", 100, null, ""), 316, 12);
+            RoundButton more = Dialogs.Put(f, Ui.Btn(Lang.T("Load more"), 100, null, ""), 316, 12);
             more.Enabled = false;
             BufferedListView list = new BufferedListView();
             list.Size = new Size(688, 370);
-            list.Columns.Add("Server (Job ID)", 330);
+            list.Columns.Add(Lang.T("Server (Job ID)"), 330);
             list.Columns.Add("Players", 100);
             list.Columns.Add("Ping", 100);
             list.Columns.Add("FPS", 100);
             list.MultiSelect = false;
             ListStyle.Attach(list);
             Dialogs.Put(f, list, 16, 56);
-            Label status = Dialogs.Put(f, Ui.Lbl("Loading servers...", "muted"), 16, 436);
+            Label status = Dialogs.Put(f, Ui.Lbl(Lang.T("Loading servers..."), "muted"), 16, 436);
             string chosen = null;
             RoundButton use = Dialogs.Put(f, Ui.Btn("Use this server", 140, null, "primary"), f.ClientSize.Width - 140 - 100 - 28, f.ClientSize.Height - 46);
             RoundButton cancel = Dialogs.Put(f, Ui.Btn("Cancel", 90, null, ""), f.ClientSize.Width - 90 - 16, f.ClientSize.Height - 46);
@@ -167,7 +167,7 @@ namespace RobloxMultiHub
             more.Click += delegate { load(true); };
             EventHandler accept = delegate
             {
-                if (list.SelectedItems.Count == 0) { status.Text = "Select a server in the list first."; return; }
+                if (list.SelectedItems.Count == 0) { status.Text = Lang.T("Select a server in the list first."); return; }
                 ServerInfo si = list.SelectedItems[0].Tag as ServerInfo;
                 if (si == null) return;
                 chosen = si.Id;

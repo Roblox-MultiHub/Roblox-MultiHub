@@ -22,6 +22,7 @@ namespace RobloxMultiHub
         RadioButton rbAuto, rbGrid, rbFixed;
         NumericUpDown numRows, numCols, numGap, numMargin, numScale, numFixW, numFixH, numAutoDelay;
         CheckBox chkStretch, chkBorderless, chkTop, chkTitles, chkAuto, chkHotkeys;
+        CheckBox chkHideBar;
         ComboBox cbSortMode;
         static readonly string[] SortModeKeys = new string[] { "Manual", "Name", "Pid" };
         Panel previewPanel;
@@ -72,7 +73,7 @@ namespace RobloxMultiHub
             cbMonitor.SelectedIndex = Math.Max(0, monitors.IndexOf(WindowLayout.PickMonitor(monitors, L.Monitor)));
             p.Opt("Which screen the windows go on.",
                 "All windows are placed on this monitor. Pick another one if you have several.",
-                Ui.Fld("Monitor", 80), cbMonitor);
+                Ui.Fld(Lang.T("Monitor"), 80), cbMonitor);
             chkWork = Ui.Chk("Keep windows clear of the taskbar", L.UseWorkArea, null);
             p.Opt("Stays out of the taskbar area.",
                 "On = use the usable part of the screen. Off = use the entire screen, even behind the taskbar.",
@@ -80,7 +81,7 @@ namespace RobloxMultiHub
 
             // ---- mode ----
             p.Section("Layout mode");
-            rbAuto = Ui.Rad("Automatic grid  (default)", L.Mode != "Grid" && L.Mode != "FixedSize", null);
+            rbAuto = Ui.Rad(Lang.T("Automatic grid  (default)"), L.Mode != "Grid" && L.Mode != "FixedSize", null);
             p.Opt("Automatic rows and columns.",
                 "Picks rows and columns from the number of windows and your screen shape: 2 windows = side by side, 4 = 2x2, 6 = 3x2, 9 = 3x3. Every window gets the same share of the screen.\n\nIf Roblox's minimum window size does not allow that, the windows overlap neatly instead (the preview shows it).",
                 rbAuto);
@@ -123,10 +124,15 @@ namespace RobloxMultiHub
             p.Opt("Rename windows to the account name.",
                 "Changes the title of windows started by this app to 'Roblox - AccountName', so you can tell them apart in the taskbar. OFF by default.",
                 chkTitles);
+            chkHideBar = Ui.Chk("Hide Roblox windows from the taskbar and Alt-Tab", Store.Settings.HideTaskbar, null);
+            p.Opt("Cleans up a crowded taskbar.",
+                "Applies the Windows tool-window style to every Roblox window (also within seconds of a new one opening). The windows stay visible on screen; they only disappear from the taskbar and Alt-Tab. Untick to bring them back.",
+                chkHideBar);
+            chkHideBar.CheckedChanged += delegate { if (!loadingLayout) { Store.Settings.HideTaskbar = chkHideBar.Checked; Store.SaveSettings(); Launcher.ApplyTaskbarHiding(); } };
 
             // ---- automation ----
-            p.Section("Automation");
-            chkAuto = Ui.Chk("Auto-capture new Roblox windows", L.AutoCapture, null);
+            p.Section(Lang.T("Automation"));
+            chkAuto = Ui.Chk(Lang.T("Auto-capture new Roblox windows"), L.AutoCapture, null);
             p.Opt("Re-arranges when windows open or close.",
                 "When ON, the layout is applied automatically a moment after a Roblox window opens or closes. It never moves windows continuously, so you can still drag one by hand in between.",
                 chkAuto);
@@ -170,9 +176,9 @@ namespace RobloxMultiHub
             p.Opt("Moves every window into the layout.",
                 "'Arrange now' applies the layout. 'Refresh list' reads the running windows again. 'Restore borders' brings back title bars removed by the borderless option.\n\n"
                 + "Sort Mode fixes the order the grid is filled in: 'Manual' keeps the order of the list (move rows up/down yourself), 'Account name' sorts by account (account1, account3, account10 - digits count as numbers), 'PID' sorts by process id, lowest first. Windows without an account name go last.",
-                Ui.Btn("Arrange now", 130, delegate { ArrangeNow(); }, "primary"),
+                Ui.Btn(Lang.T("Arrange now"), 130, delegate { ArrangeNow(); }, "primary"),
                 Ui.Btn("Refresh list", 110, delegate { RefreshWindowList(); }, ""),
-                Ui.Btn("Restore borders", 130, delegate { WindowLayout.RestoreBorders(); AddLog("Window borders restored."); }, ""),
+                Ui.Btn(Lang.T("Restore borders"), 130, delegate { WindowLayout.RestoreBorders(); AddLog("Window borders restored."); }, ""),
                 cbSortMode);
             p.RowTip("The order of this list decides which window gets which grid cell (left to right, top to bottom). 'Include / exclude' (or a double-click) takes a window out of the grid. 'Pin' places one window at an exact position and size and remembers it for that account. A line without a title is a Roblox process that has not opened its window yet, or a background process.",
                 Ui.Btn("Move up", 78, delegate { MoveRow(-1); }, ""),
@@ -181,7 +187,7 @@ namespace RobloxMultiHub
                 Ui.Btn("Pin size/pos...", 120, delegate { PinSelected(); }, ""),
                 Ui.Btn("Unpin", 64, delegate { UnpinSelected(); }, ""));
             p.RowTip("Focus brings a window to the front, Minimize minimizes it, 'Close selected' closes the selected Roblox processes and 'Close ALL Roblox' closes every Roblox process.",
-                Ui.Btn("Focus", 70, delegate { FocusSelected(); }, ""),
+                Ui.Btn(Lang.T("Focus"), 70, delegate { FocusSelected(); }, ""),
                 Ui.Btn("Minimize", 84, delegate { MinimizeSelected(); }, ""),
                 Ui.Btn("Close selected", 120, delegate { CloseSelectedWindows(); }, "danger"),
                 Ui.Btn("Close ALL Roblox", 130, delegate { CloseAllRoblox(); }, "danger"));

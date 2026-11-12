@@ -37,7 +37,7 @@ namespace RobloxMultiHub
             lvPresets = new BufferedListView();
             lvPresets.Size = new Size(PageW - PageBuilder.PadX * 2, 180);
             lvPresets.Columns.Add("Name", 170);
-            lvPresets.Columns.Add("Accounts", 70);
+            lvPresets.Columns.Add(Lang.T("Accounts"), 70);
             lvPresets.Columns.Add("Saved", 110);
             lvPresets.Columns.Add("Accounts in launch order", 150);
             lvPresets.MultiSelect = false;
@@ -132,7 +132,7 @@ namespace RobloxMultiHub
             string name = tbPresetName.Text.Trim();
             if (name.Length == 0) { AddLog("Type a name for the preset first."); tbPresetName.Focus(); return; }
             Preset old = FindPreset(name);
-            if (old != null && MessageBox.Show(this, "Replace the preset '" + old.Name + "' with what is running now?", "Save preset", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            if (old != null && MessageBox.Show(this, "Replace the preset '" + old.Name + "' with what is running now?", Lang.T("Save preset"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
             Preset pr = CapturePreset(name);
             if (pr == null) return;
             if (old != null) Store.Settings.Presets[Store.Settings.Presets.IndexOf(old)] = pr;
@@ -146,7 +146,7 @@ namespace RobloxMultiHub
         void UpdateSelectedPreset()
         {
             Preset sel = SelectedPreset();
-            if (sel == null) { AddLog("Select a preset in the list first."); return; }
+            if (sel == null) { AddLog(Lang.T("Select a preset in the list first.")); return; }
             tbPresetName.Text = sel.Name;
             SavePresetFromUi();
         }
@@ -328,7 +328,7 @@ namespace RobloxMultiHub
 
         async void RunPreset(Preset pr)
         {
-            if (launching) { AddLog("A launch is already running. Press Stop to cancel it."); return; }
+            if (launching) { AddLog(Lang.T("A launch is already running. Press Stop to cancel it.")); return; }
             AddLog("Running preset '" + pr.Name + "'...");
 
             // Remember your own MultiHub settings, so the preset's settings apply only for this run and

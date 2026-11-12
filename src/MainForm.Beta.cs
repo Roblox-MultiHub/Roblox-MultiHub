@@ -8,10 +8,6 @@ namespace RobloxMultiHub
     public partial class MainForm
     {
         Label lblBetaLive;
-        NumericUpDown numMaxRam;
-        RoundButton btnProbe;
-        Label lblProbe;
-        CheckBox chkVeryLow, chkHideBar;
         bool loadingBeta;
 
         void BuildBetaPage()
@@ -24,65 +20,9 @@ namespace RobloxMultiHub
             lblBetaLive = Ui.Lbl("", "good");
             p.Row(lblBetaLive);
 
-            p.Section("Max RAM per window");
-            numMaxRam = Ui.Num(0, 32768, Math.Max(0, Store.Settings.MaxRamMb), 80);
-            p.Opt("Maximum RAM per window (0 = off).",
-                "Windows stops every window from keeping more than this many MB of RAM: pages the game is not using right now are pushed out to the pagefile and stay there until the game really needs them. The RAM counter of each window stays near this number instead of growing all day.\n\n"
-                + "Start high (800 MB is a good first try) and lower it step by step; when a window starts to stutter you went too low, go a little back up. 0 turns it off.\n\n"
-                + "The cap is applied to every Roblox window within about 2 seconds (also right after it starts) and is removed when MultiHub closes.",
-                Ui.Fld("Max RAM (MB)", 110), numMaxRam);
-
-            numMaxRam.ValueChanged += delegate
-            {
-                if (loadingBeta) return;
-                Store.Settings.MaxRamMb = (int)numMaxRam.Value;
-                Store.SaveSettings();
-                RamCap.Tick();
-                UpdateBetaLive();
-            };
-
-            btnProbe = Ui.Btn("Find my real cap", 160, delegate
-            {
-                if (UsageMonitor.Count == 0) { AddLog("Cap probe: launch your accounts first - it measures them while they idle."); return; }
-                CapProber.Start(AddLog);
-            }, "primary");
-            p.Opt("Measures your clients to find the real floor.",
-                "While your accounts idle like normal, this lowers 'Max RAM per window' by 50 MB every ~3 minutes and watches hard page faults (pages being read back from disk). Above the floor they stay near zero; below it they climb - the last cap that stayed clean IS your number, measured on your PC with your games. It ends there automatically; click again to stop early.",
-                btnProbe);
-            lblProbe = Ui.Lbl(Store.Settings.RamCapFloorMb > 0
-                ? "Measured floor on this PC: " + Store.Settings.RamCapFloorMb + " MB per window."
-                : "Not measured yet on this PC.", "muted");
-            p.Row(lblProbe);
-
-            p.Opt("Quick numbers without a probe.",
-                "Reads cores, RAM, GPU counters, disks, pagefile and the clients currently running, and estimates how many windows this PC can run. The real per-window cap comes from the probe above.",
-                Ui.Btn("Run diagnostics", 150, delegate { BetaDiagnostics(); }, ""));
-
-            p.Section("Client tweaks");
-            chkVeryLow = Ui.Chk("VeryLow memory priority for all clients", Store.Settings.VeryLowMem, null);
-            p.Opt("Windows reclaims Roblox pages first.",
-                "One call per client. When anything else on the PC needs RAM, Windows takes it from the Roblox clients first instead of your other programs. Recommended ON for farms.",
-                chkVeryLow);
-            chkVeryLow.CheckedChanged += delegate { if (!loadingBeta) { Store.Settings.VeryLowMem = chkVeryLow.Checked; Store.SaveSettings(); } };
-
-            chkHideBar = Ui.Chk("Hide Roblox windows from the taskbar and Alt-Tab", Store.Settings.HideTaskbar, null);
-            p.Opt("Cleans up a crowded taskbar.",
-                "Applies the Windows tool-window style to every Roblox window (also within seconds of a new one opening). The windows stay visible on screen; they only disappear from the taskbar and Alt-Tab. Untick to bring them back.",
-                chkHideBar);
-            chkHideBar.CheckedChanged += delegate { if (!loadingBeta) { Store.Settings.HideTaskbar = chkHideBar.Checked; Store.SaveSettings(); Launcher.ApplyTaskbarHiding(); } };
-
-            p.Opt("Everything a supporter needs, in one file.",
-                "Writes a detailed text file next to the app data: your settings (webhook URL masked), Windows, CPU, GPU, motherboard, BIOS, every disk and where the pagefile is, the Roblox install and its flags, a count of accounts, every running client with its live overhead, hub overhead, and the recent log.",
-                Ui.Btn("Create debug log", 170, delegate
-                {
-                    try
-                    {
-                        string f = SupportBundle.Create();
-                        AddLog("Debug log written: " + f);
-                        System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + f + "\"");
-                    }
-                    catch (Exception ex) { AddLog("Debug log failed: " + ex.Message); }
-                }, ""));
+            p.Opt(Lang.T("Quick numbers without a probe."),
+                "Reads cores, RAM, GPU counters, disks, pagefile and the clients currently running, and estimates how many windows this PC can run. The real per-window cap comes from the probe on the Performance page.",
+                Ui.Btn(Lang.T("Run diagnostics"), 150, delegate { BetaDiagnostics(); }, ""));
 
             loadingBeta = false;
             UpdateBetaLive();
@@ -161,28 +101,10 @@ namespace RobloxMultiHub
         void UpdateBetaLive()
         {
             if (lblBetaLive == null) return;
-            if (CapProber.State == CapProber.Phase.Settle || CapProber.State == CapProber.Phase.Measure)
-            {
-                lblBetaLive.Text = "Cap probe: " + CapProber.Status;
-                lblBetaLive.ForeColor = Theme.Accent;
-                if (numMaxRam != null && numMaxRam.Value != Store.Settings.MaxRamMb)
-                {
-                    loadingBeta = true;
-                    numMaxRam.Value = Math.Max(0, Math.Min(32768, Store.Settings.MaxRamMb));
-                    loadingBeta = false;
-                }
-                if (lblProbe != null) lblProbe.Text = CapProber.Status;
-                return;
-            }
-            if (lblProbe != null && Store.Settings.RamCapFloorMb > 0)
-                lblProbe.Text = "Measured floor on this PC: " + Store.Settings.RamCapFloorMb + " MB per window.";
             int count = UsageMonitor.Count;
-            if (count == 0) { lblBetaLive.Text = "Right now: no Roblox window is running."; return; }
-            string s = "Right now: " + count + " window(s), " + Util.FormatBytes(UsageMonitor.TotalRam) + " RAM in total, "
+            if (count == 0) { lblBetaLive.Text = Lang.T("Right now: no Roblox window is running."); return; }
+            lblBetaLive.Text = "Right now: " + count + " window(s), " + Util.FormatBytes(UsageMonitor.TotalRam) + " RAM in total, "
                 + Util.FormatBytes(UsageMonitor.TotalRam / count) + " average.";
-            if (Store.Settings.MaxRamMb > 0)
-                s += "  " + RamCap.CappedCount + " of " + count + " window(s) hold the cap of " + Store.Settings.MaxRamMb + " MB.";
-            lblBetaLive.Text = s;
         }
     }
 
