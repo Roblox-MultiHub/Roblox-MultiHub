@@ -142,6 +142,55 @@ namespace RobloxMultiHub
             Post(url, title, desc, color);
         }
 
+        // Posts a NEW message with a PNG attachment shown inside the embed. Used by the periodic
+        // account-screenshot feature. Fire-and-forget; a failure is logged, never thrown.
+        public static void SendImage(string title, string desc, int color, byte[] png, string filename)
+        {
+            if (!Enabled || png == null || png.Length == 0) return;
+            string url = Store.Settings.WebhookUrl;
+            string name = string.IsNullOrEmpty(filename) ? "image.png" : filename;
+            Task.Run(async delegate
+            {
+                try
+                {
+                    Dictionary<string, object> embed = new Dictionary<string, object>();
+                    embed["title"] = title ?? "";
+                    embed["description"] = desc ?? "";
+                    embed["color"] = color;
+                    embed["timestamp"] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                    Dictionary<string, object> foot = new Dictionary<string, object>();
+                    foot["text"] = "Roblox MultiHub";
+                    embed["footer"] = foot;
+                    Dictionary<string, object> img = new Dictionary<string, object>();
+                    img["url"] = "attachment://" + name;
+                    embed["image"] = img;
+
+                    Dictionary<string, object> body = new Dictionary<string, object>();
+                    body["username"] = "Roblox MultiHub";
+                    body["embeds"] = new object[] { embed };
+
+                    MultipartFormDataContent form = new MultipartFormDataContent();
+                    form.Add(new StringContent(Json.To(body), Encoding.UTF8), "payload_json");
+                    ByteArrayContent file = new ByteArrayContent(png);
+                    file.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+                    form.Add(file, "files[0]", name);
+
+                    HttpResponseMessage r = await Http.PostAsync(url.Trim(), form);
+                    if ((int)r.StatusCode == 429)
+                    {
+                        await Task.Delay(1500);
+                        MultipartFormDataContent form2 = new MultipartFormDataContent();
+                        form2.Add(new StringContent(Json.To(body), Encoding.UTF8), "payload_json");
+                        ByteArrayContent file2 = new ByteArrayContent(png);
+                        file2.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+                        form2.Add(file2, "files[0]", name);
+                        await Http.PostAsync(url.Trim(), form2);
+                    }
+                }
+                catch (Exception ex) { Log.Error("WebhookImage", ex); }
+            });
+        }
+
         static void Post(string url, string title, string desc, int color)
         {
             if (!LooksLikeWebhook(url)) return;

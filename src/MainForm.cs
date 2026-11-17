@@ -772,26 +772,33 @@ namespace RobloxMultiHub
             try
             {
                 tickN++;
-                UpdateMultiChip();
+                // Background mode: while minimized to the taskbar, keep the watcher / webhook / screenshots
+                // running but skip the purely-visual refreshes the user cannot see.
+                bool bg = Store.Settings.BackgroundLight && WindowState == FormWindowState.Minimized;
+                if (!bg) UpdateMultiChip();
                 AutoCaptureTick();
                 if (tickN % 2 == 0)
                 {
                     UsageMonitor.Update();
                     WebhookStatus.Tick();
+                    WebhookShots.Tick();
                     Launcher.SweepZombies();
                     Launcher.ApplyLowMemoryPriority();
                     Launcher.ApplyTaskbarHiding();
                     CapProber.Tick(UsageMonitor.Count, AddLog);
-                    UpdateStatusCells();
-                    UpdateMemUi();
                     MaxAlts.Tick();
                     RamCap.Tick();
-                    UpdateBetaLive();
                     DiscordRpc.Update(UsageMonitor.Count, Store.Accounts.Count);
+                    if (!bg)
+                    {
+                        UpdateStatusCells();
+                        UpdateMemUi();
+                        UpdateBetaLive();
+                    }
                 }
-                if (currentPage == "Layout" && tickN % 2 == 0) RefreshWindowList();
-                if (currentPage == "Monitor" && tickN % 2 == 0) RefreshMonitor();
-                if (Store.Settings.ShowPresence && tickN % Math.Max(10, Store.Settings.PresenceSec) == 0) RefreshPresence();
+                if (!bg && currentPage == "Layout" && tickN % 2 == 0) RefreshWindowList();
+                if (!bg && currentPage == "Monitor" && tickN % 2 == 0) RefreshMonitor();
+                if (!bg && Store.Settings.ShowPresence && tickN % Math.Max(10, Store.Settings.PresenceSec) == 0) RefreshPresence();
                 if (tickN % Math.Max(10, Store.Settings.WatcherSec) == 0) RunWatcher();
                 if (Store.Settings.AntiAfk && (DateTime.Now - lastAntiAfk).TotalMinutes >= Math.Max(1, Store.Settings.AntiAfkMin)
                     && (macroForm == null || macroForm.IsDisposed || !macroForm.Busy)) RunAntiAfk();
@@ -895,6 +902,7 @@ namespace RobloxMultiHub
             StartupChecks();
             RefreshPresence();
             StartMemOnLaunch();
+            DiscordBot.Apply();
             if (Store.Settings.CheckLoginsAtStartup) CheckLoginsOnStartup();
             if (Store.Settings.CheckUpdates) CheckUpdatesOnStartup();
             if (!string.IsNullOrEmpty(Store.Settings.StartupPreset)) RunStartupPreset();
@@ -928,6 +936,42 @@ namespace RobloxMultiHub
             catch (Exception ex) { Log.Error("StartupChecks", ex); }
         }
 
+        // ---- run lighter while minimized ----
+        bool bgModeOn;
+
+        [System.Runtime.InteropServices.DllImport("psapi.dll")]
+        static extern bool EmptyWorkingSet(IntPtr hProcess);
+
+        protected override void OnSizeChanged(EventArgs e)
+        {
+            base.OnSizeChanged(e);
+            try { SetBackgroundMode(Store.Settings.BackgroundLight && WindowState == FormWindowState.Minimized); }
+            catch (Exception ex) { Log.Error("bgmode", ex); }
+        }
+
+        void SetBackgroundMode(bool on)
+        {
+            if (on == bgModeOn) return;
+            bgModeOn = on;
+            try
+            {
+                using (System.Diagnostics.Process me = System.Diagnostics.Process.GetCurrentProcess())
+                {
+                    me.PriorityClass = on
+                        ? System.Diagnostics.ProcessPriorityClass.BelowNormal
+                        : System.Diagnostics.ProcessPriorityClass.Normal;
+                    if (on)
+                    {
+                        // pause the UI animation loop and hand idle pages back to the OS
+                        if (logAnim != null) logAnim.Stop();
+                        Anim.Clear();
+                        try { EmptyWorkingSet(me.Handle); } catch (Exception) { }
+                    }
+                }
+            }
+            catch (Exception ex) { Log.Error("bgmode set", ex); }
+        }
+
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
             try
@@ -942,6 +986,7 @@ namespace RobloxMultiHub
                 Store.SaveAccounts();
                 UnregisterHotkeys();
                 DiscordRpc.Stop();
+                DiscordBot.Stop();
                 if (Store.Settings.MaxAlts) MaxAlts.Reset();
                 RamCap.Reset();
 

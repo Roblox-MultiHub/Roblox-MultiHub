@@ -25,7 +25,10 @@ namespace RobloxMultiHub
         CheckBox chkAnimations;
         NumericUpDown numCrashMax;
         CheckBox chkWebhook, chkWebhookCrash, chkWebhookRelaunch, chkWebhookBatch, chkWebhookLocked, chkWebhookStatus;
-        NumericUpDown numStatusSec;
+        CheckBox chkWebhookShots, chkBackgroundLight;
+        NumericUpDown numStatusSec, numShotsMin;
+        CheckBox chkBot;
+        RoundTextBox tbBotToken, tbBotChannel, tbBotCmd;
         RoundTextBox tbWebhook;
         CheckBox chkDiscordRpc;
         RoundTextBox tbDiscordAppId;
@@ -56,6 +59,18 @@ namespace RobloxMultiHub
                 if (loadingSettings) return;
                 Store.Settings.Animations = chkAnimations.Checked;
                 Store.SaveSettings();
+            };
+
+            chkBackgroundLight = Ui.Chk("Run lighter when minimized", S.BackgroundLight, null);
+            p.Opt("Uses less CPU/RAM while minimized to the taskbar.",
+                "ON by default. While the MultiHub window is minimized, the app lowers its own process priority, releases unused memory and skips the on-screen refreshes you cannot see. The important background work keeps running at full speed: the watcher / auto-relaunch, Discord alerts, the live status message and the account screenshots. Restore the window and it goes back to normal instantly.",
+                chkBackgroundLight);
+            chkBackgroundLight.CheckedChanged += delegate
+            {
+                if (loadingSettings) return;
+                Store.Settings.BackgroundLight = chkBackgroundLight.Checked;
+                Store.SaveSettings();
+                if (!chkBackgroundLight.Checked) SetBackgroundMode(false);
             };
 
             p.Section("Multi-instance");
@@ -178,6 +193,28 @@ namespace RobloxMultiHub
                 "Seconds between refreshes (15 - 600). Smaller = livelier, but every refresh is a Discord API call.",
                 Ui.Fld("Refresh every (seconds)", 190), numStatusSec);
 
+            chkWebhookShots = Ui.Chk("Screenshot of accounts every X minutes", S.WebhookShots, null);
+            p.Opt("Posts a picture of all your account windows on a timer.",
+                "OFF by default. Every X minutes MultiHub captures each running Roblox window and posts ONE image - a labelled grid of all your accounts - as a new message in the channel. Windows that are minimized (or that come back black, which GPU games sometimes do) show a small placeholder tile with the account name. Needs the webhook above.",
+                chkWebhookShots);
+            numShotsMin = Ui.Num(1, 1440, Math.Max(1, Math.Min(1440, S.WebhookShotsMin)), 70);
+            p.Opt("How often a screenshot is posted.",
+                "Minutes between screenshots (1 - 1440). A new message each time, so you keep a visual history.",
+                Ui.Fld("Every (minutes)", 190), numShotsMin,
+                Ui.Btn("Send one now", 140, delegate { SendShotNow(); }, ""));
+            chkWebhookShots.CheckedChanged += delegate
+            {
+                if (loadingSettings) return;
+                Store.Settings.WebhookShots = chkWebhookShots.Checked;
+                Store.SaveSettings();
+            };
+            numShotsMin.ValueChanged += delegate
+            {
+                if (loadingSettings) return;
+                Store.Settings.WebhookShotsMin = (int)numShotsMin.Value;
+                Store.SaveSettings();
+            };
+
             p.Section("Discord status (Rich Presence)");
             chkDiscordRpc = Ui.Chk("Show \"Playing Roblox MultiHub\" on my Discord profile", S.DiscordRpc, null);
             p.Opt("Shows the app on your Discord profile.",
@@ -187,6 +224,42 @@ namespace RobloxMultiHub
             p.Opt("Your Discord Application ID.",
                 "Create one for free: open the Discord Developer Portal (discord.com/developers/applications), click New Application, name it exactly \"Roblox MultiHub\" (that name is what shows after \"Playing\"), open it and copy the Application ID. Paste it here. For the little logo image, upload a picture under Rich Presence > Art Assets named exactly \"logo\". The ID is public - it is safe to share, unlike a bot token.",
                 Ui.Fld("Application ID", 120), tbDiscordAppId);
+
+            p.Section("Discord bot (on-demand screenshot)");
+            chkBot = Ui.Chk("Reply with a screenshot when I type a command", S.DiscordBot, null);
+            p.Opt("Type a command in a channel to get a screenshot on demand.",
+                "OFF by default. A webhook can only send messages, so answering a command needs a bot. Create one for free in the Discord Developer Portal (New Application > Bot > Reset Token > copy), paste the token below, and invite the bot to your server with the Read Messages, Read Message History, Send Messages and Attach Files permissions. MultiHub watches ONE channel and, when you type the command, posts a screenshot of all running accounts. It does not need the \"Message Content\" intent. The token is only ever sent to Discord and is stored locally - treat it like a password.",
+                chkBot);
+            tbBotToken = Ui.Txt(330, S.DiscordBotToken);
+            tbBotToken.UseSystemPasswordChar = true;
+            p.Opt("Your bot token.",
+                "From the Developer Portal: open your application > Bot > Reset Token > Copy. A long string like MTEx... . Anyone with it controls the bot, so keep it secret.",
+                Ui.Fld("Bot token", 120), tbBotToken);
+            tbBotChannel = Ui.Txt(230, S.DiscordBotChannel);
+            p.Opt("The channel ID to watch.",
+                "Turn on Developer Mode in Discord (User Settings > Advanced), right-click the channel > Copy Channel ID, and paste it here. The bot only reacts in this one channel.",
+                Ui.Fld("Channel ID", 120), tbBotChannel);
+            tbBotCmd = Ui.Txt(160, string.IsNullOrEmpty(S.DiscordBotCmd) ? "!shot" : S.DiscordBotCmd);
+            p.Opt("The command that triggers a screenshot.",
+                "Default !shot. (!screenshot and !accounts always work too.)",
+                Ui.Fld("Command", 120), tbBotCmd);
+            EventHandler botChanged = delegate
+            {
+                if (loadingSettings) return;
+                Store.Settings.DiscordBot = chkBot.Checked;
+                Store.Settings.DiscordBotToken = tbBotToken.Text.Trim();
+                Store.Settings.DiscordBotChannel = tbBotChannel.Text.Trim();
+                string cmd = tbBotCmd.Text.Trim();
+                Store.Settings.DiscordBotCmd = cmd.Length == 0 ? "!shot" : cmd;
+                Store.SaveSettings();
+                DiscordBot.Apply();
+                if (chkBot.Checked && !DiscordBot.Configured)
+                    AddLog("Discord bot: paste the bot token and channel ID to start it.");
+            };
+            chkBot.CheckedChanged += botChanged;
+            tbBotToken.Leave += botChanged;
+            tbBotChannel.Leave += botChanged;
+            tbBotCmd.Leave += botChanged;
 
             p.Section("Security");
             lblStorage = Ui.Lbl("", "muted");
@@ -380,6 +453,20 @@ namespace RobloxMultiHub
             }
             Webhook.SendTo(url, "Test message", "Roblox MultiHub is connected to this channel. \U0001F680", Webhook.Blurple);
             AddLog("Sent a test message to your Discord webhook. Check the channel.");
+        }
+
+        void SendShotNow()
+        {
+            if (!Webhook.Enabled)
+            {
+                MessageBox.Show(this, "Turn the Discord webhook on and paste a valid URL first.",
+                    "Account screenshots", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            int n = WebhookShots.SendNow("Account screenshots (manual)");
+            AddLog(n == 0
+                ? "No Roblox window is running, so no screenshot was sent."
+                : "Sent a screenshot of " + n + " account(s) to your Discord webhook.");
         }
 
         void OnMultiToggled()

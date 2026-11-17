@@ -185,14 +185,26 @@ namespace RobloxMultiHub
 
         static string Gb(long bytes) { return (bytes / 1073741824.0).ToString("0.00"); }
 
-        // mask the secret tail of the webhook URL (and any other long token-looking value) in a dump
+        // Mask the secret tail of the webhook URL and the bot token in a settings dump. Tolerant of
+        // whitespace after the colon (the serializer writes none), keeping only a short prefix so the
+        // bundle stays shareable.
         static string MaskSecrets(string text)
         {
             try
             {
-                return System.Text.RegularExpressions.Regex.Replace(text,
-                    "(\"WebhookUrl\": \")([^\"]{30})[^\"]*(\")",
-                    delegate(System.Text.RegularExpressions.Match m) { return m.Groups[1].Value + m.Groups[2].Value + "***" + m.Groups[3].Value; });
+                string[] keys = { "WebhookUrl", "DiscordBotToken" };
+                foreach (string k in keys)
+                {
+                    text = System.Text.RegularExpressions.Regex.Replace(text,
+                        "(\"" + k + "\"\\s*:\\s*\")([^\"]*)(\")",
+                        delegate(System.Text.RegularExpressions.Match m)
+                        {
+                            string v = m.Groups[2].Value;
+                            string head = v.Length <= 12 ? v : v.Substring(0, 12);
+                            return m.Groups[1].Value + head + (v.Length > 12 ? "***" : "") + m.Groups[3].Value;
+                        });
+                }
+                return text;
             }
             catch (Exception) { return "(settings redacted)"; }
         }

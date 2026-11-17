@@ -178,6 +178,19 @@ namespace RobloxMultiHub
         public bool WebhookStatus = false;          // keep a live status embed updated in the channel
         public int WebhookStatusSec = 60;           // how often the status embed refreshes
         public string WebhookStatusMsgId = "";      // the Discord message the status keeps editing
+        public bool WebhookShots = false;           // periodically post a screenshot grid of all accounts (OFF by default)
+        public int WebhookShotsMin = 15;            // how often, in minutes
+
+        // Discord bot (opt-in): type a command in a channel to get a screenshot on demand. Needs a bot
+        // token (treat like a password). The token is only ever sent to Discord. OFF by default.
+        public bool DiscordBot = false;
+        public string DiscordBotToken = "";
+        public string DiscordBotChannel = "";       // the channel ID the bot watches
+        public string DiscordBotCmd = "!shot";      // the command that triggers a screenshot
+
+        // Run lighter while minimized to the taskbar: lower this app's own process priority and skip
+        // the purely-visual work (the watcher, webhook and screenshots keep running).
+        public bool BackgroundLight = true;
 
         // Discord Rich Presence ("Playing Roblox MultiHub" on your profile). Needs a Discord Application ID.
         public bool DiscordRpc = true;
