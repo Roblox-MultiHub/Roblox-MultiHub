@@ -11,7 +11,7 @@ namespace RobloxMultiHub
     public partial class MainForm
     {
         // ===== Links =====  The Support section buttons open these.
-        const string DonateUrl = "https://buymeacoffee.com/multihub";
+        const string DonateUrl = "https://buymeacoffee.com/rbxmultihub";
         const string DiscordUrl = "https://discord.gg/TCrVyjYhHr";
 
         CheckBox chkMulti;

@@ -2,6 +2,10 @@
 
 All notable changes to Roblox MultiHub. Newest first. Versions link to their release.
 
+## [v1.4.3](https://github.com/Roblox-MultiHub/Roblox-MultiHub/releases/tag/v1.4.3)
+
+- Updated the "Buy us a coffee" / donate link to the project's new Buy Me a Coffee page.
+
 ## [v1.4.2](https://github.com/Roblox-MultiHub/Roblox-MultiHub/releases/tag/v1.4.2)
 
 - **Run lighter when minimized** — while minimized to the taskbar MultiHub lowers its own process priority, releases unused memory and skips on-screen refreshes. The watcher/auto-relaunch, Discord alerts, live status and screenshots keep running. On by default (Settings → Interface).

@@ -112,7 +112,7 @@ It automates windows and input, which some antivirus flags as a false positive. 
 
 ## 💬 Support & community
 
-- 💖 Donate: **[buymeacoffee.com/multihub](https://buymeacoffee.com/multihub)** — keeps the project going, totally optional.
+- 💖 Donate: **[buymeacoffee.com/rbxmultihub](https://buymeacoffee.com/rbxmultihub)** — keeps the project going, totally optional.
 - 💬 Discord: **[discord.gg/TCrVyjYhHr](https://discord.gg/TCrVyjYhHr)** — announcements, update logs, help and support tickets.
 
 ## 🔏 Code signing

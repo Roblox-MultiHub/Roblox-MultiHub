@@ -61,7 +61,7 @@ Security : accounts always encrypted (Windows DPAPI, or your own password with A
            stored in %APPDATA%\RobloxMultiHub (not next to the exe), automatic backups.
 Other    : dark/light theme, start with Windows.
 Support  : Settings > 'Support this project' has 'Buy us a coffee' and 'Join our Discord' buttons.
-           The tool is and stays free. Links: buymeacoffee.com/multihub  and  discord.gg/TCrVyjYhHr
+           The tool is and stays free. Links: buymeacoffee.com/rbxmultihub  and  discord.gg/TCrVyjYhHr
 
 NOT INCLUDED (compared with Roblox Account Manager)
 ---------------------------------------------------
