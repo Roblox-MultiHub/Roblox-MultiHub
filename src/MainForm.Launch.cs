@@ -302,10 +302,29 @@ namespace RobloxMultiHub
             return s;
         }
 
+        // The share-link code (new-style roblox.com/share?code=...&type=Server), or "" if the text is not one.
+        static string ShareCodeOf(string link)
+        {
+            if (string.IsNullOrEmpty(link)) return "";
+            if (link.IndexOf("share", StringComparison.OrdinalIgnoreCase) < 0) return "";
+            Match m = Regex.Match(link, @"[?&]code=([A-Za-z0-9]+)");
+            return m.Success ? m.Groups[1].Value : "";
+        }
+
         // The game stored on one account (card field / Edit dialog / "save to selected"), or null if none.
         LaunchSpec SavedSpec(Account acc)
         {
             string link = acc.GameLink ?? "";
+            // New-style share link: has no place id, so it is resolved per account (with that account's
+            // login) at launch time. Mark it here so the account counts as having its own game.
+            string share = ShareCodeOf(link);
+            if (share.Length > 0)
+            {
+                LaunchSpec sh = new LaunchSpec();
+                sh.Kind = "Private";
+                sh.ShareCode = share;
+                return sh;
+            }
             long pid = Util.ParsePlaceId(link);
             if (pid <= 0) pid = Util.ParsePlaceId(acc.SavedPlaceId);
             if (pid <= 0) return null;
@@ -318,12 +337,38 @@ namespace RobloxMultiHub
             return s;
         }
 
-        // A saved game replaces the Launch page choice, but only if that choice is a normal game / server.
+        // An account's own saved game / private server always wins over the Launch page choice
+        // (this whole call is already gated on the "use saved game per account" setting).
         LaunchSpec ApplySaved(Account acc, LaunchSpec spec)
         {
-            if (spec.Kind != "Game" && spec.Kind != "Job") return spec;
             LaunchSpec s = SavedSpec(acc);
             return s != null ? s : spec;
+        }
+
+        // Turn an account's unresolved share-link spec into a real place+link by looking it up with that
+        // account's login. On success the saved link is rewritten to the old-style form so next time is instant.
+        // Returns false (and logs why) if the account cannot open the server - the caller then skips it.
+        async Task<bool> ResolveSavedShare(Account acc, LaunchSpec per)
+        {
+            AddLog(AppState.Name(acc) + ": resolving its private server link...");
+            LaunchSpec r = await Api.ResolveShare(per.ShareCode, acc.Cookie);
+            if (r == null || r.PlaceId <= 0 || string.IsNullOrEmpty(r.LinkCode))
+            {
+                AddLog(AppState.Name(acc) + ": skipped - could not open its private server link (the account must own this server or be invited to it).");
+                return false;
+            }
+            per.Kind = "Private";
+            per.PlaceId = r.PlaceId;
+            per.LinkCode = r.LinkCode;
+            per.ShareCode = "";
+            try
+            {
+                acc.GameLink = "https://www.roblox.com/games/" + r.PlaceId + "?privateServerLinkCode=" + r.LinkCode;
+                acc.SavedPlaceId = r.PlaceId.ToString();
+                Store.SaveAccounts();
+            }
+            catch (Exception ex) { Log.Write("Could not save resolved share link: " + ex.Message); }
+            return true;
         }
 
         // ---------------- running a launch ----------------
@@ -458,7 +503,12 @@ namespace RobloxMultiHub
                     if (ct.IsCancellationRequested) break;
                     Account acc = accs[i];
                     Launcher.BreakerClear(acc);     // a launch you started yourself resets its crash breaker
-                    LaunchSpec per = (allowSaved && Store.Settings.UseSavedPerAccount) ? ApplySaved(acc, spec) : spec;
+                    LaunchSpec per = ((allowSaved && Store.Settings.UseSavedPerAccount) ? ApplySaved(acc, spec) : spec).Copy();
+                    // A saved new-style share link needs resolving with this account's login before we can join it.
+                    if (per.Kind == "Private" && !string.IsNullOrEmpty(per.ShareCode) && string.IsNullOrEmpty(per.LinkCode))
+                    {
+                        if (!await ResolveSavedShare(acc, per)) { UpdateStatusCells(); continue; }
+                    }
                     await Launcher.LaunchAsync(acc, per, AddLog);
                     UpdateStatusCells();
                     if (i < accs.Count - 1 && !ct.IsCancellationRequested) await Task.Delay(delay * 1000, ct);

@@ -1612,8 +1612,10 @@ namespace RobloxMultiHub
             a.GameLink = text;
             long pid = Util.ParsePlaceId(text);
             a.SavedPlaceId = pid > 0 ? pid.ToString() : "";
-            if (text.Length > 0 && pid <= 0) AddLog("No Place ID found in the game text of " + AppState.Name(a) + " - use a roblox.com/games/... link or a number.");
-            else if (pid > 0) AddLog(AppState.Name(a) + " will join place " + pid + " when launched.");
+            string share = ShareCodeOf(text);
+            if (pid > 0) AddLog(AppState.Name(a) + " will join place " + pid + " when launched.");
+            else if (share.Length > 0) AddLog(AppState.Name(a) + " will join its private server (share link) when launched.");
+            else if (text.Length > 0) AddLog("No Place ID found in the game text of " + AppState.Name(a) + " - use a roblox.com/games/... link, a share link, or a number.");
             Store.SaveAccounts();
         }
 

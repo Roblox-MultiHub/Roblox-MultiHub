@@ -2,6 +2,13 @@
 
 All notable changes to Roblox MultiHub. Newest first. Versions link to their release.
 
+## [v1.4.4](https://github.com/Roblox-MultiHub/Roblox-MultiHub/releases/tag/v1.4.4)
+
+- **Fixed per-account private servers with new Roblox share links.** Roblox now hands out new-style share links (`roblox.com/share?code=...&type=Server`) that contain no place ID. A share link saved on an account is now resolved with that account's own login at launch, converted to the classic link and saved, so the account joins its own private server instead of silently falling back to the Launch page's game.
+- If an account's share link can't be opened (the account isn't the owner and wasn't invited), that account is now skipped with a clear reason in the log instead of being sent to the wrong game.
+- An account's own saved game / private server now always takes priority over the Launch page choice (when "use saved game per account" is on), including when the page is set to Private server or Follow player.
+- The account card no longer warns "No Place ID found" for a valid share link.
+
 ## [v1.4.3](https://github.com/Roblox-MultiHub/Roblox-MultiHub/releases/tag/v1.4.3)
 
 - Updated the "Buy us a coffee" / donate link to the project's new Buy Me a Coffee page.

@@ -357,13 +357,14 @@ namespace RobloxMultiHub
         public long PlaceId;
         public string JobId = "";
         public string LinkCode = "";
+        public string ShareCode = "";       // new-style share link, resolved per account at launch (no place id yet)
         public long FollowUserId;
         public string FollowName = "";
 
         public LaunchSpec Copy()
         {
             LaunchSpec s = new LaunchSpec();
-            s.Kind = Kind; s.PlaceId = PlaceId; s.JobId = JobId; s.LinkCode = LinkCode;
+            s.Kind = Kind; s.PlaceId = PlaceId; s.JobId = JobId; s.LinkCode = LinkCode; s.ShareCode = ShareCode;
             s.FollowUserId = FollowUserId; s.FollowName = FollowName;
             return s;
         }
@@ -371,6 +372,7 @@ namespace RobloxMultiHub
         public string Describe()
         {
             if (Kind == "Job") return "place " + PlaceId + " / server " + JobId;
+            if (Kind == "Private" && PlaceId <= 0 && ShareCode.Length > 0) return "private server (share link)";
             if (Kind == "Private") return "private server of place " + PlaceId;
             if (Kind == "Follow") return "following " + (string.IsNullOrEmpty(FollowName) ? FollowUserId.ToString() : FollowName);
             return "place " + PlaceId;
