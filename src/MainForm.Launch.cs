@@ -509,6 +509,14 @@ namespace RobloxMultiHub
                     {
                         if (!await ResolveSavedShare(acc, per)) { UpdateStatusCells(); continue; }
                     }
+                    // If Roblox started an update (e.g. the previous account triggered one), let it finish before
+                    // launching the next account, so we don't pile clients into a half-installed update.
+                    if (Launcher.RobloxUpdating())
+                    {
+                        AddLog("Roblox is updating - waiting before launching the next account...");
+                        for (int w = 0; w < 720 && Launcher.RobloxUpdating() && !ct.IsCancellationRequested; w++)
+                            await Task.Delay(500, ct);
+                    }
                     await Launcher.LaunchAsync(acc, per, AddLog);
                     UpdateStatusCells();
                     if (i < accs.Count - 1 && !ct.IsCancellationRequested) await Task.Delay(delay * 1000, ct);

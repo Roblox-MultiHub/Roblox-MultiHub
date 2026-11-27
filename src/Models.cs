@@ -134,6 +134,8 @@ namespace RobloxMultiHub
         public bool WroteClientFile = false;
         public int FpsCap = 0;                      // 0 = leave Roblox's own setting alone
         public bool WroteFpsCap = false;
+        public bool SetVolume = false;              // write the in-game master volume before each launch
+        public int VolumePercent = 0;               // 0..100 (0 = muted); applied when SetVolume is on
         public string View = "List";                // List | Cards
         public int SplitW = 600;
         public bool AutoRelaunch = false;

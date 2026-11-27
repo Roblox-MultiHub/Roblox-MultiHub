@@ -11,7 +11,8 @@ namespace RobloxMultiHub
         NumericUpDown numMaxRam;
         RoundButton btnProbe;
         Label lblProbe;
-        CheckBox chkVeryLow, chkHideBar;
+        CheckBox chkVeryLow, chkHideBar, chkSetVolume;
+        NumericUpDown numVolume;
         bool loadingBeta;
 
         void BuildBetaPage()
@@ -70,6 +71,16 @@ namespace RobloxMultiHub
                 "Applies the Windows tool-window style to every Roblox window (also within seconds of a new one opening). The windows stay visible on screen; they only disappear from the taskbar and Alt-Tab. Untick to bring them back.",
                 chkHideBar);
             chkHideBar.CheckedChanged += delegate { if (!loadingBeta) { Store.Settings.HideTaskbar = chkHideBar.Checked; Store.SaveSettings(); Launcher.ApplyTaskbarHiding(); } };
+
+            p.Section("In-game volume");
+            chkSetVolume = Ui.Chk("Set the in-game volume on every launch", Store.Settings.SetVolume, null);
+            numVolume = Ui.Num(0, 100, Math.Max(0, Math.Min(100, Store.Settings.VolumePercent)), 70);
+            p.Opt("Forces Roblox's master volume (0 = muted).",
+                "Works just like the FPS cap: right before each account starts, MultiHub writes the master volume into Roblox's own settings file (GlobalBasicSettings), so every window opens at this volume. 0 mutes them - handy for a wall of alts. Change it in-game whenever you like; it is re-applied on the next launch.\n\n"
+                + "If you have never opened Roblox's audio settings the entry may not exist yet - open Settings in a Roblox client once, nudge the volume, close it, then try again.",
+                chkSetVolume, Ui.Fld("Volume %", 90), numVolume);
+            chkSetVolume.CheckedChanged += delegate { if (!loadingBeta) { Store.Settings.SetVolume = chkSetVolume.Checked; Store.SaveSettings(); } };
+            numVolume.ValueChanged += delegate { if (!loadingBeta) { Store.Settings.VolumePercent = (int)numVolume.Value; Store.SaveSettings(); } };
 
             p.Opt("Everything a supporter needs, in one file.",
                 "Writes a detailed text file next to the app data: your settings (webhook URL masked), Windows, CPU, GPU, motherboard, BIOS, every disk and where the pagefile is, the Roblox install and its flags, a count of accounts, every running client with its live overhead, hub overhead, and the recent log.",

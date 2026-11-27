@@ -2,6 +2,11 @@
 
 All notable changes to Roblox MultiHub. Newest first. Versions link to their release.
 
+## [v1.4.5](https://github.com/Roblox-MultiHub/Roblox-MultiHub/releases/tag/v1.4.5)
+
+- **Much better behaviour when Roblox auto-updates.** When Roblox installs an update it closes the old clients and has no window for a while, which used to look like a crash: the watcher relaunched into the half-installed update, launches "failed" after 60s, and the crash breaker gave up. Now MultiHub detects an update in progress and (1) pauses the watcher until it finishes, then brings your accounts back, (2) keeps waiting for a launching client instead of failing at 60s, and (3) holds the next account in a batch until the update is done — so one update no longer takes your whole farm down.
+- **New (Beta): set the in-game volume on every launch.** Works like the FPS cap — MultiHub writes Roblox's master volume into its settings file right before each account starts, so every window opens at the volume you pick (0 = muted, great for a wall of alts). Find it under Beta → In-game volume.
+
 ## [v1.4.4](https://github.com/Roblox-MultiHub/Roblox-MultiHub/releases/tag/v1.4.4)
 
 - **Fixed per-account private servers with new Roblox share links.** Roblox now hands out new-style share links (`roblox.com/share?code=...&type=Server`) that contain no place ID. A share link saved on an account is now resolved with that account's own login at launch, converted to the classic link and saved, so the account joins its own private server instead of silently falling back to the Launch page's game.

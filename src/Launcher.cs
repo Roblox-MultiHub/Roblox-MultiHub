@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -366,6 +367,54 @@ namespace RobloxMultiHub
             catch (Exception) { return false; }
         }
 
+        // ---------- Roblox auto-update awareness ----------
+        // Roblox installs an update via its bootstrapper, which closes the old-version clients and writes a
+        // new version folder. While that happens a freshly launched client has no window for a while, so the
+        // launch wait must not give up, and the watcher must not treat the closed clients as crashes.
+        static bool wasUpdating;
+
+        public static bool RobloxUpdating()
+        {
+            // 1) the bootstrapper / installer process is running
+            foreach (string name in new string[] { "RobloxPlayerLauncher", "RobloxPlayerInstaller", "RobloxPlayerLauncherBeta", "RobloxPlayerBootstrapper" })
+            {
+                try
+                {
+                    Process[] ps = Process.GetProcessesByName(name);
+                    bool any = ps.Length > 0;
+                    foreach (Process p in ps) p.Dispose();
+                    if (any) return true;
+                }
+                catch (Exception) { }
+            }
+            // 2) Roblox is writing packages / a new version folder right now
+            try
+            {
+                string roblox = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Roblox");
+                if (DirTouchedWithin(Path.Combine(roblox, "Downloads"), 90)) return true;   // bootstrapper downloads here
+                if (DirTouchedWithin(Path.Combine(roblox, "Versions"), 90)) return true;     // a version folder is being installed
+            }
+            catch (Exception) { }
+            return false;
+        }
+
+        // True if the folder, or any file/subfolder directly inside it, was written in the last 'seconds'.
+        static bool DirTouchedWithin(string dir, int seconds)
+        {
+            try
+            {
+                if (!Directory.Exists(dir)) return false;
+                DateTime cut = DateTime.Now.AddSeconds(-seconds);
+                if (Directory.GetLastWriteTime(dir) >= cut) return true;
+                foreach (string d in Directory.GetDirectories(dir))
+                    if (Directory.GetLastWriteTime(d) >= cut) return true;
+                foreach (string f in Directory.GetFiles(dir))
+                    if (File.GetLastWriteTime(f) >= cut) return true;
+            }
+            catch (Exception) { }
+            return false;
+        }
+
         // ---------- client settings (graphics flags) ----------
         // Writes the allowlisted flags chosen on the Performance page into Roblox's ClientAppSettings.json.
         // Called right before every launch, so the same settings apply to every account until changed.
@@ -512,6 +561,65 @@ namespace RobloxMultiHub
                 if (!Store.Settings.WroteFpsCap) { Store.Settings.WroteFpsCap = true; Store.SaveSettings(); }
                 if (changed && log != null) log("FPS cap " + cap + " written to Roblox's settings file.");
             }
+        }
+
+        // ---------- in-game volume (same settings file as the FPS cap) ----------
+        // Roblox keeps the master volume in GlobalBasicSettings_13.xml as <float name="MasterVolume">0..1</float>
+        // and reads it at startup, exactly like FramerateCap. When the Beta option is on, write it before launch.
+        const string VolPattern = "(<float name=\"MasterVolume\">)(-?[0-9.]+)(</float>)";
+
+        public static void ApplyVolume(Action<string> log)
+        {
+            if (!Store.Settings.SetVolume) return;
+            int pct = Math.Max(0, Math.Min(100, Store.Settings.VolumePercent));
+            string file = FindBasicSettings();
+            if (file == null)
+            {
+                if (log != null) log("Volume: Roblox's settings file was not found. Start Roblox once normally, close it, then try again.");
+                return;
+            }
+            // 0..1 with an invariant decimal point (a Dutch locale would otherwise write a comma and corrupt the XML).
+            string want = (pct / 100f).ToString("0.####", CultureInfo.InvariantCulture);
+            string problem = "";
+            bool changed = false;
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                bool c;
+                problem = TryWriteValue(file, VolPattern, want, out c);
+                if (c) changed = true;
+                if (problem.Length == 0) break;
+                Thread.Sleep(150);
+            }
+            if (problem.Length > 0)
+            {
+                if (log != null) log("Could not set the in-game volume: " + problem);
+                return;
+            }
+            if (changed && log != null) log("In-game volume set to " + pct + "%.");
+        }
+
+        // Puts 'want' (already a string) into the first match of 'pattern' (group 2 is the value) and reads it back.
+        internal static string TryWriteValue(string file, string pattern, string want, out bool changed)
+        {
+            changed = false;
+            try
+            {
+                string xml = File.ReadAllText(file, Encoding.UTF8);
+                Match m = Regex.Match(xml, pattern);
+                if (!m.Success) return "the settings file has no matching entry yet - open Roblox's settings once (change the volume), close it, then try again";
+                if (m.Groups[2].Value != want)
+                {
+                    string backup = file + ".multihub-backup";
+                    if (!File.Exists(backup)) File.Copy(file, backup);
+                    xml = xml.Substring(0, m.Groups[2].Index) + want + xml.Substring(m.Groups[2].Index + m.Groups[2].Length);
+                    File.WriteAllText(file, xml, new UTF8Encoding(false));
+                    changed = true;
+                }
+                Match check = Regex.Match(File.ReadAllText(file, Encoding.UTF8), pattern);
+                return (check.Success && check.Groups[2].Value == want) ? "" : "Roblox changed the file again right away";
+            }
+            catch (IOException ex) { return ex.Message; }
+            catch (UnauthorizedAccessException ex) { return ex.Message; }
         }
 
         // Waits until the Roblox window of that process exists (the client has read its settings by then).
@@ -746,6 +854,7 @@ namespace RobloxMultiHub
                 string exe = FindRobloxExe();
                 if (direct && exe == null) { log(who + "Roblox was not found. Install it from roblox.com (or switch the launch method to Protocol in Settings)."); return false; }
                 if (exe != null) WriteClientSettings(exe);
+                ApplyVolume(log);
                 if (a.FpsCap > 0)
                 {
                     SetFpsCap(a.FpsCap, log);                      // this account has its own cap for this launch ...
@@ -801,7 +910,9 @@ namespace RobloxMultiHub
                 DateTime minStart = DateTime.Now.AddSeconds(-2);   // our client cannot be older than the spawn
                 int pid = 0;
                 bool already = false;
-                for (int i = 0; i < 120 && pid == 0; i++)
+                int maxAttempts = 120;                 // ~60s in the normal case
+                bool updateNoticed = false;
+                for (int i = 0; i < maxAttempts && pid == 0; i++)
                 {
                     await Task.Delay(500);
 
@@ -825,6 +936,14 @@ namespace RobloxMultiHub
                     if (pid == 0)
                         foreach (WinInfo w in WindowLayout.FindRobloxWindows())
                             if (w.HasWindow && !windowedBefore.Contains(w.Pid) && FindInstance(w.Pid) == null) { pid = w.Pid; break; }
+
+                    // While Roblox is downloading/installing an update the client has no window yet - keep waiting
+                    // (up to ~6 min) instead of giving up at 60s and reporting a false failure.
+                    if (pid == 0 && i >= maxAttempts - 1 && maxAttempts < 720 && RobloxUpdating())
+                    {
+                        if (!updateNoticed) { updateNoticed = true; log(who + "Roblox is updating - waiting for the update to finish..."); }
+                        maxAttempts = Math.Min(720, maxAttempts + 120);   // extend by ~60s each time
+                    }
                 }
 
                 a.LastUsedTicks = DateTime.UtcNow.Ticks;
@@ -884,6 +1003,15 @@ namespace RobloxMultiHub
         // ---------- watcher: relaunch accounts whose Roblox window disappeared ----------
         public static async Task WatcherTick(Action<string> log)
         {
+            // While Roblox is updating it closes the old clients on purpose; don't treat that as a crash and
+            // don't relaunch into a half-installed update. Wait it out, then resume (the dead clients come back).
+            if (RobloxUpdating())
+            {
+                if (!wasUpdating) { wasUpdating = true; if (log != null) log("Roblox is updating - the watcher is paused and will bring your accounts back when it finishes."); }
+                return;
+            }
+            if (wasUpdating) { wasUpdating = false; if (log != null) log("Roblox update finished - the watcher is active again."); }
+
             // Crash/disconnect alerts go out whether or not auto-relaunch is on.
             if (Store.Settings.WebhookCrash)
                 foreach (Instance g in Instances.Where(i => !i.UserClosed && !IsAlive(i.Pid)).ToList())
