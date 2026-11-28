@@ -26,6 +26,10 @@ namespace RobloxMultiHub
         static HttpClient http;
         public static string Status = "off";
 
+        // Set by MainForm: runs a text command (cmd, arg) on the UI thread and returns the reply to post.
+        // null until the form is ready. The bot only ever sends the reply string back to Discord.
+        public static Func<string, string, string> CommandRunner;
+
         public static bool Configured
         {
             get
@@ -96,7 +100,7 @@ namespace RobloxMultiHub
                     botId = Json.Str(j, "id");
                     string uname = Json.Str(j, "username");
                     Log.Write("Discord bot connected as " + (string.IsNullOrEmpty(uname) ? "(unknown)" : uname)
-                        + ". Type " + Store.Settings.DiscordBotCmd + " in the channel for a screenshot.");
+                        + ". Type " + Store.Settings.DiscordBotCmd + " for a screenshot, or !help for all commands.");
                 }
                 Status = "listening";
             }
@@ -134,8 +138,7 @@ namespace RobloxMultiHub
                             object author = Json.Get(m, "author");
                             if (Json.Bool(author, "bot")) continue;             // ignore bots (incl. ourselves)
                             if (Json.Str(author, "id") == botId) continue;
-                            if (IsCommand(Json.Str(m, "content")))
-                                await HandleCommand(c, channel, ct);
+                            await HandleMessage(c, channel, Json.Str(m, "content"), ct);
                         }
                     }
                 }
@@ -147,17 +150,43 @@ namespace RobloxMultiHub
             }
         }
 
-        static bool IsCommand(string content)
+        // Decide what a channel message means and act on it. Screenshot commands are handled here (they post
+        // an image); every other command is a text command, run on the UI thread via CommandRunner and its
+        // reply posted back. Messages that are not addressed to the bot are ignored silently (no spam).
+        static async Task HandleMessage(HttpClient c, string channel, string content, CancellationToken ct)
         {
-            if (string.IsNullOrEmpty(content)) return false;
-            string c = content.Trim().ToLowerInvariant();
-            string cmd = (Store.Settings.DiscordBotCmd ?? "!shot").Trim().ToLowerInvariant();
-            if (c == cmd || c.StartsWith(cmd + " ")) return true;
-            // handy built-in aliases, whatever the custom command is
-            return c == "!shot" || c == "!screenshot" || c == "!accounts";
+            string trimmed = (content ?? "").Trim();
+            if (trimmed.Length == 0) return;
+            int sp = trimmed.IndexOf(' ');
+            string cmd = (sp < 0 ? trimmed : trimmed.Substring(0, sp)).ToLowerInvariant();
+            string arg = sp < 0 ? "" : trimmed.Substring(sp + 1).Trim();
+
+            string shot = (Store.Settings.DiscordBotCmd ?? "!shot").Trim().ToLowerInvariant();
+            if (cmd == shot || cmd == "!shot" || cmd == "!screenshot" || cmd == "!ss" || cmd == "!accounts")
+            {
+                await SendShot(c, channel, ct);
+                return;
+            }
+            if (cmd == "!help" || cmd == "!status" || cmd == "!launch" || cmd == "!start"
+                || cmd == "!stop" || cmd == "!relaunch" || cmd == "!cap")
+            {
+                Func<string, string, string> run = CommandRunner;
+                string reply = (run == null) ? "Remote control is still starting up - try again in a moment."
+                                             : SafeRun(run, cmd, arg);
+                if (!string.IsNullOrEmpty(reply)) await PostText(c, channel, reply, ct);
+                Log.Write("Discord bot: ran " + cmd + (arg.Length > 0 ? " " + arg : ""));
+                return;
+            }
+            // anything else in the channel is not for us
         }
 
-        static async Task HandleCommand(HttpClient c, string channel, CancellationToken ct)
+        static string SafeRun(Func<string, string, string> run, string cmd, string arg)
+        {
+            try { return run(cmd, arg); }
+            catch (Exception ex) { Log.Error("DiscordBot run", ex); return "Could not run that command."; }
+        }
+
+        static async Task SendShot(HttpClient c, string channel, CancellationToken ct)
         {
             try
             {

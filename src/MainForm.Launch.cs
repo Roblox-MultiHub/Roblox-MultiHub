@@ -529,5 +529,149 @@ namespace RobloxMultiHub
             if (!cancelled && Store.Settings.WebhookBatch)
                 Webhook.Send("Launch finished", "Started " + accs.Count + " account(s): " + spec.Describe(), Webhook.Green);
         }
+
+        // ================= Discord bot: remote control =================
+        // Runs a text command coming from the Discord bot. Called on the bot's background thread, so it marshals
+        // onto the UI thread (every launch/stop and the shared instance list must run there) and returns the reply
+        // text the bot posts back. Only ever returns text - it never exposes cookies or any account secret.
+        string RunBotCommand(string cmd, string arg)
+        {
+            try
+            {
+                if (IsDisposed || Disposing) return null;
+                if (InvokeRequired) return (string)Invoke(new Func<string, string, string>(RunBotCommand), cmd, arg);
+            }
+            catch (Exception) { return null; }   // form closing mid-command
+            try
+            {
+                switch (cmd)
+                {
+                    case "!help": return BotHelp();
+                    case "!status": return BotStatus();
+                    case "!launch":
+                    case "!start": return BotLaunch(arg);
+                    case "!stop": return BotStop(arg);
+                    case "!relaunch": return BotRelaunch(arg);
+                    case "!cap": return BotCap(arg);
+                }
+                return null;
+            }
+            catch (Exception ex) { Log.Error("RunBotCommand", ex); return "Error: " + ex.Message; }
+        }
+
+        static string BotHelp()
+        {
+            return "**Roblox MultiHub — remote control**\n```"
+                + "\n!status            how many accounts are running + who"
+                + "\n!shot              screenshot grid of all running windows"
+                + "\n!launch <name|all> launch one account (by name) or all listed"
+                + "\n!stop <name|all>   close one account or all windows this app started"
+                + "\n!relaunch <name|all> restart one account or every running one"
+                + "\n!cap <MB|off>      set the Max-RAM-per-window cap"
+                + "\n!help              this message"
+                + "\n```Names match an account's alias or username (part of the name is enough).";
+        }
+
+        string BotStatus()
+        {
+            List<Account> all = Store.Accounts;
+            int running = all.Count(a => runningIds.Contains(a.Id));
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            sb.Append("**Farm status** — ").Append(running).Append(" of ").Append(all.Count).Append(" account(s) running");
+            if (MultiInstance.Enabled) sb.Append("  (multi-instance: ").Append(MultiInstance.State).Append(")");
+            if (Launcher.RobloxUpdating()) sb.Append("\n⏳ Roblox is updating right now.");
+            int shown = 0;
+            foreach (Account a in all)
+            {
+                if (!runningIds.Contains(a.Id)) continue;
+                if (shown >= 25) { sb.Append("\n…and ").Append(running - shown).Append(" more."); break; }
+                LiveInfo li = AppState.Live(a);
+                string state = li.PresenceType == 2 ? "in game" : li.PresenceType == 3 ? "studio"
+                    : li.PresenceType == 1 ? "online" : li.CookieBad ? "cookie expired" : "running";
+                sb.Append("\n🟢 ").Append(AppState.Name(a)).Append(" — ").Append(state);
+                shown++;
+            }
+            if (running == 0) sb.Append("\nNo windows are running. Use `!launch all` to start the listed accounts.");
+            return sb.ToString();
+        }
+
+        string BotLaunch(string arg)
+        {
+            if (launching) return "A launch is already running — try again when it finishes.";
+            if (Eq(arg, "all") || arg.Length == 0)
+            {
+                List<Account> all = FilteredAccounts();
+                if (all.Count == 0) return "There are no accounts in the list.";
+                StartLaunch(all);
+                return "Launching " + all.Count + " account(s)…";
+            }
+            string err; Account acc = FindAccount(arg, out err);
+            if (acc == null) return err;
+            if (runningIds.Contains(acc.Id)) return AppState.Name(acc) + " is already running.";
+            LaunchOne(acc);
+            return "Launching " + AppState.Name(acc) + "…";
+        }
+
+        string BotStop(string arg)
+        {
+            if (Eq(arg, "all") || arg.Length == 0) { StopAll(); return "Closing every Roblox window this app started."; }
+            string err; Account acc = FindAccount(arg, out err);
+            if (acc == null) return err;
+            if (!runningIds.Contains(acc.Id)) return AppState.Name(acc) + " is not running.";
+            StopAccount(acc);
+            return "Closed " + AppState.Name(acc) + ".";
+        }
+
+        string BotRelaunch(string arg)
+        {
+            if (launching) return "A launch is already running — try again when it finishes.";
+            if (Eq(arg, "all"))
+            {
+                List<Account> run = Store.Accounts.Where(a => runningIds.Contains(a.Id)).ToList();
+                if (run.Count == 0) return "Nothing is running to relaunch.";
+                StopAll();
+                StartLaunch(run);
+                return "Relaunching " + run.Count + " account(s)…";
+            }
+            string err; Account acc = FindAccount(arg, out err);
+            if (acc == null) return err;
+            StopAccount(acc);
+            LaunchOne(acc);
+            return "Relaunching " + AppState.Name(acc) + "…";
+        }
+
+        string BotCap(string arg)
+        {
+            int mb;
+            if (Eq(arg, "off") || arg == "0") mb = 0;
+            else if (!int.TryParse(arg.Trim(), out mb) || mb < 0) return "Give a number of MB, or `off`. Example: `!cap 700`.";
+            Store.Settings.MaxRamMb = Math.Min(32768, mb);
+            Store.SaveSettings();
+            try { RamCap.Tick(); UpdateBetaLive(); } catch (Exception) { }
+            return mb == 0 ? "RAM cap turned off." : "RAM cap set to " + Store.Settings.MaxRamMb + " MB per window.";
+        }
+
+        static bool Eq(string a, string b) { return string.Equals((a ?? "").Trim(), (b ?? "").Trim(), StringComparison.OrdinalIgnoreCase); }
+
+        // Finds one account by alias / username / display name: exact match first, then a unique partial match.
+        Account FindAccount(string q, out string err)
+        {
+            err = null;
+            q = (q ?? "").Trim();
+            if (q.Length == 0) { err = "Give an account name, for example `!launch alice`."; return null; }
+            List<Account> all = Store.Accounts;
+            List<Account> exact = all.Where(a => Eq(a.Alias, q) || Eq(a.Username, q) || Eq(a.DisplayName, q)).ToList();
+            if (exact.Count == 1) return exact[0];
+            if (exact.Count > 1) { err = "More than one account is called '" + q + "'."; return null; }
+            List<Account> part = all.Where(a => Contains(a.Alias, q) || Contains(a.Username, q) || Contains(a.DisplayName, q)).ToList();
+            if (part.Count == 1) return part[0];
+            if (part.Count > 1) { err = "'" + q + "' matches " + part.Count + " accounts — be more specific."; return null; }
+            err = "No account called '" + q + "'. Use `!status` to see names."; return null;
+        }
+
+        static bool Contains(string hay, string needle)
+        {
+            return !string.IsNullOrEmpty(hay) && hay.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
     }
 }

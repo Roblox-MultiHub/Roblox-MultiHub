@@ -225,10 +225,11 @@ namespace RobloxMultiHub
                 "Create one for free: open the Discord Developer Portal (discord.com/developers/applications), click New Application, name it exactly \"Roblox MultiHub\" (that name is what shows after \"Playing\"), open it and copy the Application ID. Paste it here. For the little logo image, upload a picture under Rich Presence > Art Assets named exactly \"logo\". The ID is public - it is safe to share, unlike a bot token.",
                 Ui.Fld("Application ID", 120), tbDiscordAppId);
 
-            p.Section("Discord bot (on-demand screenshot)");
-            chkBot = Ui.Chk("Reply with a screenshot when I type a command", S.DiscordBot, null);
-            p.Opt("Type a command in a channel to get a screenshot on demand.",
-                "OFF by default. A webhook can only send messages, so answering a command needs a bot. Create one for free in the Discord Developer Portal (New Application > Bot > Reset Token > copy), paste the token below, and invite the bot to your server with the Read Messages, Read Message History, Send Messages and Attach Files permissions. MultiHub watches ONE channel and, when you type the command, posts a screenshot of all running accounts. It does not need the \"Message Content\" intent. The token is only ever sent to Discord and is stored locally - treat it like a password.",
+            p.Section("Discord bot (remote control)");
+            chkBot = Ui.Chk("Let me control the farm from a Discord channel", S.DiscordBot, null);
+            p.Opt("Run your whole farm from Discord - even from your phone.",
+                "OFF by default. A webhook can only send messages, so taking commands needs a bot. Create one for free in the Discord Developer Portal (New Application > Bot > Reset Token > copy), paste the token below, and invite the bot to your server with the Read Messages, Read Message History, Send Messages and Attach Files permissions. MultiHub watches ONE channel; type !help there for the full list. Commands: !status, !shot, !launch <name|all>, !stop <name|all>, !relaunch <name|all>, !cap <MB|off>. It does not need the \"Message Content\" intent. The token is only ever sent to Discord and is stored locally - treat it like a password.\n\n"
+                + "SAFETY: anyone who can post in that channel can launch/stop your accounts, so use a PRIVATE channel only you (or people you trust) can see. Commands never reveal your cookies or any account secret.",
                 chkBot);
             tbBotToken = Ui.Txt(330, S.DiscordBotToken);
             tbBotToken.UseSystemPasswordChar = true;
@@ -241,7 +242,7 @@ namespace RobloxMultiHub
                 Ui.Fld("Channel ID", 120), tbBotChannel);
             tbBotCmd = Ui.Txt(160, string.IsNullOrEmpty(S.DiscordBotCmd) ? "!shot" : S.DiscordBotCmd);
             p.Opt("The command that triggers a screenshot.",
-                "Default !shot. (!screenshot and !accounts always work too.)",
+                "Default !shot. (!screenshot, !ss and !accounts always work too.) The control commands (!status, !launch, !stop, !relaunch, !cap, !help) are always available.",
                 Ui.Fld("Command", 120), tbBotCmd);
             EventHandler botChanged = delegate
             {

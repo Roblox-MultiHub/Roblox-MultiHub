@@ -902,6 +902,7 @@ namespace RobloxMultiHub
             StartupChecks();
             RefreshPresence();
             StartMemOnLaunch();
+            DiscordBot.CommandRunner = RunBotCommand;
             DiscordBot.Apply();
             if (Store.Settings.CheckLoginsAtStartup) CheckLoginsOnStartup();
             if (Store.Settings.CheckUpdates) CheckUpdatesOnStartup();
@@ -986,6 +987,7 @@ namespace RobloxMultiHub
                 Store.SaveAccounts();
                 UnregisterHotkeys();
                 DiscordRpc.Stop();
+                DiscordBot.CommandRunner = null;
                 DiscordBot.Stop();
                 if (Store.Settings.MaxAlts) MaxAlts.Reset();
                 RamCap.Reset();

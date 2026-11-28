@@ -2,6 +2,10 @@
 
 All notable changes to Roblox MultiHub. Newest first. Versions link to their release.
 
+## [v1.4.6](https://github.com/Roblox-MultiHub/Roblox-MultiHub/releases/tag/v1.4.6)
+
+- **New: control your whole farm from Discord — even from your phone.** The Discord bot is now a full remote-control console, not just screenshots. Type `!status` (who's running), `!launch <name|all>`, `!stop <name|all>`, `!relaunch <name|all>`, `!cap <MB|off>`, `!shot` or `!help` in the channel the bot watches, and MultiHub does it and replies. Unlike other tools' remote control, it drives MultiHub itself (nothing is injected into Roblox) and never exposes your cookies. Use a **private** channel — anyone who can post there can launch/stop your accounts. Settings → Discord bot (remote control).
+
 ## [v1.4.5](https://github.com/Roblox-MultiHub/Roblox-MultiHub/releases/tag/v1.4.5)
 
 - **Much better behaviour when Roblox auto-updates.** When Roblox installs an update it closes the old clients and has no window for a while, which used to look like a crash: the watcher relaunched into the half-installed update, launches "failed" after 60s, and the crash breaker gave up. Now MultiHub detects an update in progress and (1) pauses the watcher until it finishes, then brings your accounts back, (2) keeps waiting for a launching client instead of failing at 60s, and (3) holds the next account in a batch until the update is done — so one update no longer takes your whole farm down.
